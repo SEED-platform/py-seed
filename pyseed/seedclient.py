@@ -15,7 +15,7 @@ N.B. Only a Read Only client (with public methods) is supplied.
 This is a deliberate design decision. There is no general purpose client that
 can write to the db, this ensures caching is transparent and always valid.
 
-You *must* always use the class corresponsing to the relevant model, i.e.
+You *must* always use the class corresponding to the relevant model, i.e.
 one that inherits from SEEDRecord to be able to write to the db.
 You *should* generally this for reading too, in order to get the benefits of
 caching.
@@ -28,11 +28,9 @@ import inspect
 # Imports from Third Party Modules
 import requests
 
-# Imports from Django
-
 # Local Imports
-from pyseed.apibase import (add_pk, JSONAPI, UserAuthMixin, APIClientError)
-
+from pyseed.apibase import JSONAPI, OAuthMixin, UserAuthMixin, add_pk
+from pyseed.exceptions import SEEDError
 
 # Constants
 URLS = {
@@ -82,12 +80,9 @@ def _set_default(obj, key, val, required=True):
 
 
 # Public Classes and Functions
-class SEEDError(APIClientError):
-    # pylint:disable=too-few-public-methods
-    pass
 
 
-class SEEDBaseClient(UserAuthMixin, JSONAPI):
+class SEEDBaseClient(JSONAPI):
     """Interact with SEED API.
 
     Raises a SEEDError on an API Error. No further logging or error
@@ -134,18 +129,17 @@ class SEEDBaseClient(UserAuthMixin, JSONAPI):
     """
     # pylint:disable=too-few-public-methods,too-many-arguments
     # pylint:disable=too-many-instance-attributes
+
     def __init__(self, org_id, username=None, password=None, access_token=None,
                  endpoint=None, data_name=None, use_ssl=None,
                  base_url=None, port=None, url_map=None, **kwargs):
-        use_ssl = use_ssl if use_ssl else True
+        use_ssl = use_ssl if use_ssl is not None else True
         super(SEEDBaseClient, self).__init__(
             username=username, password=password, use_ssl=use_ssl,
             use_auth=True, access_token=access_token, **kwargs
         )
         self.org_id = org_id
         self.token = access_token
-        if not url_map:
-            url_map = URLS
         # prevent overriding if set in sublcass as class attr
         if not getattr(self, 'endpoint', None):
             self.endpoint = endpoint
@@ -402,13 +396,49 @@ class DeleteMixin(object):
             self._check_response(response, **kwargs)
 
 
-class SEEDReadOnlyClient(ReadMixin, SEEDBaseClient):
+class SEEDUserAuthBaseClient(UserAuthMixin, SEEDBaseClient):
+    """
+    SEED base client using username and password(or api key) authentication
+    """
+    pass
+
+
+class SEEDOAuthBaseClient(OAuthMixin, SEEDBaseClient):
+    """SEED base client using JWT OAuth2 based authentication"""
+
+    def __init__(self, oauth_client, org_id, username=None, password=None,
+                 access_token=None, endpoint=None, data_name=None,
+                 use_ssl=None, base_url=None, port=None, url_map=None,
+                 **kwargs):
+
+        self.oauth_client = oauth_client
+        super(SEEDOAuthBaseClient, self).__init__(
+            org_id, username=username, password=password,
+            access_token=access_token, endpoint=endpoint, data_name=data_name,
+            use_ssl=use_ssl, base_url=base_url, port=port, url_map=url_map,
+            **kwargs
+        )
+
+
+class SEEDReadOnlyClient(ReadMixin, SEEDUserAuthBaseClient):
     """Read Ony Client"""
     pass
 
 
 class SEEDReadWriteClient(CreateMixin, ReadMixin, UpdateMixin, DeleteMixin,
-                          SEEDBaseClient):
+                          SEEDUserAuthBaseClient):
+    """Client with full CRUD Methods"""
+    # pylint:disable=too-many-ancestors
+    pass
+
+
+class SEEDOAuthReadOnlyClient(ReadMixin, SEEDOAuthBaseClient):
+    """Read Ony Client"""
+    pass
+
+
+class SEEDOAuthReadWriteClient(CreateMixin, ReadMixin, UpdateMixin,
+                               DeleteMixin, SEEDOAuthBaseClient):
     """Client with full CRUD Methods"""
     # pylint:disable=too-many-ancestors
     pass

@@ -93,3 +93,4 @@ ENV/
 # ignore backup files etc
 *.bak
 *.old
+.pytest_cache/
