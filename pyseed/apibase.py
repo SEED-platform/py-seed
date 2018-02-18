@@ -8,12 +8,16 @@ Functionality for calls to external API's"""
 # Imports from Standard Library
 import re
 
+# Imports from Third Party Modules
 # Imports from External Modules
 import requests
 
-
+# Local Imports
 # Public Functions and Classes
 # Helper functions for use by BaseAPI subclasses
+from pyseed.exceptions import APIClientError
+
+
 def add_pk(url, pk, required=True, slash=False):
     """Add id/primary key to url"""
     if required and not pk:
@@ -30,10 +34,6 @@ def add_pk(url, pk, required=True, slash=False):
     if slash:
         url = "{}/".format(url)
     return url
-
-
-class APIClientError(Exception):
-    pass
 
 
 class BaseAPI(object):
@@ -281,3 +281,44 @@ class UserAuthMixin(object):
         if getattr(self, 'use_auth', None) and not getattr(self, 'auth', None):
             self.auth = self._get_auth()
         return super(UserAuthMixin, self)._construct_payload(params)
+
+
+class OAuthMixin(object):
+    """
+    Mixin to provide api client authentication via OAuth access tokens based
+    on the JWTGrantClient found in jwt-oauth2lib.
+
+    see https://github.com/GreenBuildingRegistry/jwt_oauth2
+    """
+
+    _token_type = "Bearer"
+    oauth_client = None
+
+    def _get_access_token(self):
+        """Generate OAuth access token"""
+        config = getattr(self, 'config')
+        private_key_file = config.get('private_key_location', default=None)
+        client_id = config.get('client_id', default=None)
+        username = getattr(self, 'username', None)
+        with open(private_key_file, 'r') as pk_file:
+            sig = pk_file.read()
+            oauth_client = self.oauth_client(
+                sig, username, client_id,
+                pvt_key_password=getattr(self, 'pvt_key_password', None)
+            )
+            return oauth_client.get_access_token()
+
+    def _construct_payload(self, params):
+        """Construct parameters for an api call.
+.
+        :param params: An dictionary of key-value pairs to include
+            in the request.
+        :return: A dictionary of k-v pairs to send to the server
+            in the request.
+        """
+        params = super(OAuthMixin, self)._construct_payload(params)
+        token = getattr(self, 'token', None) or self._get_access_token()
+        params['headers'] = {
+            'Authorization': '{} {}'.format(self._token_type, token)
+        }
+        return params
