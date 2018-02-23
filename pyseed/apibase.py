@@ -296,9 +296,8 @@ class OAuthMixin(object):
 
     def _get_access_token(self):
         """Generate OAuth access token"""
-        config = getattr(self, 'config')
-        private_key_file = config.get('private_key_location', default=None)
-        client_id = config.get('client_id', default=None)
+        private_key_file = getattr(self, 'private_key_location', default=None)
+        client_id = getattr(self, 'client_id', default=None)
         username = getattr(self, 'username', None)
         with open(private_key_file, 'r') as pk_file:
             sig = pk_file.read()

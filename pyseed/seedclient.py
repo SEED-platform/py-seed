@@ -89,20 +89,20 @@ class SEEDBaseClient(JSONAPI):
     handling is done. This the responsibility of the caller.
 
     This should never be used directly, instead inherit from
-    SEEDReadOnlyClient or SEEDRecord.
+    one of the SEED Read or ReadWrite classes with mixins.
 
     Note subclasses of these should not themselves be inherited from due
     to the way error handling works, this should not be needed, other classes
     can inherit from them directly and overwrite methods/use mixins as
     appropriate.
 
-    endpoint referers to the endpoint name. This allow you to call an
+    endpoint refers to the endpoint name. This allow you to call an
     endpoint without having to know the full url.
 
     Endpoint names are set in config, and can be accessed as self.endpoints.
 
     data_name is set as an attribute on the view called.
-    This constains the actual response data.
+    This constrains the actual response data.
     If not set it is derived from the url (typically its the view name).
     In either case 'data' is used as a fallback, then detail.
 
@@ -396,49 +396,25 @@ class DeleteMixin(object):
             self._check_response(response, **kwargs)
 
 
-class SEEDUserAuthBaseClient(UserAuthMixin, SEEDBaseClient):
-    """
-    SEED base client using username and password(or api key) authentication
-    """
-    pass
-
-
-class SEEDOAuthBaseClient(OAuthMixin, SEEDBaseClient):
-    """SEED base client using JWT OAuth2 based authentication"""
-
-    def __init__(self, oauth_client, org_id, username=None, password=None,
-                 access_token=None, endpoint=None, data_name=None,
-                 use_ssl=None, base_url=None, port=None, url_map=None,
-                 **kwargs):
-
-        self.oauth_client = oauth_client
-        super(SEEDOAuthBaseClient, self).__init__(
-            org_id, username=username, password=password,
-            access_token=access_token, endpoint=endpoint, data_name=data_name,
-            use_ssl=use_ssl, base_url=base_url, port=port, url_map=url_map,
-            **kwargs
-        )
-
-
-class SEEDReadOnlyClient(ReadMixin, SEEDUserAuthBaseClient):
+class SEEDReadOnlyClient(ReadMixin, UserAuthMixin, SEEDBaseClient):
     """Read Ony Client"""
     pass
 
 
 class SEEDReadWriteClient(CreateMixin, ReadMixin, UpdateMixin, DeleteMixin,
-                          SEEDUserAuthBaseClient):
+                          UserAuthMixin, SEEDBaseClient):
     """Client with full CRUD Methods"""
     # pylint:disable=too-many-ancestors
     pass
 
 
-class SEEDOAuthReadOnlyClient(ReadMixin, SEEDOAuthBaseClient):
+class SEEDOAuthReadOnlyClient(ReadMixin, OAuthMixin, SEEDBaseClient):
     """Read Ony Client"""
     pass
 
 
 class SEEDOAuthReadWriteClient(CreateMixin, ReadMixin, UpdateMixin,
-                               DeleteMixin, SEEDOAuthBaseClient):
+                               DeleteMixin, OAuthMixin, SEEDBaseClient):
     """Client with full CRUD Methods"""
     # pylint:disable=too-many-ancestors
     pass
