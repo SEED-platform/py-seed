@@ -262,9 +262,9 @@ class MixinTests(unittest.TestCase):
         self.urls_map = URLS
         self.base_url = 'example.org'
         self.client = SEEDOAuthReadWriteClient(
-            MockOAuthClient, 1, username='test@example.org',
+            1, username='test@example.org',
             access_token='dfghjk', base_url=self.base_url,
-            port=self.port, url_map=self.urls_map
+            port=self.port, url_map=self.urls_map, oauth_client=MockOAuthClient
         )
         self.call_dict = {
             'headers': {'Authorization': 'Bearer dfghjk'},
