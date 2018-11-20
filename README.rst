@@ -1,6 +1,12 @@
 Py-SEED
 =======
 
+.. image:: https://travis-ci.org/SEED-platform/py-seed.svg?branch=dev
+    :target: https://travis-ci.org/SEED-platform/py-seed
+
+.. image:: https://pypip.in/v/py-seed/badge.svg
+        :target: https://pypi.python.org/pypi/py-seed/
+
 A python API client for the SEED Platform
 
 
