@@ -17,7 +17,7 @@ import requests
 
 # Local Imports
 from pyseed.exceptions import SEEDError
-from pyseed.seedclient import (  # SEEDReadWriteClient,
+from pyseed.seedclient import (
     ReadMixin,
     SEEDBaseClient,
     SEEDOAuthReadWriteClient,
