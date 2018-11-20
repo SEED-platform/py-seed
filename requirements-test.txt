@@ -1,0 +1,9 @@
+-r requirements.txt
+
+flake8==3.6.0
+tox
+mock
+pytest
+pytest-cov
+pytest-xdist
+testfixtures>=5.1.1
