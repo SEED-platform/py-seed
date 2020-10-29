@@ -34,28 +34,49 @@ from pyseed.exceptions import SEEDError
 
 # Constants (Should end with a slash)
 URLS = {
-    'columns': '/api/v3/columns/',
-    'cycles': '/api/v3/cycles/',
-    'datasets': '/api/v3/datasets/',
-    'gbr_properties': '/api/v3/gbr_properties/',
-    'green_assessment': '/api/v3/green_assessments/',
-    'green_assessment_property': '/api/v3/green_assessment_properties/',
-    'green_assessment_url': '/api/v3/green_assessment_urls/',
-    'labels': '/api/v3/labels/',
-    'import_files': '/api/v3/import_files/',
-    'properties': '/api/v3/properties/',
-    'property_states': '/api/v3/property_states/',
-    'property_views': '/api/v3/property_views/',
-    'taxlots': '/api/v3/taxlots/',
-    'users': '/api/v3/users/',
+    'v3': {
+        'columns': '/api/v3/columns/',
+        'cycles': '/api/v3/cycles/',
+        'datasets': '/api/v3/datasets/',
+        'gbr_properties': '/api/v3/gbr_properties/',
+        'green_assessment': '/api/v3/green_assessments/',
+        'green_assessment_property': '/api/v3/green_assessment_properties/',
+        'green_assessment_url': '/api/v3/green_assessment_urls/',
+        'labels': '/api/v3/labels/',
+        'import_files': '/api/v3/import_files/',
+        'properties': '/api/v3/properties/',
+        'property_states': '/api/v3/property_states/',
+        'property_views': '/api/v3/property_views/',
+        'taxlots': '/api/v3/taxlots/',
+        'users': '/api/v3/users/',
+    },
+    'v2': {
+        'columns': '/api/v2/columns/',
+        'column_mappings': '/api/v2/column_mappings/',
+        'cycles': '/api/v2/cycles/',
+        'datasets': '/api/v2/datasets/',
+        'gbr_properties': '/api/v2/gbr_properties/',
+        'green_assessment': '/api/v2/green_assessments/',
+        'green_assessment_property': '/api/v2/green_assessment_properties/',
+        'green_assessment_url': '/api/v2/green_assessment_urls/',
+        'labels': '/api/v2/labels/',
+        'import_files': '/api/v2/import_files/',
+        'projects': '/api/v2/projects/',
+        'properties': '/api/v2/properties/',
+        'property_states': '/api/v2/property_states/',
+        'property_views': '/api/v2/property_views/',
+        'taxlots': '/api/v2/taxlots/',
+        'users': '/api/v2/users/',
+    }
 }
 
 
 # Private Classes and Functions
-def _get_urls(base_url, url_map=None):
+def _get_urls(base_url, url_map=None, version=None):
     """Populate URL"""
+    version = version if version else 'v3'
     if not url_map:
-        url_map = URLS
+        url_map = URLS[version]
     return {
         key: '{}/{}'.format(base_url.rstrip('/'), val.lstrip('/'))
         for key, val in url_map.items()
@@ -130,8 +151,8 @@ class SEEDBaseClient(JSONAPI):
     # pylint:disable=too-many-instance-attributes
 
     def __init__(self, org_id, username=None, password=None, access_token=None,
-                 endpoint=None, data_name=None, use_ssl=None,
-                 base_url=None, port=None, url_map=None, **kwargs):
+                 endpoint=None, data_name=None, use_ssl=None, base_url=None,
+                 port=None, url_map=None, version=None, **kwargs):
         use_ssl = use_ssl if use_ssl is not None else True
         super(SEEDBaseClient, self).__init__(
             username=username, password=password, use_ssl=use_ssl,
@@ -152,7 +173,7 @@ class SEEDBaseClient(JSONAPI):
             self.base_url = '{}:{}'.format(self.base_url, self.port)
         if not self.base_url.endswith('/'):
             self.base_url = self.base_url + '/'
-        self.urls = _get_urls(self.base_url, url_map)
+        self.urls = _get_urls(self.base_url, url_map=url_map, version=version)
         self.endpoints = self.urls.keys()
 
     def _check_response(self, response, *args, **kwargs):
