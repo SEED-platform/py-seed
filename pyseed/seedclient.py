@@ -57,7 +57,7 @@ def _get_urls(base_url, url_map=None):
     if not url_map:
         url_map = URLS
     return {
-        key: f'{base_url.rstrip("/")}/{val.lstrip("/")}'
+        key: '{}/{}'.format(base_url.rstrip('/'), val.lstrip('/'))
         for key, val in url_map.items()
     }
 
@@ -72,7 +72,7 @@ def _set_default(obj, key, val, required=True):
     if not val:
         val = getattr(obj, key, None)
     if not val and required:
-        msg = f'{key} is not set'
+        msg = '{} is not set'.format(key)
         raise AttributeError(msg)
     return val
 
@@ -149,7 +149,7 @@ class SEEDBaseClient(JSONAPI):
         if not getattr(self, 'port', None):
             self.port = port if port else None
         if self.port:
-            self.base_url = f'{self.base_url}:{self.port}'
+            self.base_url = '{}:{}'.format(self.base_url, self.port)
         if not self.base_url.endswith('/'):
             self.base_url = self.base_url + '/'
         self.urls = _get_urls(self.base_url, url_map)
@@ -167,7 +167,7 @@ class SEEDBaseClient(JSONAPI):
         # OK, Created, Accepted
         if response.status_code not in [200, 201, 202]:
             error = True
-            error_msg = f'SEED returned status code: {response.status_code}'
+            error_msg = 'SEED returned status code: {}'.format(response.status_code)
         # SEED adds a status key to the response to indicate success/error
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
@@ -205,7 +205,7 @@ class SEEDBaseClient(JSONAPI):
             except KeyError:
                 pass
         if result is None:
-            error_msg = f'Could not find result using data_name {data_name}.'
+            error_msg = 'Could not find result using data_name {}.'.format(data_name)
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
         return result
 
@@ -236,7 +236,9 @@ class SEEDBaseClient(JSONAPI):
         url = response.request.url
         verb = response.request.method
         # e.g. MyClass.method
-        caller = f'{self.__class__.__name__}.{inspect.stack()[stack_pos + 1][3]}'
+        caller = caller = '{}.{}'.format(
+            self.__class__.__name__, inspect.stack()[stack_pos + 1][3]
+        )
         if args:
             kwargs['args'] = args
         raise SEEDError(
