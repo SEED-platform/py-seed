@@ -55,7 +55,7 @@ class BaseAPI(object):
         ..Note:
             if use_auth is True the default is to use http basic
             authentication if self.auth is not set. (You will need to
-            to this by overidding __init__ and setting this before
+            to this by overriding __init__ and setting this before
             calling super.
 
             This requires username and password to be supplied as
@@ -130,7 +130,7 @@ class BaseAPI(object):
         return url
 
     def check_call_success(self, response):
-        """Return true if api call was successfull."""
+        """Return true if api call was successful."""
         # pylint: disable=no-self-use, no-member
         return response.status_code == requests.codes.ok
 

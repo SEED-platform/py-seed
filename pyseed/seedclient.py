@@ -32,24 +32,22 @@ import requests
 from pyseed.apibase import JSONAPI, OAuthMixin, UserAuthMixin, add_pk
 from pyseed.exceptions import SEEDError
 
-# Constants
+# Constants (Should end with a slash)
 URLS = {
-    'columns': '/api/v2/columns/',
-    'column_mappings': '/api/v2/column_mappings/',
-    'cycles': '/api/v2/cycles/',
-    'datasets': '/api/v2/datasets/',
-    'gbr_properties': '/api/v2/gbr_properties/',
-    'green_assessment': '/api/v2/green_assessments/',
-    'green_assessment_property': '/api/v2/green_assessment_properties/',
-    'green_assessment_url': '/api/v2/green_assessment_urls/',
-    'labels': '/api/v2/labels/',
-    'import_files': '/api/v2/import_files/',
-    'projects': '/api/v2/projects/',
-    'properties': '/api/v2/properties/',
-    'property_states': '/api/v2/property_states/',
-    'property_views': '/api/v2/property_views/',
-    'taxlots': '/api/v2/taxlots/',
-    'users': '/api/v2/users/',
+    'columns': '/api/v3/columns/',
+    'cycles': '/api/v3/cycles/',
+    'datasets': '/api/v3/datasets/',
+    'gbr_properties': '/api/v3/gbr_properties/',
+    'green_assessment': '/api/v3/green_assessments/',
+    'green_assessment_property': '/api/v3/green_assessment_properties/',
+    'green_assessment_url': '/api/v3/green_assessment_urls/',
+    'labels': '/api/v3/labels/',
+    'import_files': '/api/v3/import_files/',
+    'properties': '/api/v3/properties/',
+    'property_states': '/api/v3/property_states/',
+    'property_views': '/api/v3/property_views/',
+    'taxlots': '/api/v3/taxlots/',
+    'users': '/api/v3/users/',
 }
 
 
@@ -127,6 +125,7 @@ class SEEDBaseClient(JSONAPI):
     :param config_urls_key: key for urls in config object (default urls)
     :type config_urls_key: str
     """
+
     # pylint:disable=too-few-public-methods,too-many-arguments
     # pylint:disable=too-many-instance-attributes
 
@@ -140,7 +139,7 @@ class SEEDBaseClient(JSONAPI):
         )
         self.org_id = org_id
         self.token = access_token
-        # prevent overriding if set in sublcass as class attr
+        # prevent overriding if set in subclass as class attr
         if not getattr(self, 'endpoint', None):
             self.endpoint = endpoint
         if not getattr(self, 'data_name', None):
@@ -164,16 +163,14 @@ class SEEDBaseClient(JSONAPI):
         be reported correctly.
         """
         error = False
-        error_msg = "Unknown error from SEED API"
-        # OK, Created , Accepted
+        error_msg = 'Unknown error from SEED API'
+        # OK, Created, Accepted
         if response.status_code not in [200, 201, 202]:
             error = True
-            error_msg = "SEED returned status code: {}".format(
-                response.status_code
-            )
+            error_msg = 'SEED returned status code: {}'.format(response.status_code)
         # SEED adds a status key to the response to indicate success/error
         # This is superfluous as status codes should be used to indicate an
-        # error, but theyt are not always set correctly.
+        # error, but they are not always set correctly.
         elif response.json().get('status', None) == 'error':
             error = True
         if error:
@@ -208,9 +205,7 @@ class SEEDBaseClient(JSONAPI):
             except KeyError:
                 pass
         if result is None:
-            error_msg = "Could not find result using data_name {}.".format(
-                data_name
-            )
+            error_msg = 'Could not find result using data_name {}.'.format(data_name)
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
         return result
 
@@ -227,7 +222,7 @@ class SEEDBaseClient(JSONAPI):
 
         Thus if the error occurs directly in the function calling _raise_error
         stack_pos=0, if that function is called by another function add 1 etc.
-        Note techically *this* method (_raise_error) is at the bottom of the
+        Note technically *this* method (_raise_error) is at the bottom of the
         stack, but we add 1 to stack_pos so counting starts at the method
         that calls this one.
 
@@ -241,7 +236,7 @@ class SEEDBaseClient(JSONAPI):
         url = response.request.url
         verb = response.request.method
         # e.g. MyClass.method
-        caller = '{}.{}'.format(
+        caller = caller = '{}.{}'.format(
             self.__class__.__name__, inspect.stack()[stack_pos + 1][3]
         )
         if args:
@@ -253,7 +248,7 @@ class SEEDBaseClient(JSONAPI):
 
     def _set_params(self, params):
         """Add org_id"""
-        params['org_id'] = self.org_id
+        params['organization_id'] = self.org_id
         return params
 
 
@@ -263,6 +258,7 @@ class SEEDBaseClient(JSONAPI):
 
 class CreateMixin(object):
     """Add _post methods"""
+
     # pylint:disable=too-few-public-methods
 
     def post(self, endpoint=None, data_name=None, **kwargs):
@@ -288,6 +284,7 @@ class CreateMixin(object):
 
 class ReadMixin(object):
     """Add get &  list method"""
+
     # pylint:disable=too-few-public-methods
 
     def get(self, pk, endpoint=None, data_name=None, **kwargs):
@@ -307,8 +304,7 @@ class ReadMixin(object):
         url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
         response = super(ReadMixin, self)._get(url=url, **kwargs)
         self._check_response(response, **kwargs)
-        result = self._get_result(response, data_name=data_name, **kwargs)
-        return result
+        return self._get_result(response, data_name=data_name, **kwargs)
 
     def list(self, endpoint=None, data_name=None, **kwargs):
         """
@@ -332,6 +328,7 @@ class ReadMixin(object):
 
 class UpdateMixin(object):
     """Add _put & _patch methods"""
+
     # pylint:disable=too-few-public-methods,redefined-builtin
 
     def put(self, pk, endpoint=None, data_name=None, **kwargs):
@@ -373,6 +370,7 @@ class UpdateMixin(object):
 
 class DeleteMixin(object):
     """Add _delete methods"""
+
     # pylint:disable=too-few-public-methods,redefined-builtin
 
     def delete(self, pk, endpoint=None, data_name=None, **kwargs):
