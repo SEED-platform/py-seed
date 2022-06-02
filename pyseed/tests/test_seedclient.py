@@ -269,7 +269,7 @@ class MixinTests(unittest.TestCase):
         self.call_dict = {
             'headers': {'Authorization': 'Bearer dfghjk'},
             'params': {
-                'org_id': 1,
+                'organization_id': 1,
                 'headers': {'Authorization': 'Bearer dfghjk'}
             },
             'timeout': None
@@ -306,8 +306,8 @@ class MixinTests(unittest.TestCase):
         self.assertEqual('Llama!', result)
 
         call_dict = self.call_dict.copy()
-        call_dict['json'] = {'org_id': 1, 'foo': 'bar'}
-        del call_dict['params']['org_id']
+        call_dict['json'] = {'organization_id': 1, 'foo': 'bar'}
+        del call_dict['params']['organization_id']
         mock_requests.patch.assert_called_with(url, **call_dict)
 
     def test_put(self, mock_requests):
@@ -317,8 +317,8 @@ class MixinTests(unittest.TestCase):
         self.assertEqual('Llama!', result)
 
         call_dict = self.call_dict.copy()
-        call_dict['json'] = {'org_id': 1, 'foo': 'bar'}
-        del call_dict['params']['org_id']
+        call_dict['json'] = {'organization_id': 1, 'foo': 'bar'}
+        del call_dict['params']['organization_id']
         mock_requests.put.assert_called_with(url, **call_dict)
 
     def test_post(self, mock_requests):
@@ -328,6 +328,6 @@ class MixinTests(unittest.TestCase):
         self.assertEqual('Llama!', result)
 
         call_dict = self.call_dict.copy()
-        call_dict['json'] = {'org_id': 1, 'foo': 'bar'}
-        del call_dict['params']['org_id']
+        call_dict['json'] = {'organization_id': 1, 'foo': 'bar'}
+        del call_dict['params']['organization_id']
         mock_requests.post.assert_called_with(url, **call_dict)
