@@ -1,8 +1,8 @@
 Py-SEED
 =======
 
-.. image:: https://travis-ci.org/SEED-platform/py-seed.svg?branch=dev
-    :target: https://travis-ci.org/SEED-platform/py-seed
+.. image:: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg?branch=develop
+    :target: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg
 
 .. image:: https://pypip.in/v/py-seed/badge.svg
         :target: https://pypi.python.org/pypi/py-seed/
