@@ -45,6 +45,7 @@ URLS = {
         'labels': '/api/v3/labels/',
         'import_files': '/api/v3/import_files/',
         'properties': '/api/v3/properties/',
+        'properties/labels': '/api/v3/properties/labels/',
         'property_states': '/api/v3/property_states/',
         'property_views': '/api/v3/property_views/',
         'taxlots': '/api/v3/taxlots/',
@@ -192,11 +193,14 @@ class SEEDBaseClient(JSONAPI):
         # SEED adds a status key to the response to indicate success/error
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
-        elif response.json().get('status', None) == 'error':
-            error = True
-        # In some cases there is not a 'status' field, so check if the
-        # results or data key don't exist
-        elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
+        elif isinstance(response.json(), dict):
+            if response.json().get('status', None) == 'error':
+                error = True
+            # In some cases there is not a 'status' field, so check if the
+            # results or data key don't exist
+            elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
+                error = True
+        elif not isinstance(response.json(), list):
             error = True
 
         if error:
@@ -223,13 +227,23 @@ class SEEDBaseClient(JSONAPI):
             else:
                 data_name = durl[1]
         # actual results should be under data_name or the fallbacks
+        result = response.json()
+        if result is None:
+            error_msg = 'No results returned'
+            self._raise_error(response, error_msg, stack_pos=2, **kwargs)
+
+        constrained_result = None
         for dname in [data_name, 'data', 'detail']:
             try:
-                result = response.json().get(dname)
-                if result is not None:
+                # allow a list to be valid (this is the case with labels)
+                if isinstance(result, dict):
+                    constrained_result = result.get(dname)
+                if constrained_result is not None:
+                    result = constrained_result
                     break
             except KeyError:
                 pass
+
         if result is None:
             error_msg = 'Could not find result using data_name {}.'.format(data_name)
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
