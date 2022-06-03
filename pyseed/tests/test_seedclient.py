@@ -21,6 +21,7 @@ from pyseed.seedclient import (
     ReadMixin,
     SEEDBaseClient,
     SEEDOAuthReadWriteClient,
+    SEEDReadWriteClient,
 )
 
 PY3 = sys.version_info[0] == 3
@@ -255,7 +256,7 @@ class SEEDClientMethodTests(unittest.TestCase):
 
 @mock.patch('pyseed.apibase.requests')
 class MixinTests(unittest.TestCase):
-    """Test Mixins via SEEDReadWriteClient"""
+    """Test Mixins via SEEDOAuthReadWriteClient"""
 
     def setUp(self):
         self.port = 1337
@@ -270,7 +271,6 @@ class MixinTests(unittest.TestCase):
             'headers': {'Authorization': 'Bearer dfghjk'},
             'params': {
                 'organization_id': 1,
-                'headers': {'Authorization': 'Bearer dfghjk'}
             },
             'timeout': None
         }
@@ -306,8 +306,8 @@ class MixinTests(unittest.TestCase):
         self.assertEqual('Llama!', result)
 
         call_dict = self.call_dict.copy()
-        call_dict['json'] = {'organization_id': 1, 'foo': 'bar'}
-        del call_dict['params']['organization_id']
+        call_dict['json'] = {'organization_id': 1, 'foo': 'bar', }
+        del call_dict['params']
         mock_requests.patch.assert_called_with(url, **call_dict)
 
     def test_put(self, mock_requests):
@@ -318,7 +318,7 @@ class MixinTests(unittest.TestCase):
 
         call_dict = self.call_dict.copy()
         call_dict['json'] = {'organization_id': 1, 'foo': 'bar'}
-        del call_dict['params']['organization_id']
+        del call_dict['params']
         mock_requests.put.assert_called_with(url, **call_dict)
 
     def test_post(self, mock_requests):
@@ -329,5 +329,43 @@ class MixinTests(unittest.TestCase):
 
         call_dict = self.call_dict.copy()
         call_dict['json'] = {'organization_id': 1, 'foo': 'bar'}
-        del call_dict['params']['organization_id']
+        del call_dict['params']
         mock_requests.post.assert_called_with(url, **call_dict)
+
+
+
+
+@mock.patch('pyseed.apibase.requests')
+class SEEDReadWriteClientTests(unittest.TestCase):
+    """Test SEEDReadWriteClient"""
+
+    def setUp(self):
+        self.port = 1337
+        self.urls_map = URLS
+        self.base_url = 'example.org'
+        self.client = SEEDReadWriteClient(
+            1, username='test@example.org',
+            api_key='dfghjk', base_url=self.base_url,
+            port=self.port, url_map=self.urls_map
+        )
+        self.call_dict = {
+            'headers': {'Authorization': 'Basic dfghjk'},
+            'params': {
+                'organization_id': 1,
+            },
+            'timeout': None
+        }
+
+    def test_get(self, mock_requests):
+        url = 'https://example.org:1337/api/v2/test/1/'
+        mock_requests.get.return_value = get_mock_response(data="Llama!")
+        result = self.client.get(1, endpoint='test1')
+        self.assertEqual('Llama!', result)
+        
+
+    def test_list(self, mock_requests):
+        url = 'https://example.org:1337/api/v2/test/'
+        mock_requests.get.return_value = get_mock_response(data=["Llama!"])
+        result = self.client.list(endpoint='test1')
+        self.assertEqual(['Llama!'], result)
+        

@@ -93,8 +93,6 @@ class BaseAPI(object):
                 except AttributeError:
                     msg = "{} is a compulsory field".format(param)
                     raise APIClientError(msg)
-        if self.auth:                                        # pragma: no cover
-            params['auth'] = self.auth
         return params
 
     def _construct_url(self, urlstring, use_ssl=None):
@@ -140,7 +138,7 @@ class BaseAPI(object):
         params = self._construct_payload(kwargs)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -157,7 +155,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -181,7 +179,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -205,7 +203,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -226,7 +224,7 @@ class BaseAPI(object):
         params = self._construct_payload(kwargs)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -279,7 +277,7 @@ class UserAuthMixin(object):
             in the request.
         """
         if getattr(self, 'use_auth', None) and not getattr(self, 'auth', None):
-            self.auth = self._get_auth()
+            self.auth = self._get_auth()   
         return super(UserAuthMixin, self)._construct_payload(params)
 
 
@@ -321,3 +319,4 @@ class OAuthMixin(object):
             'Authorization': '{} {}'.format(self._token_type, token)
         }
         return params
+
