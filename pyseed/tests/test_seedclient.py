@@ -333,8 +333,6 @@ class MixinTests(unittest.TestCase):
         mock_requests.post.assert_called_with(url, **call_dict)
 
 
-
-
 @mock.patch('pyseed.apibase.requests')
 class SEEDReadWriteClientTests(unittest.TestCase):
     """Test SEEDReadWriteClient"""
@@ -357,15 +355,13 @@ class SEEDReadWriteClientTests(unittest.TestCase):
         }
 
     def test_get(self, mock_requests):
-        url = 'https://example.org:1337/api/v2/test/1/'
+        # url = 'https://example.org:1337/api/v2/test/1/'
         mock_requests.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint='test1')
         self.assertEqual('Llama!', result)
-        
 
     def test_list(self, mock_requests):
-        url = 'https://example.org:1337/api/v2/test/'
+        # url = 'https://example.org:1337/api/v2/test/'
         mock_requests.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint='test1')
         self.assertEqual(['Llama!'], result)
-        

@@ -277,7 +277,7 @@ class UserAuthMixin(object):
             in the request.
         """
         if getattr(self, 'use_auth', None) and not getattr(self, 'auth', None):
-            self.auth = self._get_auth()   
+            self.auth = self._get_auth()
         return super(UserAuthMixin, self)._construct_payload(params)
 
 
@@ -319,4 +319,3 @@ class OAuthMixin(object):
             'Authorization': '{} {}'.format(self._token_type, token)
         }
         return params
-

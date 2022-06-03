@@ -196,7 +196,7 @@ class SEEDBaseClient(JSONAPI):
             error = True
         # In some cases there is not a 'status' field, so check if the
         # results or data key don't exist
-        elif not any(key in ['results', 'data'] for key in response.json().keys()):
+        elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
             error = True
 
         if error:
