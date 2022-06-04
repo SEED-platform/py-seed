@@ -196,23 +196,6 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         self.assertEqual(conm.exception.verb.upper(), 'GET')
         self.assertEqual(conm.exception.status_code, 404)
 
-    def test_get_result(self, mock_requests):
-        """Test errors raised in _get_result"""
-        url = 'http://example.org/api/v2/test/'
-        mock_requests.get.return_value = get_mock_response(
-            data="No llama!", data_name='bar', error=False,
-        )
-        with self.assertRaises(SEEDError) as conm:
-            self.client.get(1)
-
-        self.assertEqual(
-            conm.exception.error, 'Could not find result using data_name test.'
-        )
-        self.assertEqual(conm.exception.service, 'SEED')
-        self.assertEqual(conm.exception.url, url)
-        self.assertEqual(conm.exception.verb.upper(), 'GET')
-        self.assertEqual(conm.exception.status_code, 200)
-
 
 class SEEDClientMethodTests(unittest.TestCase):
 

@@ -164,10 +164,20 @@ class BaseAPI(object):
         if self.auth:                                       # pragma: no cover
             payload['auth'] = self.auth
         if self.use_json:
-            payload['json'] = kwargs.get('data', None)
+            data = kwargs.get('json', None)
+            if data:
+                payload['json'] = data
+            else:
+                # just put the remaining kwargs into the json field
+                payload['json'] = kwargs
         else:
-            payload['data'] = kwargs.get('data', None)
-        
+            data = kwargs.get('data', None)
+            if data:
+                payload['data'] = data
+            else:
+                # just put the remaining kwargs into the data field
+                payload['data'] = kwargs
+
         api_call = requests.post(url, **payload)
         return api_call
 
