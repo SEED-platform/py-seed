@@ -93,8 +93,6 @@ class BaseAPI(object):
                 except AttributeError:
                     msg = "{} is a compulsory field".format(param)
                     raise APIClientError(msg)
-        if self.auth:                                        # pragma: no cover
-            params['auth'] = self.auth
         return params
 
     def _construct_url(self, urlstring, use_ssl=None):
@@ -140,7 +138,7 @@ class BaseAPI(object):
         params = self._construct_payload(kwargs)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -157,7 +155,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -166,9 +164,26 @@ class BaseAPI(object):
         if self.auth:                                       # pragma: no cover
             payload['auth'] = self.auth
         if self.use_json:
-            payload['json'] = kwargs
+            data = kwargs.pop('json', None)
+            if data:
+                payload['json'] = data
+            else:
+                # just put the remaining kwargs into the json field
+                payload['json'] = kwargs
         else:
-            payload['data'] = kwargs
+            data = kwargs.pop('data', None)
+            if data:
+                payload['data'] = data
+            else:
+                # just put the remaining kwargs into the data field
+                payload['data'] = kwargs
+
+        # if there are any remaining kwargs, then put them into the params
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params'].update(**kwargs)
+
+        # now do the actual call to post!
         api_call = requests.post(url, **payload)
         return api_call
 
@@ -181,7 +196,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -190,9 +205,25 @@ class BaseAPI(object):
         if self.auth:                                       # pragma: no cover
             payload['auth'] = self.auth
         if self.use_json:
-            payload['json'] = kwargs
+            data = kwargs.pop('json', None)
+            if data:
+                payload['json'] = data
+            else:
+                # just put the remaining kwargs into the json field
+                payload['json'] = kwargs
         else:
-            payload['data'] = kwargs
+            data = kwargs.pop('data', None)
+            if data:
+                payload['data'] = data
+            else:
+                # just put the remaining kwargs into the data field
+                payload['data'] = kwargs
+
+        # if there are any remaining kwargs, then put them into the params
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params'].update(**kwargs)
+
         api_call = requests.put(url, **payload)
         return api_call
 
@@ -205,7 +236,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -214,9 +245,24 @@ class BaseAPI(object):
         if self.auth:                                        # pragma: no cover
             payload['auth'] = self.auth
         if self.use_json:
-            payload['json'] = kwargs
+            data = kwargs.pop('json', None)
+            if data:
+                payload['json'] = data
+            else:
+                # just put the remaining kwargs into the json field
+                payload['json'] = kwargs
         else:
-            payload['data'] = kwargs
+            data = kwargs.pop('data', None)
+            if data:
+                payload['data'] = data
+            else:
+                # just put the remaining kwargs into the data field
+                payload['data'] = kwargs
+
+        # if there are any remaining kwargs, then put them into the params
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params'].update(**kwargs)
         api_call = requests.patch(url, **payload)
         return api_call
 
@@ -226,7 +272,7 @@ class BaseAPI(object):
         params = self._construct_payload(kwargs)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
