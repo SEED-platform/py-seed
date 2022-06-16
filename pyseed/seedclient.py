@@ -49,7 +49,7 @@ URLS = {
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
         'property_states': '/api/v3/property_states/',
-        'property_views': '/api/v3/property_views/', 
+        'property_views': '/api/v3/property_views/',
         'taxlots': '/api/v3/taxlots/',
         'upload': '/api/v3/upload/',
         'users': '/api/v3/users/',
@@ -107,6 +107,7 @@ def _set_default(obj, key, val, required=True):
         msg = '{} is not set'.format(key)
         raise AttributeError(msg)
     return val
+
 
 def _replace_url_args(url, url_args):
     """Replace any custom string URL items with values in args"""
@@ -211,7 +212,7 @@ class SEEDBaseClient(JSONAPI):
         # error, but they are not always set correctly.
         elif isinstance(response.json(), dict):
             status_field = response.json().get('status', None)
-            
+
             if status_field:
                 if status_field == 'error':
                     error = True
@@ -219,9 +220,9 @@ class SEEDBaseClient(JSONAPI):
                     # continue
                     error = False
             elif 'success' in response.json().keys():
-                success_flag = response.json().get('success', None)    
+                success_flag = response.json().get('success', None)
                 # For file uploads the response key is 'success'
-                if not success_flag: 
+                if not success_flag:
                     error = True
                 elif success_flag:
                     error = False

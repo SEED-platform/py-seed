@@ -37,6 +37,7 @@ def add_pk(url, pk, required=True, slash=False):
             url = "{}/".format(url)
     return url
 
+
 class BaseAPI(object):
     """
     Base class for API Calls
