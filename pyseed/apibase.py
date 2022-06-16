@@ -37,14 +37,6 @@ def add_pk(url, pk, required=True, slash=False):
             url = "{}/".format(url)
     return url
 
-
-def _replace_url_args(url, url_args):
-    """Replace any custom string URL items with values in args"""
-    if url_args:
-        for key, value in url_args.items():
-            url = url.replace(f"{key}/", f"{value}/")
-    return url
-
 class BaseAPI(object):
     """
     Base class for API Calls

@@ -36,7 +36,8 @@ from pyseed.exceptions import SEEDError
 URLS = {
     'v3': {
         'columns': '/api/v3/columns/',
-        'column_mapping_profiles': '/api/v3/column_mapping_profiles/filter/',
+        'column_mapping_profiles': '/api/v3/column_mapping_profiles/',
+        'column_mapping_profiles_filter': '/api/v3/column_mapping_profiles/filter/',
         'cycles': '/api/v3/cycles/',
         'datasets': '/api/v3/datasets/',
         'gbr_properties': '/api/v3/gbr_properties/',
@@ -46,7 +47,7 @@ URLS = {
         'labels': '/api/v3/labels/',
         'import_files': '/api/v3/import_files/',
         'properties': '/api/v3/properties/',
-        'properties/labels': '/api/v3/properties/labels/',
+        'properties_labels': '/api/v3/properties/labels/',
         'property_states': '/api/v3/property_states/',
         'property_views': '/api/v3/property_views/', 
         'taxlots': '/api/v3/taxlots/',
@@ -54,9 +55,12 @@ URLS = {
         'users': '/api/v3/users/',
         # POSTs with replaceable keys
         'import_files_start_save_data_pk': '/api/v3/import_files/PK/start_save_data/',
+        'import_files_start_map_data_pk': '/api/v3/import_files/PK/map/',
+        'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
+        'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
         # GETs with replaceable keys
         'progress': '/api/v3/progress/PROGRESS_KEY/',
-        
+        'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
     },
     'v2': {
         'columns': '/api/v2/columns/',
@@ -221,6 +225,13 @@ class SEEDBaseClient(JSONAPI):
                     error = True
                 elif success_flag:
                     error = False
+            elif 'progress_data' in response.json().keys():
+                # this is a system matching response, which is okay. return the success flag of this
+                status_flag = response.json()['progress_data'].get('status', None)
+                if status_flag in ['not-started', 'success']:
+                    error = False
+                else:
+                    error = True
             elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if the
                 # results or data key don't exist
@@ -424,7 +435,7 @@ class UpdateMixin(object):
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
         response = super(UpdateMixin, self)._put(url=url, **kwargs)
         self._check_response(response, **kwargs)
@@ -444,7 +455,7 @@ class UpdateMixin(object):
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
         response = super(UpdateMixin, self)._patch(url=url, **kwargs)
         self._check_response(response, **kwargs)
@@ -471,7 +482,7 @@ class DeleteMixin(object):
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
         response = super(DeleteMixin, self)._delete(url=url, **kwargs)
         # delete should return 204 and no content
