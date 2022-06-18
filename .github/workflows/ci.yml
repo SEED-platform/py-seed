@@ -70,9 +70,9 @@ jobs:
         run: |
           # break up into the individual files because we are getting race conditions
           # these are the "integration" marked tests
-          pytest tests/test_seed_base.py -s
           pytest tests/test_seed_properties.py -s
-          pytest tests/test_seed_uploader.py -s
+          # pytest tests/test_seed_uploader.py -s
+          # pytest tests/test_seed_base.py -s
       - name: Dump docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v1
