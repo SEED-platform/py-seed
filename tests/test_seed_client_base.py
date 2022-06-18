@@ -9,7 +9,6 @@ Tests for SEEDClient
 
 # Imports from Standard Library
 import json
-import sys
 import unittest
 from unittest import mock
 

@@ -117,7 +117,7 @@ def _replace_url_args(url, url_args):
             url = url.replace(f"{key}/", f"{value}/")
     return url
 
-# Public Classes and Functions
+
 class SEEDBaseClient(JSONAPI):
     """Interact with SEED API.
 

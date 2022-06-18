@@ -46,13 +46,13 @@ from pyseed.utils import read_map_file
 
 class UtilsTest(unittest.TestCase):
     def test_mapping_file(self):
-        mappings = read_map_file(Path('tests/data/test-seed-data-mappings.csv'))
-        assert len(mappings)==14
+        mappings = read_map_file(Path("tests/data/test-seed-data-mappings.csv"))
+        assert len(mappings) == 14
 
-        expected =  {
-            'from_field': 'Sq. Ft',
-            'from_units': 'ft**2',
-            'to_field': 'gross_floor_area',
-            'to_table_name': 'PropertyState'
-    }
-        assert mappings[5]==expected
+        expected = {
+            "from_field": "Sq. Ft",
+            "from_units": "ft**2",
+            "to_field": "gross_floor_area",
+            "to_table_name": "PropertyState",
+        }
+        assert mappings[5] == expected
