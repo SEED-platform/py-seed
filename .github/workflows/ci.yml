@@ -68,10 +68,7 @@ jobs:
           docker exec seed_web ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --pyseed > seed-config.json
       - name: Run tests with pytest
         run: |
-          # break up into the individual files because we are getting race conditions
-          # these are the "integration" marked tests
-          pytest tests/test_seed_client.py -s
-          # pytest tests/test_seed_base.py -s
+          pytest -m "integration" -s
       - name: Dump docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v1
