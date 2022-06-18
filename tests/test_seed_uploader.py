@@ -37,6 +37,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 # Imports from Third Party Modules
+import pytest
 import unittest
 from datetime import date
 from pathlib import Path
@@ -45,6 +46,7 @@ from pathlib import Path
 from pyseed.seed_client_uploader import SeedUploader
 
 
+@pytest.mark.integration
 class SeedUploaderTest(unittest.TestCase):
     def setUp(self) -> None:
         self.organization_id = 1
