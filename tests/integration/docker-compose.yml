@@ -65,7 +65,9 @@ services:
       - POSTGRES_PASSWORD=super-secret-password
       - SECRET_KEY=ARQV8qGuJKH8sGnBf6ZeEdJQRKLTUhsvEcp8qG9X9sCPXvGLhdxqnNXpZcy6HEyf
       - DJANGO_SETTINGS_MODULE=config.settings.docker
-      - NUMBER_OF_WORKERS
+      # fix to only one worker for tests, otherwise jobs can clash -- at least we are seeing
+      # something strange
+      - NUMBER_OF_WORKERS=1
     depends_on:
       - db-redis
       - db-postgres
