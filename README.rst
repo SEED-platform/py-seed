@@ -22,13 +22,15 @@ Within Python you can use the client like this:
 .. code-block:: python
 
     import pyseed
+    from pathlib import Path
 
     # The seed-config.json file defines the hosting locaiton and credentials for your SEED instance.
     # If running SEED locally for testing, then you can run the following from your SEED root directory:
     #    ./manage.py create_test_user_json --username user@seed-platform.org --file ./seed-config.json --pyseed
 
     config_file = Path('seed-config.json')
-    seed_client = SeedProperties(cls.organization_id, connection_config_filepath=config_file)
+    organization_id = 1
+    seed_client = SeedProperties(organization_id, connection_config_filepath=config_file)
 
     # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
     # data end up in the correct cycle
