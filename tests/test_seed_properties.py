@@ -113,29 +113,29 @@ class SeedBuildingsTest(unittest.TestCase):
         properties = self.seed_client.get_view_ids_with_label(label_names=['Violation'])
         assert all(item in properties[0]['is_applied'] for item in prop_ids)
 
-        # now remove the violation label and add complied
-        result = self.seed_client.update_labels_of_buildings(['Complied'], ['Violation'], prop_ids)
+        # now remove the violation label and add compliant
+        result = self.seed_client.update_labels_of_buildings(['Compliant'], ['Violation'], prop_ids)
         assert result['status'] == 'success'
         assert result['num_updated'] == 3
         properties = self.seed_client.get_view_ids_with_label(label_names=['Violation'])
         # should no longer have violation
         assert not all(item in properties[0]['is_applied'] for item in prop_ids)
-        properties = self.seed_client.get_view_ids_with_label(label_names=['Complied'])
+        properties = self.seed_client.get_view_ids_with_label(label_names=['Compliant'])
         # should all have complied
         assert all(item in properties[0]['is_applied'] for item in prop_ids)
 
         # now remove all
-        result = self.seed_client.update_labels_of_buildings([], ['Violation', 'Complied'], prop_ids)
+        result = self.seed_client.update_labels_of_buildings([], ['Violation', 'Compliant'], prop_ids)
         assert result['status'] == 'success'
         assert result['num_updated'] == 3
         # no labels on the properties
-        properties = self.seed_client.get_view_ids_with_label(label_names=['Complied', 'Violation'])
+        properties = self.seed_client.get_view_ids_with_label(label_names=['Compliant', 'Violation'])
         assert not all(item in properties[0]['is_applied'] for item in prop_ids)
         assert not all(item in properties[1]['is_applied'] for item in prop_ids)
 
-    def test_get_buildings_with_labels(self):
-        buildings = self.seed_client.get_view_ids_with_label(['In Violation', 'Complied', 'Email'])
-        for building in buildings:
-            print(building)
+    # def test_get_buildings_with_labels(self):
+    #     buildings = self.seed_client.get_view_ids_with_label(['In Violation', 'Compliant', 'Email'])
+    #     for building in buildings:
+    #         print(building)
 
-        assert len(buildings) == 3
+    #     assert len(buildings) == 3
