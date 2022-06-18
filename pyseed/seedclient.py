@@ -25,10 +25,8 @@ caching.
 # Imports from Standard Library
 import inspect
 
-# Imports from Third Party Modules
-import requests
-
 # Local Imports
+import requests
 from pyseed.apibase import JSONAPI, OAuthMixin, UserAuthMixin, add_pk
 from pyseed.exceptions import SEEDError
 

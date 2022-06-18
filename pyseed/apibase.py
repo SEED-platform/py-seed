@@ -8,11 +8,9 @@ Functionality for calls to external API's"""
 # Imports from Standard Library
 import re
 
-# Imports from Third Party Modules
+# Local Imports
 # Imports from External Modules
 import requests
-
-# Local Imports
 # Public Functions and Classes
 # Helper functions for use by BaseAPI subclasses
 from pyseed.exceptions import APIClientError
