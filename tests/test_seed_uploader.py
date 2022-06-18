@@ -48,23 +48,22 @@ from pyseed.seed_client_uploader import SeedUploader
 
 @pytest.mark.integration
 class SeedUploaderTest(unittest.TestCase):
-    def setUp(self) -> None:
-        self.organization_id = 1
+    @classmethod
+    def setup_class(cls):
+        cls.organization_id = 1
 
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path('seed-config.json')
         # The uploader inherits all the methods from SeedClient as well.
-        self.uploader = SeedUploader(self.organization_id, connection_config_filepath=config_file)
+        cls.uploader = SeedUploader(cls.organization_id, connection_config_filepath=config_file)
 
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
-        self.uploader.get_or_create_cycle(
+        cls.uploader.get_or_create_cycle(
             'pyseed-api-integration-test', date(2021, 6, 1), date(2022, 6, 1), set_cycle_id=True
         )
-
-        return super().setUp()
 
     def test_upload_datafile(self):
         # Need to get the dataset id, again. Maybe need to clean up eventually.

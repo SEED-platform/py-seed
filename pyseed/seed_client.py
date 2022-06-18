@@ -356,7 +356,7 @@ class SeedProperties(SeedClient):
         datasets = self.client.list(endpoint='datasets', data_name='datasets')
         for dataset in datasets:
             if dataset['name'] == dataset_name:
-                print(f"Dataset already created, returning {dataset}")
+                logger.info(f"Dataset already created, returning {dataset['name']}")
                 return dataset
 
         # create a new dataset - this doesn't return the entire dict back
@@ -429,7 +429,7 @@ class SeedProperties(SeedClient):
                 url_args={'PROGRESS_KEY': progress_key}
             )
         except Exception:
-            print("Other unknown exception caught")
+            logger.error("Other unknown exception caught")
             progress_result = None
 
         if progress_result and progress_result['progress'] == 100:

@@ -53,7 +53,7 @@ jobs:
           url: "http://localhost:8000/"
           responseCode: 200
           timeout: 120000
-          interval: 500
+          interval: 2000
       - name: Wait another 30s
         uses: jakejarvis/wait-action@master
         with:

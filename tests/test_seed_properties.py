@@ -49,21 +49,23 @@ from pyseed.seed_client_uploader import SeedUploader
 
 @pytest.mark.integration
 class SeedBuildingsTest(unittest.TestCase):
-    def setUp(self) -> None:
-        self.output_dir = Path('tests/output')
-        if not self.output_dir.exists():
-            self.output_dir.mkdir()
+    @classmethod
+    def setup_class(cls):
+        """setup for all of the tests below"""
+        cls.output_dir = Path('tests/output')
+        if not cls.output_dir.exists():
+            cls.output_dir.mkdir()
 
-        self.organization_id = 1
+        cls.organization_id = 1
 
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path('seed-config.json')
-        self.seed_client = SeedProperties(self.organization_id, connection_config_filepath=config_file)
+        cls.seed_client = SeedProperties(cls.organization_id, connection_config_filepath=config_file)
 
         # Include the uploader to upload the buildings for testing
-        uploader = SeedUploader(self.organization_id, connection_config_filepath=config_file)
+        uploader = SeedUploader(cls.organization_id, connection_config_filepath=config_file)
 
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
@@ -71,7 +73,7 @@ class SeedBuildingsTest(unittest.TestCase):
             'pyseed-api-test', date(2021, 6, 1), date(2022, 6, 1), set_cycle_id=True
         )
         # also set the seed_client to this cycle id
-        self.seed_client.cycle_id = cycle['cycles']['id']
+        cls.seed_client.cycle_id = cycle['cycles']['id']
 
         uploader.upload_and_match_datafile(
             'single-step-test',
@@ -79,16 +81,15 @@ class SeedBuildingsTest(unittest.TestCase):
             'Single Step Column Mappings',
             'tests/data/test-seed-data-mappings.csv')
 
-        return super().setUp()
-
-    def tearDown(self) -> None:
+    @classmethod
+    def teardown_class(cls):
         # remove all of the test buildings?
-        return super().tearDown()
+        pass
 
     def test_seed_buildings(self):
         buildings = self.seed_client.get_buildings()
-        for building in buildings:
-            print(building)
+        # for building in buildings:
+        #     print(building)
         assert len(buildings) == 10
 
     def test_search_buildings(self):
