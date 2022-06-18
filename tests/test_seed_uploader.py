@@ -65,6 +65,7 @@ class SeedUploaderTest(unittest.TestCase):
             'pyseed-api-integration-test', date(2021, 6, 1), date(2022, 6, 1), set_cycle_id=True
         )
 
+    @pytest.mark.order(1)
     def test_upload_datafile(self):
         # Need to get the dataset id, again. Maybe need to clean up eventually.
         dataset = self.uploader.get_or_create_dataset('seed-salesforce-test-data')
@@ -125,6 +126,7 @@ class SeedUploaderTest(unittest.TestCase):
         assert result['status'] == 'success'
         assert result['progress'] == 100
 
+    @pytest.mark.order(2)
     def test_upload_single_method(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
