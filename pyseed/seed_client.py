@@ -61,8 +61,12 @@ class SeedClient(object):
 
         Args:
             organization_id (int): _description_
-            connection_params (dict): _description_
-        """
+            connection_params (dict, optional): parameters to connect to SEED. Defaults to None.
+            connection_config_filepath (Path, optional): path to the parameters (JSON file). Defaults to None.
+
+        Raises:
+            Exception: SeedClient
+        """       
         if not connection_params and not connection_config_filepath:
             raise Exception("Must provide either connection_params or connection_config_filepath")
 
