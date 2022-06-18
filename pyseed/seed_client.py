@@ -699,3 +699,61 @@ class SeedProperties(SeedClient):
             }
         """
         return self.client.get(None, required_pk=False, endpoint='import_files_matching_results', url_args={'PK': import_file_id})
+
+    def upload_and_match_datafile(self, dataset_name: str, datafile: str, column_mapping_profile_name: str, column_mappings_file: str, **kwargs) -> dict:
+        """Upload a file to the cycle_id that is defined in the constructor. This carries the
+        upload of the file through the whole ingestion process (map, merge, pair, geocode).
+
+        Args:
+            dataset_name (str): Name of the dataset to upload to
+            datafile (str): Full path to the datafile to upload
+            column_mapping_profile_name (str): Name of the column mapping profile to use
+            column_mappings_file (str): Mapping that will be uploaded to the column_mapping_profile_name
+
+        Returns:
+            dict: {
+                matching summary
+            }
+        """
+        datafile_type = kwargs.pop('datafile_type', 'Assessed Raw')
+        dataset = self.get_or_create_dataset(dataset_name)
+        result = self.upload_datafile(
+            dataset['id'],
+            datafile,
+            datafile_type
+        )
+        import_file_id = result['import_file_id']
+
+        # start processing
+        result = self.start_save_data(import_file_id)
+        progress_key = result.get('progress_key', None)
+
+        # wait until upload is complete
+        result = self.track_progress_result(progress_key)
+
+        # create/retrieve the column mappings
+        result = self.create_or_update_column_mapping_profile_from_file(
+            column_mapping_profile_name,
+            column_mappings_file
+        )
+
+        # set the column mappings for the dataset
+        result = self.set_import_file_column_mappings(import_file_id, result['mappings'])
+
+        # now start the mapping
+        result = self.start_map_data(import_file_id)
+        progress_key = result.get('progress_key', None)
+
+        # wait until upload is complete
+        result = self.track_progress_result(progress_key)
+
+        # save the mappings, call system matching/geocoding
+        result = self.start_system_matching_and_geocoding(import_file_id)
+        progress_data = result.get('progress_data', None)
+        progress_key = progress_data.get('progress_key', None)
+
+        # wait until upload is complete
+        result = self.track_progress_result(progress_key)
+
+        # return summary
+        return self.get_matching_results(import_file_id)
