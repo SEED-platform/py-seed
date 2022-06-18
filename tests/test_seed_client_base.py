@@ -7,13 +7,13 @@ All rights reserved
 Tests for SEEDClient
 """
 
-# Imports from Standard Library
+# Imports from Third Party Modules
 import json
+import requests
 import unittest
 from unittest import mock
 
 # Local Imports
-import requests
 from pyseed.exceptions import SEEDError
 from pyseed.seed_client_base import (
     ReadMixin,

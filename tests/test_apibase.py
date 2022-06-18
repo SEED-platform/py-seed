@@ -6,7 +6,7 @@ copyright (c) 2016-2016 Earth Advantage. All rights reserved.
 
 Unit tests for pyseed/apibase
 """
-# Imports from Standard Library
+# Imports from Third Party Modules
 import sys
 import unittest
 
@@ -27,8 +27,10 @@ SERVICES_DICT = {
 
 PY3 = sys.version_info[0] == 3
 if PY3:
+    # Imports from Third Party Modules
     from unittest import mock
 else:
+    # Imports from Third Party Modules
     import mock
 
 

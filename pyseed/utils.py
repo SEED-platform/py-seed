@@ -1,4 +1,4 @@
-# Imports from Standard Library
+# Imports from Third Party Modules
 import csv
 from pathlib import Path
 
