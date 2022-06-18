@@ -118,8 +118,6 @@ def _replace_url_args(url, url_args):
     return url
 
 # Public Classes and Functions
-
-
 class SEEDBaseClient(JSONAPI):
     """Interact with SEED API.
 

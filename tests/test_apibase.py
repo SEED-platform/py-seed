@@ -13,7 +13,7 @@ import unittest
 # Local Imports
 from pyseed.apibase import JSONAPI, BaseAPI, add_pk
 from pyseed.exceptions import APIClientError
-from pyseed.seedclient import _get_urls, _set_default
+from pyseed.seed_client_base import _get_urls, _set_default
 
 NO_URL_ERROR = "APIClientError: No url set"
 SSL_ERROR = "APIClientError: use_ssl is true but url does not starts with https"
