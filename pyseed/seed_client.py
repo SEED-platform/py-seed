@@ -91,7 +91,7 @@ class SeedClient(object):
         """Read in the connection config file and return the connection params. This
         file can be mostly created by calling the following from the SEED root directory:
 
-        ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:80--file api_test_user.json
+        ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:80 --pyseed --file api_test_user.json
 
         Args:
             filepath (str): path to the connection config file
