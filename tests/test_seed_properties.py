@@ -86,12 +86,14 @@ class SeedBuildingsTest(unittest.TestCase):
         # remove all of the test buildings?
         pass
 
+    @pytest.mark.order(1)
     def test_seed_buildings(self):
         buildings = self.seed_client.get_buildings()
         # for building in buildings:
         #     print(building)
         assert len(buildings) == 10
 
+    @pytest.mark.order(2)
     def test_search_buildings(self):
         properties = self.seed_client.search_buildings(identifier_exact='B-1')
         assert len(properties) == 1
@@ -99,6 +101,7 @@ class SeedBuildingsTest(unittest.TestCase):
         properties = self.seed_client.search_buildings(identifier_filter='B-1')
         assert len(properties) == 2
 
+    @pytest.mark.order(3)
     def test_add_label_to_buildings(self):
         # get seed buildings
         prop_ids = []
