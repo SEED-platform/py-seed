@@ -60,6 +60,8 @@ class SeedBaseTest(unittest.TestCase):
         config_file = Path('seed-config.json')
         cls.seed_client = SeedProperties(cls.organization_id, connection_config_filepath=config_file)
 
+        cls.organization_id = 1
+
     @classmethod
     def teardown_class(cls):
         # remove all of the test buildings?
@@ -67,7 +69,7 @@ class SeedBaseTest(unittest.TestCase):
 
     def test_get_create_delete_cycle(self):
         all_cycles = self.seed_client.get_cycles()
-        assert len(all_cycles['cycles']) == 4
+        assert len(all_cycles['cycles']) >= 1
 
         # create a new unique cycle
         unique_id = str(uuid.uuid4())[:8]
@@ -125,7 +127,7 @@ class SeedBaseTest(unittest.TestCase):
 
     def test_get_column_mapping_profiles(self):
         result = self.seed_client.get_column_mapping_profiles()
-        assert len(result) > 0
+        assert len(result) >= 1
 
         # There should only be one default BuildingSync mapping profile
         result = self.seed_client.get_column_mapping_profiles('BuildingSync Default')

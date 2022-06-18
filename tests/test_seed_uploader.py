@@ -68,7 +68,7 @@ class SeedUploaderTest(unittest.TestCase):
     @pytest.mark.order(1)
     def test_upload_datafile(self):
         # Need to get the dataset id, again. Maybe need to clean up eventually.
-        dataset = self.uploader.get_or_create_dataset('seed-salesforce-test-data')
+        dataset = self.uploader.get_or_create_dataset('pyseed-uploader-test-data')
 
         result = self.uploader.upload_datafile(
             dataset['id'],
@@ -134,7 +134,7 @@ class SeedUploaderTest(unittest.TestCase):
                                           date(2022, 6, 1), set_cycle_id=True)
 
         result = self.uploader.upload_and_match_datafile(
-            'single-step-test',
+            'pyseed-single-step-test',
             'tests/data/test-seed-data.xlsx',
             'Single Step Column Mappings',
             'tests/data/test-seed-data-mappings.csv')

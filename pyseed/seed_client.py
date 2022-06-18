@@ -37,7 +37,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 # Imports from Standard Library
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # Imports from Third Party Modules
 import json
@@ -353,19 +353,21 @@ class SeedProperties(SeedClient):
         post_data = {
             'name': dataset_name
         }
+        selected = {}
         datasets = self.client.list(endpoint='datasets', data_name='datasets')
         for dataset in datasets:
             if dataset['name'] == dataset_name:
                 logger.info(f"Dataset already created, returning {dataset['name']}")
-                return dataset
+                selected = dataset
+                break
 
         # create a new dataset - this doesn't return the entire dict back
         # so after creating go and get the individual dataset
         dataset = self.client.post(endpoint='datasets', json=post_data)
         if dataset['status'] == 'success':
-            return self.client.get(dataset['id'], endpoint='datasets', data_name='dataset')
+            selected = self.client.get(dataset['id'], endpoint='datasets', data_name='dataset')
 
-        return {}
+        return selected
 
     def upload_datafile(self, dataset_id: int, data_file: str, upload_datatype: str) -> dict:
         """Upload a datafile file

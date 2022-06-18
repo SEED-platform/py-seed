@@ -76,7 +76,7 @@ class SeedBuildingsTest(unittest.TestCase):
         cls.seed_client.cycle_id = cycle['cycles']['id']
 
         uploader.upload_and_match_datafile(
-            'single-step-test',
+            'pyseed-properties-test',
             'tests/data/test-seed-data.xlsx',
             'Single Step Column Mappings',
             'tests/data/test-seed-data-mappings.csv')
