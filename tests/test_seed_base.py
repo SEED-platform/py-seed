@@ -69,7 +69,8 @@ class SeedBaseTest(unittest.TestCase):
 
     def test_get_create_delete_cycle(self):
         all_cycles = self.seed_client.get_cycles()
-        assert len(all_cycles['cycles']) >= 1
+        cycle_count = len(all_cycles['cycles'])
+        assert cycle_count >= 1
 
         # create a new unique cycle
         unique_id = str(uuid.uuid4())[:8]
@@ -79,17 +80,19 @@ class SeedBaseTest(unittest.TestCase):
         assert cycle['cycles']['name'] == f'test cycle {unique_id}'
         cycle_id = cycle['cycles']['id']
         all_cycles = self.seed_client.get_cycles()
-        assert len(all_cycles['cycles']) == 5
+        assert len(all_cycles['cycles']) == cycle_count + 1
         # verify that it won't be created again
         cycle = self.seed_client.get_or_create_cycle(
             f'test cycle {unique_id}', date(2021, 1, 1), date(2022, 1, 1)
         )
         assert cycle_id == cycle['cycles']['id']
         all_cycles = self.seed_client.get_cycles()
-        assert len(all_cycles['cycles']) == 5
+        assert len(all_cycles['cycles']) == cycle_count + 1
 
         # now delete the new cycle
         self.seed_client.delete_cycle(cycle_id)
+        all_cycles = self.seed_client.get_cycles()
+        assert len(all_cycles['cycles']) == cycle_count
 
     def test_create_cycle(self):
         cycle = self.seed_client.create_cycle('new cycle', date(2021, 6, 1), date(2022, 6, 1))
