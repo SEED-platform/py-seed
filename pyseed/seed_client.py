@@ -36,6 +36,9 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
+# Imports from Standard Library
+from typing import Dict, List, Optional, Set, Tuple
+
 # Imports from Third Party Modules
 import json
 import logging
@@ -56,7 +59,7 @@ class SeedClient(object):
     """This is a wrapper around the SEEDReadWriteClient. If you need access
     to the READOnly client, or the OAuth client, then you will need to create another class"""
 
-    def __init__(self, organization_id: int, connection_params: dict = None, connection_config_filepath: Path = None) -> None:
+    def __init__(self, organization_id: int, connection_params: Optional[dict] = None, connection_config_filepath: Optional[Path] = None) -> None:
         """wrapper around SEEDReadWriteClient.
 
         Args:
@@ -66,21 +69,21 @@ class SeedClient(object):
 
         Raises:
             Exception: SeedClient
-        """       
+        """
         if not connection_params and not connection_config_filepath:
             raise Exception("Must provide either connection_params or connection_config_filepath")
 
         # favor the connection params over the config file
         if connection_params:
             # the connetion params are simply squashed on SEEDReadWriteClient init
-            pass
+            payload = connection_params
         elif connection_config_filepath:
-            connection_params = SeedClient.read_connection_config_file(connection_config_filepath)
+            payload = SeedClient.read_connection_config_file(connection_config_filepath)
             # read in from config file
 
         self.client = SEEDReadWriteClient(
             organization_id,
-            **connection_params
+            **payload
         )
 
     @classmethod
@@ -362,6 +365,8 @@ class SeedProperties(SeedClient):
         if dataset['status'] == 'success':
             return self.client.get(dataset['id'], endpoint='datasets', data_name='dataset')
 
+        return {}
+
     def upload_datafile(self, dataset_id: int, data_file: str, upload_datatype: str) -> dict:
         """Upload a datafile file
 
@@ -460,7 +465,7 @@ class SeedProperties(SeedClient):
 
         return result
 
-    def get_column_mapping_profile(self, column_mapping_profile_name: str) -> dict:
+    def get_column_mapping_profile(self, column_mapping_profile_name: str) -> Optional[dict]:
         """get a specific column mapping profile. Currently, filter does not take an
         argument by name, so return them all and find the one that matches the
         column_mapping_profile_name.
