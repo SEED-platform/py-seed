@@ -55,7 +55,7 @@ from pyseed.utils import read_map_file
 logger = logging.getLogger(__name__)
 
 
-class SeedClient(object):
+class SeedClientWrapper(object):
     """This is a wrapper around the SEEDReadWriteClient. If you need access
     to the READOnly client, or the OAuth client, then you will need to create another class"""
 
@@ -68,7 +68,7 @@ class SeedClient(object):
             connection_config_filepath (Path, optional): path to the parameters (JSON file). Defaults to None.
 
         Raises:
-            Exception: SeedClient
+            Exception: SeedClientWrapper
         """
         if not connection_params and not connection_config_filepath:
             raise Exception("Must provide either connection_params or connection_config_filepath")
@@ -78,7 +78,7 @@ class SeedClient(object):
             # the connetion params are simply squashed on SEEDReadWriteClient init
             payload = connection_params
         elif connection_config_filepath:
-            payload = SeedClient.read_connection_config_file(connection_config_filepath)
+            payload = SeedClientWrapper.read_connection_config_file(connection_config_filepath)
             # read in from config file
 
         self.client = SEEDReadWriteClient(
@@ -103,7 +103,7 @@ class SeedClient(object):
         return connection_params
 
 
-class SeedProperties(SeedClient):
+class SeedClient(SeedClientWrapper):
     """SEED Client with several property related
     helper methods implemented."""
 

@@ -44,7 +44,7 @@ from datetime import date
 from pathlib import Path
 
 # Local Imports
-from pyseed.seed_client import SeedProperties
+from pyseed.seed_client import SeedClient
 
 
 @pytest.mark.integration
@@ -58,7 +58,7 @@ class SeedBaseTest(unittest.TestCase):
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path('seed-config.json')
-        cls.seed_client = SeedProperties(cls.organization_id, connection_config_filepath=config_file)
+        cls.seed_client = SeedClient(cls.organization_id, connection_config_filepath=config_file)
 
         cls.organization_id = 1
 
