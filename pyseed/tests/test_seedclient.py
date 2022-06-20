@@ -12,10 +12,8 @@ import json
 import sys
 import unittest
 
-# Imports from Third Party Modules
-import requests
-
 # Local Imports
+import requests
 from pyseed.exceptions import SEEDError
 from pyseed.seedclient import (
     ReadMixin,

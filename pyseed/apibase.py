@@ -8,11 +8,9 @@ Functionality for calls to external API's"""
 # Imports from Standard Library
 import re
 
-# Imports from Third Party Modules
+# Local Imports
 # Imports from External Modules
 import requests
-
-# Local Imports
 # Public Functions and Classes
 # Helper functions for use by BaseAPI subclasses
 from pyseed.exceptions import APIClientError
@@ -32,7 +30,9 @@ def add_pk(url, pk, required=True, slash=False):
         else:
             url = "{}{}".format(url, pk)
     if slash:
-        url = "{}/".format(url)
+        # Only add the trailing slash if it's not already there
+        if not url.endswith('/'):
+            url = "{}/".format(url)
     return url
 
 

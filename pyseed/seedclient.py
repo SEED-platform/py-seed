@@ -25,10 +25,8 @@ caching.
 # Imports from Standard Library
 import inspect
 
-# Imports from Third Party Modules
-import requests
-
 # Local Imports
+import requests
 from pyseed.apibase import JSONAPI, OAuthMixin, UserAuthMixin, add_pk
 from pyseed.exceptions import SEEDError
 
@@ -36,6 +34,8 @@ from pyseed.exceptions import SEEDError
 URLS = {
     'v3': {
         'columns': '/api/v3/columns/',
+        'column_mapping_profiles': '/api/v3/column_mapping_profiles/',
+        'column_mapping_profiles_filter': '/api/v3/column_mapping_profiles/filter/',
         'cycles': '/api/v3/cycles/',
         'datasets': '/api/v3/datasets/',
         'gbr_properties': '/api/v3/gbr_properties/',
@@ -43,13 +43,25 @@ URLS = {
         'green_assessment_property': '/api/v3/green_assessment_properties/',
         'green_assessment_url': '/api/v3/green_assessment_urls/',
         'labels': '/api/v3/labels/',
+        'labels_property': '/api/v3/labels_property/',
+        'labels_taxlot': '/api/v3/labels_taxlot/',
         'import_files': '/api/v3/import_files/',
         'properties': '/api/v3/properties/',
-        'properties/labels': '/api/v3/properties/labels/',
+        'properties_labels': '/api/v3/properties/labels/',
+        'properties_search': '/api/v3/properties/search/',
         'property_states': '/api/v3/property_states/',
         'property_views': '/api/v3/property_views/',
         'taxlots': '/api/v3/taxlots/',
+        'upload': '/api/v3/upload/',
         'users': '/api/v3/users/',
+        # POSTs with replaceable keys
+        'import_files_start_save_data_pk': '/api/v3/import_files/PK/start_save_data/',
+        'import_files_start_map_data_pk': '/api/v3/import_files/PK/map/',
+        'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
+        'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
+        # GETs with replaceable keys
+        'progress': '/api/v3/progress/PROGRESS_KEY/',
+        'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
     },
     'v2': {
         'columns': '/api/v2/columns/',
@@ -79,8 +91,7 @@ def _get_urls(base_url, url_map=None, version=None):
     if not url_map:
         url_map = URLS[version]
     return {
-        key: '{}/{}'.format(base_url.rstrip('/'), val.lstrip('/'))
-        for key, val in url_map.items()
+        key: '{}/{}'.format(base_url.rstrip('/'), val.lstrip('/')) for key, val in url_map.items()
     }
 
 
@@ -98,6 +109,13 @@ def _set_default(obj, key, val, required=True):
         raise AttributeError(msg)
     return val
 
+
+def _replace_url_args(url, url_args):
+    """Replace any custom string URL items with values in args"""
+    if url_args:
+        for key, value in url_args.items():
+            url = url.replace(f"{key}/", f"{value}/")
+    return url
 
 # Public Classes and Functions
 
@@ -194,11 +212,25 @@ class SEEDBaseClient(JSONAPI):
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
         elif isinstance(response.json(), dict):
-            if response.json().get('status', None) == 'error':
-                error = True
-            # In some cases there is not a 'status' field, so check if the
-            # results or data key don't exist
+            status_field = response.json().get('status', None)
+
+            if status_field:
+                if status_field == 'error':
+                    error = True
+                elif status_field == 'success':
+                    # continue
+                    error = False
+            elif 'success' in response.json().keys():
+                success_flag = response.json().get('success', None)
+                # For file uploads the response key is 'success'
+                error = not success_flag
+            elif 'progress_data' in response.json().keys():
+                # this is a system matching response, which is okay. return the success flag of this
+                status_flag = response.json()['progress_data'].get('status', None)
+                error = status_flag not in ['not-started', 'success']
             elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
+                # In some cases there is not a 'status' field, so check if the
+                # results or data key don't exist
                 error = True
         elif not isinstance(response.json(), list):
             error = True
@@ -311,12 +343,22 @@ class CreateMixin(object):
 
         :returns: dict (from response.json()[data_name])
         """
+        # for a post, if the user has sent some url args, then pop them for later
+        # parsing.
+        url_args = kwargs.pop('url_args', None)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = self.urls[endpoint]
+        # check if the endpoint is to be looked up or is a fully qualified url
+        if '/' in endpoint:
+            url = endpoint
+        elif endpoint in self.urls:
+            url = self.urls[endpoint]
+        else:
+            raise Exception(f'Unknown endpoint: {endpoint}')
         if not url.endswith('/'):
             url = url + '/'
+        url = _replace_url_args(url, url_args)
         response = super(CreateMixin, self)._post(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
@@ -338,10 +380,12 @@ class ReadMixin(object):
         :returns: dict (from response.json()[data_name])
 
         """
+        url_args = kwargs.pop('url_args', None)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        url = _replace_url_args(url, url_args)
         response = super(ReadMixin, self)._get(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
@@ -355,12 +399,14 @@ class ReadMixin(object):
 
         :returns: dict (from response.json()[data_name])
         """
+        url_args = kwargs.pop('url_args', None)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = self.urls[endpoint]
         if not url.endswith('/'):
             url = url + '/'
+        url = _replace_url_args(url, url_args)
         response = super(ReadMixin, self)._get(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
@@ -381,10 +427,12 @@ class UpdateMixin(object):
 
         :returns: dict (from response.json()[data_name])
         """
+        url_args = kwargs.pop('url_args', None)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        url = _replace_url_args(url, url_args)
         response = super(UpdateMixin, self)._put(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
@@ -399,10 +447,12 @@ class UpdateMixin(object):
 
         :returns: dict (from response.json()[data_name])
         """
+        url_args = kwargs.pop('url_args', None)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        url = _replace_url_args(url, url_args)
         response = super(UpdateMixin, self)._patch(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
@@ -424,10 +474,12 @@ class DeleteMixin(object):
         :returns: None
         """
         # pylint:disable=no-member
+        url_args = kwargs.pop('url_args', None)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=True, slash=True)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        url = _replace_url_args(url, url_args)
         response = super(DeleteMixin, self)._delete(url=url, **kwargs)
         # delete should return 204 and no content
         if response.status_code != requests.codes.no_content:
@@ -435,7 +487,7 @@ class DeleteMixin(object):
 
 
 class SEEDReadOnlyClient(ReadMixin, UserAuthMixin, SEEDBaseClient):
-    """Read Ony Client"""
+    """Read Only Client"""
     pass
 
 
