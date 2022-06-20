@@ -98,4 +98,4 @@ ENV/
 .vscode
 
 # Seed config files
-seed-config.json
+seed-config*.json

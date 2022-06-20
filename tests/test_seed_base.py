@@ -189,3 +189,28 @@ class SeedBaseTest(unittest.TestCase):
         # find nothing field
         result = self.seed_client.get_labels(filter_by_name=['Does not Exist'])
         assert len(result) == 0
+
+    def test_get_or_create_label(self):
+        label_name = 'something borrowed'
+        label = self.seed_client.get_or_create_label(label_name, 'green', show_in_list=True)
+        label_id = label['id']
+        assert label is not None
+        assert label['name'] == label_name
+
+        # try running it again and make sure it doesn't create a new label (ID should be the same0)
+        label = self.seed_client.get_or_create_label(label_name)
+        assert label_id == label['id']
+
+        # now update the color
+        label = self.seed_client.update_label(label_name, new_color='blue')
+        assert label['color'] == 'blue'
+
+        # now update the name and show in list = False
+        new_label_name = 'something blue'
+        label = self.seed_client.update_label(label_name, new_label_name=new_label_name, new_show_in_list=False)
+        assert label['name'] == new_label_name
+
+        # cleanup by deleting label
+        label = self.seed_client.delete_label(new_label_name)
+        # not the best response, but this means it passed
+        assert label is None

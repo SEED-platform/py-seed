@@ -158,11 +158,89 @@ class SeedClient(SeedClientWrapper):
             labels = [label for label in labels if label['name'] in filter_by_name]
         return labels
 
-    def get_or_create_label(self, label_name: str) -> dict:
-        pass
+    def get_or_create_label(self, label_name: str, color: str = 'blue', show_in_list: bool = False) -> dict:
+        """_summary_
 
-    def update_label(self, label_id: int, label_name: str) -> dict:
-        pass
+        Args:
+            label_name (str): Name of label. SEED enforces uniqueness of label names within an organization.
+            color (str, optional): Default color of the label. Must be from red, blue, light blue, green, white, orange, gray. 'blue' is the default.
+            show_in_list (bool, optional): If true, then the label is shown in the inventory list page as part of the column. Defaults to False.
+
+        Returns:
+            dict: {
+                'id': 87,
+                'name': 'label name',
+                'color': 'green',
+                'organization_id': 1,
+                'show_in_list': true
+            }
+        """
+        # First check if the label exists
+        label = self.get_labels(filter_by_name=[label_name])
+        if len(label) == 1:
+            return label[0]
+
+        payload = {
+            "name": label_name,
+            "color": color,
+            "show_in_list": show_in_list
+        }
+        return self.client.post(endpoint='labels', json=payload)
+
+    def update_label(self, label_name: str, new_label_name: str = None, new_color: str = None, new_show_in_list: bool = None) -> dict:
+        """Update an existing label with the new_* fields. If the new_* fields are not provided, then the existing values are used.
+
+        Args:
+            label_name (str): Name of existing label. This is required and must match an existing label name for the organization
+            new_label_name (str, optional): New name of the label. Defaults to None.
+            new_color (str, optional): New color of the label. Must be from red, blue, light blue, green, white, orange, gray. Defaults to None
+            new_show_in_list (bool, optional): New boolean on whether to show the label in the inventory list page. Defaults to None.
+
+        Raises:
+            Exception: If the label does not exist, then throw an error.
+
+        Returns:
+            dict: {
+                'id': 87,
+                'name': 'label name',
+                'color': 'green',
+                'organization_id': 1,
+                'show_in_list': true
+            }
+        """
+        # color (str, optional): Default color of the label. Must be from red, blue, light blue, green, white, orange, gray. 'blue' is the default.
+        # get the existing label
+        label = self.get_labels(filter_by_name=[label_name])
+        if len(label) != 1:
+            raise Exception(f"Could not find label to update of {label_name}")
+        current_label = label[0]
+
+        if new_label_name is not None:
+            current_label['name'] = new_label_name
+
+        if new_color is not None:
+            current_label['color'] = new_color
+
+        if new_show_in_list is not None:
+            current_label['show_in_list'] = new_show_in_list
+
+        return self.client.put(current_label['id'], endpoint='labels', json=current_label)
+
+    def delete_label(self, label_name: str) -> dict:
+        """Deletes an existing label. This method will look up the ID of the label to delete.
+
+        Args:
+            label_name (str): Name of the label to delete.
+
+        Returns:
+            dict: _description_
+        """
+        label = self.get_labels(filter_by_name=[label_name])
+        if len(label) != 1:
+            raise Exception(f"Could not find label to delete with name {label_name}")
+        id = label[0]['id']
+
+        return self.client.delete(id, endpoint='labels')
 
     def get_view_ids_with_label(self, label_names: list = []) -> list:
         """Get the view IDs of the properties with a given label name.

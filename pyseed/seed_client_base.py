@@ -232,10 +232,14 @@ class SEEDBaseClient(JSONAPI):
                     error = False
                 else:
                     error = True
-            elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
+            elif not any(key in ['results', 'data', 'status', 'id'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if the
-                # results or data key don't exist
+                # results or data key don't exist.
+
+                # For some object creates, the response is simply the object back in JSON format with an ID field.
+                # So just check for an ID field.
                 error = True
+
         elif not isinstance(response.json(), list):
             error = True
 
