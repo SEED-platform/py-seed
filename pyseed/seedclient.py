@@ -48,7 +48,7 @@ URLS = {
         'import_files': '/api/v3/import_files/',
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
-        'property_search': '/api/v3/properties/search/',
+        'properties_search': '/api/v3/properties/search/',
         'property_states': '/api/v3/property_states/',
         'property_views': '/api/v3/property_views/',
         'taxlots': '/api/v3/taxlots/',
@@ -223,17 +223,11 @@ class SEEDBaseClient(JSONAPI):
             elif 'success' in response.json().keys():
                 success_flag = response.json().get('success', None)
                 # For file uploads the response key is 'success'
-                if not success_flag:
-                    error = True
-                elif success_flag:
-                    error = False
+                error = not success_flag
             elif 'progress_data' in response.json().keys():
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
-                if status_flag in ['not-started', 'success']:
-                    error = False
-                else:
-                    error = True
+                error = status_flag not in ['not-started', 'success']
             elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if the
                 # results or data key don't exist
