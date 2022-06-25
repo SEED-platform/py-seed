@@ -824,7 +824,7 @@ class SeedClient(SeedClientWrapper):
         """
         # grab the mappings from the file, then pass to the other method
         if not Path(mapping_file).exists():
-            raise Exception("Could not find mapping file: {mapping_file}")
+            raise Exception(f"Could not find mapping file: {mapping_file}")
 
         return self.create_or_update_column_mapping_profile(
             mapping_profile_name, read_map_file(mapping_file)
