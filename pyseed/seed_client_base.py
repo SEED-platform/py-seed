@@ -226,11 +226,11 @@ class SEEDBaseClient(JSONAPI):
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
                 error = status_flag not in ['not-started', 'success']
-            elif not any(key in ['results', 'data', 'status'] for key in response.json().keys()):
+            elif not any(key in ['results', 'data', 'status', 'id'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if the
                 # results or data key don't exist.
 
-                # For some object creates, the response is simply the object back in JSON format with an ID field.
+                # 'id' -- For some object creates, the response is simply the object back in JSON format with an ID field.
                 # So just check for an ID field.
                 error = True
 

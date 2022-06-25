@@ -69,7 +69,7 @@ class SeedBaseTest(unittest.TestCase):
 
     def test_get_create_delete_cycle(self):
         all_cycles = self.seed_client.get_cycles()
-        cycle_count = len(all_cycles['cycles'])
+        cycle_count = len(all_cycles)
         assert cycle_count >= 1
 
         # create a new unique cycle
@@ -77,49 +77,53 @@ class SeedBaseTest(unittest.TestCase):
         cycle = self.seed_client.get_or_create_cycle(
             f'test cycle {unique_id}', date(2021, 1, 1), date(2022, 1, 1)
         )
-        assert cycle['cycles']['name'] == f'test cycle {unique_id}'
-        cycle_id = cycle['cycles']['id']
+        assert cycle['name'] == f'test cycle {unique_id}'
+        cycle_id = cycle['id']
         all_cycles = self.seed_client.get_cycles()
-        assert len(all_cycles['cycles']) == cycle_count + 1
+        assert len(all_cycles) == cycle_count + 1
         # verify that it won't be created again
         cycle = self.seed_client.get_or_create_cycle(
             f'test cycle {unique_id}', date(2021, 1, 1), date(2022, 1, 1)
         )
-        assert cycle_id == cycle['cycles']['id']
+        assert cycle_id == cycle['id']
         all_cycles = self.seed_client.get_cycles()
-        assert len(all_cycles['cycles']) == cycle_count + 1
+        assert len(all_cycles) == cycle_count + 1
 
         # now delete the new cycle
         self.seed_client.delete_cycle(cycle_id)
         all_cycles = self.seed_client.get_cycles()
-        assert len(all_cycles['cycles']) == cycle_count
+        assert len(all_cycles) == cycle_count
 
     def test_create_cycle(self):
-        cycle = self.seed_client.create_cycle('new cycle', date(2021, 6, 1), date(2022, 6, 1))
-        cycle_id = cycle['cycles']['id']
+        new_cycle_name = 'test cycle for test_create_cycle'
+        cycle = self.seed_client.create_cycle(new_cycle_name, date(2021, 6, 1), date(2022, 6, 1))
+        cycle_id = cycle['id']
         assert cycle is not None
 
+        # verify that trying to create the same name will fail
+        with pytest.raises(Exception) as exc_info:
+            self.seed_client.create_cycle(new_cycle_name, date(2021, 6, 1), date(2022, 6, 1))
+        assert exc_info.value.args[0] == f"A cycle with this name already exists: '{new_cycle_name}'"
+
         # test the setting of the ID
-        cycle = self.seed_client.get_or_create_cycle('new cycle', None, None, set_cycle_id=True)
+        cycle = self.seed_client.get_or_create_cycle(new_cycle_name, None, None, set_cycle_id=True)
         assert self.seed_client.cycle_id == cycle_id
 
         # clean up the cycle
         self.seed_client.delete_cycle(cycle_id)
 
-    def test_cycle_multiple_names_warning(self):
-        ids_to_delete = []
-        for _i in range(0, 5):
-            cycle = self.seed_client.create_cycle('new cycle', date(2021, 6, 1), date(2022, 6, 1))
-            ids_to_delete.append(cycle['cycles']['id'])
+    def test_get_cycle_by_name(self):
+        cycle = self.seed_client.create_cycle('test cycle for test_get_cycle_by_name', date(2021, 6, 1), date(2022, 6, 1))
+        cycle_id = cycle['id']
+        assert cycle is not None
 
-        cycle = self.seed_client.get_or_create_cycle('new cycle', None, None)
+        cycle = self.seed_client.get_cycle_by_name('test cycle for test_get_cycle_by_name', set_cycle_id=True)
+        assert cycle is not None
+        assert cycle['name'] == 'test cycle for test_get_cycle_by_name'
+        assert self.seed_client.cycle_id == cycle_id
 
-        # now delete the new cycles
-        for id in ids_to_delete:
-            self.seed_client.delete_cycle(id)
-
-        # not catching anything at the moment
-        assert True
+        # cleanup
+        self.seed_client.delete_cycle(cycle_id)
 
     def test_get_or_create_dataset(self):
         dataset_name = 'seed-salesforce-test-data'

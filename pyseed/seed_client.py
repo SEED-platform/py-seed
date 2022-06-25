@@ -64,7 +64,15 @@ class SeedClientWrapper(object):
 
         Args:
             organization_id (int): _description_
-            connection_params (dict, optional): parameters to connect to SEED. Defaults to None.
+            connection_params (dict, optional): parameters to connect to SEED. Defaults to None. If using, then must contain the following:
+                {
+                    "name": "not used - can be any string",
+                    "base_url": "http://127.0.0.1",
+                    "username": "user@somedomain.com",
+                    "api_key": "1b5ea1ee220c8628789c61d66253d90398e6ad03",
+                    "port": 8000,
+                    "use_ssl": false
+                }
             connection_config_filepath (Path, optional): path to the parameters (JSON file). Defaults to None.
 
         Raises:
@@ -93,6 +101,16 @@ class SeedClientWrapper(object):
 
         ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:80 --pyseed --file api_test_user.json
 
+        Content must contain:
+            {
+                "name": "not used - can be any string",
+                "base_url": "http://127.0.0.1",
+                "username": "user@somedomain.com",
+                "api_key": "1b5ea1ee220c8628789c61d66253d90398e6ad03",
+                "port": 8000,
+                "use_ssl": false
+            }
+
         Args:
             filepath (str): path to the connection config file
         """
@@ -117,6 +135,24 @@ class SeedClient(SeedClientWrapper):
         # TODO: what to do with this if paginated?
         return buildings
 
+    def get_property(self, property_view_id: int) -> dict:
+        """Return a single property (view and state) by the property view id.
+
+        Args:
+            property_view_id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
+
+        Returns:
+            dict: {
+                'id': property_view_id,
+                'state': {
+                    'extra_data': {},
+                },
+                'measures': [],
+                ...
+            }
+        """
+        return self.client.get(property_view_id, endpoint='property_views', data_name='property_views')
+
     def search_buildings(self, identifier_filter: str = None, identifier_exact: str = None) -> dict:
         payload = {
             "cycle": self.cycle_id,
@@ -127,7 +163,7 @@ class SeedClient(SeedClientWrapper):
         if identifier_exact is not None:
             payload["identifier_exact"] = identifier_exact
 
-        properties = self.client.get(None, required_pk=False, endpoint='property_search', **payload)
+        properties = self.client.get(None, required_pk=False, endpoint='properties_search', **payload)
         return properties
 
     def get_labels(self, filter_by_name: list = None) -> list:
@@ -224,6 +260,9 @@ class SeedClient(SeedClientWrapper):
         if new_show_in_list is not None:
             current_label['show_in_list'] = new_show_in_list
 
+        # remove the org id from the json data
+        current_label.pop('organization_id')
+
         return self.client.put(current_label['id'], endpoint='labels', json=current_label)
 
     def delete_label(self, label_name: str) -> dict:
@@ -317,11 +356,33 @@ class SeedClient(SeedClientWrapper):
         result = self.client.put(None, required_pk=False, endpoint=endpoint, json=payload)
         return result
 
-    def get_cycles(self) -> dict:
-        """list all the existing cycles"""
+    def get_cycles(self) -> list:
+        """Return a list of all the cycles for the organization.
+
+        Returns:
+            list: [
+                { 
+                    'name': '2021 Calendar Year', 
+                    'start': '2020-12-31T23:53:00-08:00', 
+                    'end': '2021-12-31T23:53:00-08:00', 
+                    'organization': 1, 
+                    'user': None, 
+                    'id': 2
+                },
+                {
+                    'name': '2023', 
+                    'start': '2023-01-01T00:00:00-08:00', 
+                    'end': '2023-12-31T00:00:00-08:00', 
+                    'organization': 1, 
+                    'user': 1, 
+                    'id': 3
+                }
+                ...
+            ]
+        """        
         # first list the cycles
         cycles = self.client.list(endpoint='cycles')
-        return cycles
+        return cycles['cycles']
 
     def create_cycle(self, cycle_name: str, start_date: date, end_date: date) -> dict:
         """Name of the cycle to create. If the cycle already exists, then it will
@@ -334,15 +395,12 @@ class SeedClient(SeedClientWrapper):
 
         Returns:
             dict: {
-                'status': 'success',
-                'cycles': {
                     'name': 'new cycle 351cd7e1',
                     'start': '2021-01-01T00:00:00-08:00',
                     'end': '2022-01-01T00:00:00-08:00',
                     'organization': 1,
                     'user': 1,
                     'id': 24
-                    }
                 }
         """
         post_data = {
@@ -351,8 +409,15 @@ class SeedClient(SeedClientWrapper):
             "end": end_date.strftime("%Y-%m-%d"),
         }
 
+        # before creating, check if the name already exists. SEED allows the same name of cycles,
+        # but we really shouldn't
+        existing_cycles = self.get_cycles()
+        for cycle in existing_cycles:
+            if cycle['name'] == cycle_name:
+                raise Exception(f"A cycle with this name already exists: '{cycle_name}'")
+
         cycles = self.client.post(endpoint='cycles', json=post_data)
-        return cycles
+        return cycles['cycles']
 
     def get_or_create_cycle(self, cycle_name: str, start_date: date, end_date: date, set_cycle_id: bool = False) -> dict:
         """Get or create a new cycle. If the cycle_name already exists, then it simply returns the existing cycle. However, if the cycle_name does not exist, then it will create a new cycle.
@@ -365,23 +430,19 @@ class SeedClient(SeedClientWrapper):
 
         Returns:
             dict: {
-                'status': 'success',
-                'cycles': {
-                    'name': 'new cycle 351cd7e1',
+                    'name': 'Calendar Year 2022',
                     'start': '2021-01-01T00:00:00-08:00',
                     'end': '2022-01-01T00:00:00-08:00',
                     'organization': 1,
                     'user': 1,
                     'id': 24
-                    }
                 }
-
         """
         cycles = self.get_cycles()
 
         # note that this picks the first one it finds, even if there are more
         # than one cycle with the name name
-        cycle_names = [cycle['name'] for cycle in cycles['cycles']]
+        cycle_names = [cycle['name'] for cycle in cycles]
         counts = Counter(cycle_names)
         for i_cycle_name, count in counts.items():
             if count > 1:
@@ -390,7 +451,7 @@ class SeedClient(SeedClientWrapper):
                 print(msg)
 
         selected = None
-        for cycle in cycles['cycles']:
+        for cycle in cycles:
             if cycle['name'] == cycle_name:
                 selected = cycle
                 break
@@ -399,13 +460,39 @@ class SeedClient(SeedClientWrapper):
             cycle = self.create_cycle(cycle_name, start_date, end_date)
             # only return the cycle portion of the response so that it
             # matches the result from the "already exists"-case
-            selected = cycle['cycles']
+            selected = cycle
 
         if set_cycle_id:
             self.cycle_id = selected['id']
 
         # to keep the response consistent add back in the status
-        return {'status': 'success', 'cycles': selected}
+        return selected
+
+    def get_cycle_by_name(self, cycle_name: str, set_cycle_id:bool=None) -> dict:
+        """Set the current cycle by name.
+
+        Args:
+            cycle_name (str): name of the cycle to set
+            set_cycle_id (bool): set the cycle_id on the object for later use. Defaults to None.
+
+        Returns:
+            dict: {
+                        'name': 'Calendar Year 2022',
+                        'start': '2021-01-01T00:00:00-08:00',
+                        'end': '2022-01-01T00:00:00-08:00',
+                        'organization': 1,
+                        'user': 1,
+                        'id': 24
+                }
+        """
+        cycles = self.get_cycles()
+        for cycle in cycles:
+            if cycle['name'] == cycle_name:
+                if set_cycle_id:
+                    self.cycle_id = cycle['id']
+                return cycle
+
+        raise ValueError(f"cycle '{cycle_name}' not found")
 
     def delete_cycle(self, cycle_id: str) -> dict:
         """Delete the cycle. This will only work if there are no properties or tax lots in the cycle
