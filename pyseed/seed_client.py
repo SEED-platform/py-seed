@@ -59,7 +59,12 @@ class SeedClientWrapper(object):
     """This is a wrapper around the SEEDReadWriteClient. If you need access
     to the READOnly client, or the OAuth client, then you will need to create another class"""
 
-    def __init__(self, organization_id: int, connection_params: Optional[dict] = None, connection_config_filepath: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        organization_id: int,
+        connection_params: Optional[dict] = None,
+        connection_config_filepath: Optional[Path] = None,
+    ) -> None:
         """wrapper around SEEDReadWriteClient.
 
         Args:
@@ -79,20 +84,21 @@ class SeedClientWrapper(object):
             Exception: SeedClientWrapper
         """
         if not connection_params and not connection_config_filepath:
-            raise Exception("Must provide either connection_params or connection_config_filepath")
+            raise Exception(
+                "Must provide either connection_params or connection_config_filepath"
+            )
 
         # favor the connection params over the config file
         if connection_params:
             # the connetion params are simply squashed on SEEDReadWriteClient init
             payload = connection_params
         elif connection_config_filepath:
-            payload = SeedClientWrapper.read_connection_config_file(connection_config_filepath)
+            payload = SeedClientWrapper.read_connection_config_file(
+                connection_config_filepath
+            )
             # read in from config file
 
-        self.client = SEEDReadWriteClient(
-            organization_id,
-            **payload
-        )
+        self.client = SEEDReadWriteClient(organization_id, **payload)
 
     @classmethod
     def read_connection_config_file(cls, filepath: Path) -> dict:
@@ -125,12 +131,50 @@ class SeedClient(SeedClientWrapper):
     """SEED Client with several property related
     helper methods implemented."""
 
-    def __init__(self, organization_id: int, connection_params: dict = None, connection_config_filepath: Path = None) -> None:
+    def __init__(
+        self,
+        organization_id: int,
+        connection_params: dict = None,
+        connection_config_filepath: Path = None,
+    ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
+    def get_organizations(self, brief: bool = True) -> Dict:
+        """Get a list organizations (that one is allowed to view)
+
+        Args:
+            brief (bool, optional): if True, then only return the organization id with some other basic info. Defaults to True.
+        Returns:
+            Dict: [
+                {
+                    "name": "test-org",
+                    "org_id": 1,
+                    "parent_id": null,
+                    "is_parent": true,
+                    "id": 1,
+                    "user_role": "owner",
+                    "display_decimal_places": 2
+                },
+                ...
+            ]
+        """
+        orgs = self.client.list(
+            endpoint="organizations",
+            data_name="organizations",
+            brief="true" if brief else "false",
+        )
+        return orgs
+
     def get_buildings(self) -> list:
-        self.client.list(endpoint='properties', data_name='pagination', per_page=1)['total']
-        buildings = self.client.list(endpoint='properties', data_name='results', per_page=100, cycle=self.cycle_id)
+        self.client.list(endpoint="properties", data_name="pagination", per_page=1)[
+            "total"
+        ]
+        buildings = self.client.list(
+            endpoint="properties",
+            data_name="results",
+            per_page=100,
+            cycle=self.cycle_id,
+        )
 
         # TODO: what to do with this if paginated?
         return buildings
@@ -151,9 +195,13 @@ class SeedClient(SeedClientWrapper):
                 ...
             }
         """
-        return self.client.get(property_view_id, endpoint='property_views', data_name='property_views')
+        return self.client.get(
+            property_view_id, endpoint="property_views", data_name="property_views"
+        )
 
-    def search_buildings(self, identifier_filter: str = None, identifier_exact: str = None) -> dict:
+    def search_buildings(
+        self, identifier_filter: str = None, identifier_exact: str = None
+    ) -> dict:
         payload = {
             "cycle": self.cycle_id,
         }
@@ -163,7 +211,9 @@ class SeedClient(SeedClientWrapper):
         if identifier_exact is not None:
             payload["identifier_exact"] = identifier_exact
 
-        properties = self.client.get(None, required_pk=False, endpoint='properties_search', **payload)
+        properties = self.client.get(
+            None, required_pk=False, endpoint="properties_search", **payload
+        )
         return properties
 
     def get_labels(self, filter_by_name: list = None) -> list:
@@ -189,12 +239,14 @@ class SeedClient(SeedClientWrapper):
                 }, ...
             ]
         """
-        labels = self.client.list(endpoint='labels')
+        labels = self.client.list(endpoint="labels")
         if filter_by_name is not None:
-            labels = [label for label in labels if label['name'] in filter_by_name]
+            labels = [label for label in labels if label["name"] in filter_by_name]
         return labels
 
-    def get_or_create_label(self, label_name: str, color: str = 'blue', show_in_list: bool = False) -> dict:
+    def get_or_create_label(
+        self, label_name: str, color: str = "blue", show_in_list: bool = False
+    ) -> dict:
         """_summary_
 
         Args:
@@ -216,14 +268,16 @@ class SeedClient(SeedClientWrapper):
         if len(label) == 1:
             return label[0]
 
-        payload = {
-            "name": label_name,
-            "color": color,
-            "show_in_list": show_in_list
-        }
-        return self.client.post(endpoint='labels', json=payload)
+        payload = {"name": label_name, "color": color, "show_in_list": show_in_list}
+        return self.client.post(endpoint="labels", json=payload)
 
-    def update_label(self, label_name: str, new_label_name: str = None, new_color: str = None, new_show_in_list: bool = None) -> dict:
+    def update_label(
+        self,
+        label_name: str,
+        new_label_name: str = None,
+        new_color: str = None,
+        new_show_in_list: bool = None,
+    ) -> dict:
         """Update an existing label with the new_* fields. If the new_* fields are not provided, then the existing values are used.
 
         Args:
@@ -252,18 +306,20 @@ class SeedClient(SeedClientWrapper):
         current_label = label[0]
 
         if new_label_name is not None:
-            current_label['name'] = new_label_name
+            current_label["name"] = new_label_name
 
         if new_color is not None:
-            current_label['color'] = new_color
+            current_label["color"] = new_color
 
         if new_show_in_list is not None:
-            current_label['show_in_list'] = new_show_in_list
+            current_label["show_in_list"] = new_show_in_list
 
         # remove the org id from the json data
-        current_label.pop('organization_id')
+        current_label.pop("organization_id")
 
-        return self.client.put(current_label['id'], endpoint='labels', json=current_label)
+        return self.client.put(
+            current_label["id"], endpoint="labels", json=current_label
+        )
 
     def delete_label(self, label_name: str) -> dict:
         """Deletes an existing label. This method will look up the ID of the label to delete.
@@ -277,9 +333,9 @@ class SeedClient(SeedClientWrapper):
         label = self.get_labels(filter_by_name=[label_name])
         if len(label) != 1:
             raise Exception(f"Could not find label to delete with name {label_name}")
-        id = label[0]['id']
+        id = label[0]["id"]
 
-        return self.client.delete(id, endpoint='labels')
+        return self.client.delete(id, endpoint="labels")
 
     def get_view_ids_with_label(self, label_names: list = []) -> list:
         """Get the view IDs of the properties with a given label name.
@@ -294,12 +350,19 @@ class SeedClient(SeedClientWrapper):
             list: list of labels and the views they are associated with
         """
         properties = self.client.post(
-            endpoint='properties_labels',
+            endpoint="properties_labels",
             cycle=self.cycle_id,
-            json={"label_names": label_names})
+            json={"label_names": label_names},
+        )
         return properties
 
-    def update_labels_of_buildings(self, add_label_names: list, remove_label_names: list, building_ids: list, inventory_type: str = 'property') -> dict:
+    def update_labels_of_buildings(
+        self,
+        add_label_names: list,
+        remove_label_names: list,
+        building_ids: list,
+        inventory_type: str = "property",
+    ) -> dict:
         """Add label names to the passed building ids.
 
         Args:
@@ -321,17 +384,17 @@ class SeedClient(SeedClientWrapper):
                 ]
             }
         """
-        if inventory_type == 'property':
-            endpoint = 'labels_property'
-        elif inventory_type == 'tax_lot':
-            endpoint = 'labels_taxlot'
+        if inventory_type == "property":
+            endpoint = "labels_property"
+        elif inventory_type == "tax_lot":
+            endpoint = "labels_taxlot"
         else:
-            raise ValueError('inventory_type must be either property or tax_lot')
+            raise ValueError("inventory_type must be either property or tax_lot")
 
         # first make sure that the labels exist
-        labels = self.client.list(endpoint='labels')
+        labels = self.client.list(endpoint="labels")
         # create a label id look up
-        label_id_lookup = {label['name']: label['id'] for label in labels}
+        label_id_lookup = {label["name"]: label["id"] for label in labels}
 
         # now find the IDs of the labels that we want to add and remove
         add_label_ids = []
@@ -340,20 +403,22 @@ class SeedClient(SeedClientWrapper):
             if label_name in label_id_lookup:
                 add_label_ids.append(label_id_lookup[label_name])
             else:
-                logger.warning(f'label name {label_name} not found in SEED, skipping')
+                logger.warning(f"label name {label_name} not found in SEED, skipping")
 
         for label_name in remove_label_names:
             if label_name in label_id_lookup:
                 remove_label_ids.append(label_id_lookup[label_name])
             else:
-                logger.warning(f'label name {label_name} not found in SEED, skipping')
+                logger.warning(f"label name {label_name} not found in SEED, skipping")
 
         payload = {
             "inventory_ids": building_ids,
             "add_label_ids": add_label_ids,
             "remove_label_ids": remove_label_ids,
         }
-        result = self.client.put(None, required_pk=False, endpoint=endpoint, json=payload)
+        result = self.client.put(
+            None, required_pk=False, endpoint=endpoint, json=payload
+        )
         return result
 
     def get_cycles(self) -> list:
@@ -361,28 +426,28 @@ class SeedClient(SeedClientWrapper):
 
         Returns:
             list: [
-                { 
-                    'name': '2021 Calendar Year', 
-                    'start': '2020-12-31T23:53:00-08:00', 
-                    'end': '2021-12-31T23:53:00-08:00', 
-                    'organization': 1, 
-                    'user': None, 
+                {
+                    'name': '2021 Calendar Year',
+                    'start': '2020-12-31T23:53:00-08:00',
+                    'end': '2021-12-31T23:53:00-08:00',
+                    'organization': 1,
+                    'user': None,
                     'id': 2
                 },
                 {
-                    'name': '2023', 
-                    'start': '2023-01-01T00:00:00-08:00', 
-                    'end': '2023-12-31T00:00:00-08:00', 
-                    'organization': 1, 
-                    'user': 1, 
+                    'name': '2023',
+                    'start': '2023-01-01T00:00:00-08:00',
+                    'end': '2023-12-31T00:00:00-08:00',
+                    'organization': 1,
+                    'user': 1,
                     'id': 3
                 }
                 ...
             ]
-        """        
+        """
         # first list the cycles
-        cycles = self.client.list(endpoint='cycles')
-        return cycles['cycles']
+        cycles = self.client.list(endpoint="cycles")
+        return cycles["cycles"]
 
     def create_cycle(self, cycle_name: str, start_date: date, end_date: date) -> dict:
         """Name of the cycle to create. If the cycle already exists, then it will
@@ -413,13 +478,21 @@ class SeedClient(SeedClientWrapper):
         # but we really shouldn't
         existing_cycles = self.get_cycles()
         for cycle in existing_cycles:
-            if cycle['name'] == cycle_name:
-                raise Exception(f"A cycle with this name already exists: '{cycle_name}'")
+            if cycle["name"] == cycle_name:
+                raise Exception(
+                    f"A cycle with this name already exists: '{cycle_name}'"
+                )
 
-        cycles = self.client.post(endpoint='cycles', json=post_data)
-        return cycles['cycles']
+        cycles = self.client.post(endpoint="cycles", json=post_data)
+        return cycles["cycles"]
 
-    def get_or_create_cycle(self, cycle_name: str, start_date: date, end_date: date, set_cycle_id: bool = False) -> dict:
+    def get_or_create_cycle(
+        self,
+        cycle_name: str,
+        start_date: date,
+        end_date: date,
+        set_cycle_id: bool = False,
+    ) -> dict:
         """Get or create a new cycle. If the cycle_name already exists, then it simply returns the existing cycle. However, if the cycle_name does not exist, then it will create a new cycle.
 
         Args:
@@ -442,7 +515,7 @@ class SeedClient(SeedClientWrapper):
 
         # note that this picks the first one it finds, even if there are more
         # than one cycle with the name name
-        cycle_names = [cycle['name'] for cycle in cycles]
+        cycle_names = [cycle["name"] for cycle in cycles]
         counts = Counter(cycle_names)
         for i_cycle_name, count in counts.items():
             if count > 1:
@@ -452,7 +525,7 @@ class SeedClient(SeedClientWrapper):
 
         selected = None
         for cycle in cycles:
-            if cycle['name'] == cycle_name:
+            if cycle["name"] == cycle_name:
                 selected = cycle
                 break
 
@@ -463,12 +536,12 @@ class SeedClient(SeedClientWrapper):
             selected = cycle
 
         if set_cycle_id:
-            self.cycle_id = selected['id']
+            self.cycle_id = selected["id"]
 
         # to keep the response consistent add back in the status
         return selected
 
-    def get_cycle_by_name(self, cycle_name: str, set_cycle_id:bool=None) -> dict:
+    def get_cycle_by_name(self, cycle_name: str, set_cycle_id: bool = None) -> dict:
         """Set the current cycle by name.
 
         Args:
@@ -487,9 +560,9 @@ class SeedClient(SeedClientWrapper):
         """
         cycles = self.get_cycles()
         for cycle in cycles:
-            if cycle['name'] == cycle_name:
+            if cycle["name"] == cycle_name:
                 if set_cycle_id:
-                    self.cycle_id = cycle['id']
+                    self.cycle_id = cycle["id"]
                 return cycle
 
         raise ValueError(f"cycle '{cycle_name}' not found")
@@ -503,7 +576,7 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict:
         """
-        return self.client.delete(cycle_id, endpoint='cycles')
+        return self.client.delete(cycle_id, endpoint="cycles")
 
     def get_or_create_dataset(self, dataset_name: str) -> dict:
         """Get or create a SEED dataset which is used to hold
@@ -515,26 +588,28 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict: resulting dataset record
         """
-        post_data = {
-            'name': dataset_name
-        }
+        post_data = {"name": dataset_name}
         selected = {}
-        datasets = self.client.list(endpoint='datasets', data_name='datasets')
+        datasets = self.client.list(endpoint="datasets", data_name="datasets")
         for dataset in datasets:
-            if dataset['name'] == dataset_name:
+            if dataset["name"] == dataset_name:
                 logger.info(f"Dataset already created, returning {dataset['name']}")
                 selected = dataset
                 break
 
         # create a new dataset - this doesn't return the entire dict back
         # so after creating go and get the individual dataset
-        dataset = self.client.post(endpoint='datasets', json=post_data)
-        if dataset['status'] == 'success':
-            selected = self.client.get(dataset['id'], endpoint='datasets', data_name='dataset')
+        dataset = self.client.post(endpoint="datasets", json=post_data)
+        if dataset["status"] == "success":
+            selected = self.client.get(
+                dataset["id"], endpoint="datasets", data_name="dataset"
+            )
 
         return selected
 
-    def upload_datafile(self, dataset_id: int, data_file: str, upload_datatype: str) -> dict:
+    def upload_datafile(
+        self, dataset_id: int, data_file: str, upload_datatype: str
+    ) -> dict:
         """Upload a datafile file
 
         Args:
@@ -551,16 +626,16 @@ class SeedClient(SeedClientWrapper):
                 }
         """
         params = {
-            'import_record': dataset_id,
-            'source_type': upload_datatype,
+            "import_record": dataset_id,
+            "source_type": upload_datatype,
         }
 
         files_params = [
-            ('file', (Path(data_file).name, open(Path(data_file).resolve(), 'rb'))),
+            ("file", (Path(data_file).name, open(Path(data_file).resolve(), "rb"))),
         ]
 
         return self.client.post(
-            'upload',
+            "upload",
             params=params,
             files=files_params,
         )
@@ -588,18 +663,19 @@ class SeedClient(SeedClientWrapper):
 
         """
         if not progress_key:
-            raise Exception('No progress key provided')
+            raise Exception("No progress key provided")
         try:
             progress_result = self.client.get(
-                None, required_pk=False,
-                endpoint='progress',
-                url_args={'PROGRESS_KEY': progress_key}
+                None,
+                required_pk=False,
+                endpoint="progress",
+                url_args={"PROGRESS_KEY": progress_key},
             )
         except Exception:
             logger.error("Other unknown exception caught")
             progress_result = None
 
-        if progress_result and progress_result['progress'] == 100:
+        if progress_result and progress_result["progress"] == 100:
             return progress_result
         else:
             # wait a couple seconds before checking the status again
@@ -608,7 +684,7 @@ class SeedClient(SeedClientWrapper):
 
         return progress_result
 
-    def get_column_mapping_profiles(self, profile_type: str = 'All') -> dict:
+    def get_column_mapping_profiles(self, profile_type: str = "All") -> dict:
         """get the list of column mapping profiles. If profile_type is provided
         then return the list of profiles of that type.
 
@@ -618,21 +694,27 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict: column mapping profiles
         """
-        result = self.client.post(endpoint='column_mapping_profiles_filter')
+        result = self.client.post(endpoint="column_mapping_profiles_filter")
         indices_to_remove = []
         for index, item in enumerate(result):
-            if profile_type == 'All':
+            if profile_type == "All":
                 continue
-            elif item['profile_type'] != profile_type:
+            elif item["profile_type"] != profile_type:
                 indices_to_remove.append(index)
 
         # return only the unmarked indices
         if indices_to_remove:
-            result = [item for index, item in enumerate(result) if index not in indices_to_remove]
+            result = [
+                item
+                for index, item in enumerate(result)
+                if index not in indices_to_remove
+            ]
 
         return result
 
-    def get_column_mapping_profile(self, column_mapping_profile_name: str) -> Optional[dict]:
+    def get_column_mapping_profile(
+        self, column_mapping_profile_name: str
+    ) -> Optional[dict]:
         """get a specific column mapping profile. Currently, filter does not take an
         argument by name, so return them all and find the one that matches the
         column_mapping_profile_name.
@@ -643,15 +725,17 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict: single column mapping profile
         """
-        results = self.client.post(endpoint='column_mapping_profiles_filter')
+        results = self.client.post(endpoint="column_mapping_profiles_filter")
         for item in results:
-            if item['name'] == column_mapping_profile_name:
+            if item["name"] == column_mapping_profile_name:
                 return item
 
         # if nothing, then return none
         return None
 
-    def create_or_update_column_mapping_profile(self, mapping_profile_name: str, mappings: list) -> dict:
+    def create_or_update_column_mapping_profile(
+        self, mapping_profile_name: str, mappings: list
+    ) -> dict:
         """Create or update an existing mapping profile from a list of mappings
 
         This only works for 'Normal' column mapping profiles, that is, it does not work for
@@ -695,20 +779,24 @@ class SeedClient(SeedClientWrapper):
             # enforce uniqueness of the name, so we can use the same name for multiple
             # column mapping profiles (for better or worse)
             payload = {
-                'name': mapping_profile_name,
-                'mappings': mappings,
-                'profile_type': 'Normal',
+                "name": mapping_profile_name,
+                "mappings": mappings,
+                "profile_type": "Normal",
             }
-            result = self.client.post(endpoint='column_mapping_profiles', json=payload)
+            result = self.client.post(endpoint="column_mapping_profiles", json=payload)
         else:
             payload = {
-                'mappings': mappings,
+                "mappings": mappings,
             }
-            result = self.client.put(profile['id'], endpoint='column_mapping_profiles', json=payload)
+            result = self.client.put(
+                profile["id"], endpoint="column_mapping_profiles", json=payload
+            )
 
         return result
 
-    def create_or_update_column_mapping_profile_from_file(self, mapping_profile_name: str, mapping_file: str) -> dict:
+    def create_or_update_column_mapping_profile_from_file(
+        self, mapping_profile_name: str, mapping_file: str
+    ) -> dict:
         """creates or updates a mapping profile. The format of the mapping file is a CSV with the following format:
 
         # Raw Columns,    units, SEED Table,    SEED Columns
@@ -742,7 +830,9 @@ class SeedClient(SeedClientWrapper):
             mapping_profile_name, read_map_file(mapping_file)
         )
 
-    def set_import_file_column_mappings(self, import_file_id: int, mappings: list) -> dict:
+    def set_import_file_column_mappings(
+        self, import_file_id: int, mappings: list
+    ) -> dict:
         """Sets the column mappings onto the import file record.
 
         Args:
@@ -753,10 +843,10 @@ class SeedClient(SeedClientWrapper):
             dict: dict of status
         """
         return self.client.post(
-            'org_column_mapping_import_file',
-            url_args={'ORG_ID': self.client.org_id},
-            params={'import_file_id': import_file_id},
-            json={"mappings": mappings}
+            "org_column_mapping_import_file",
+            url_args={"ORG_ID": self.client.org_id},
+            params={"import_file_id": import_file_id},
+            json={"mappings": mappings},
         )
 
     def start_save_data(self, import_file_id: int) -> dict:
@@ -775,9 +865,9 @@ class SeedClient(SeedClientWrapper):
                 }
         """
         return self.client.post(
-            'import_files_start_save_data_pk',
-            url_args={'PK': import_file_id},
-            json={'cycle_id': self.cycle_id}
+            "import_files_start_save_data_pk",
+            url_args={"PK": import_file_id},
+            json={"cycle_id": self.cycle_id},
         )
 
     def start_map_data(self, import_file_id: int) -> dict:
@@ -796,8 +886,8 @@ class SeedClient(SeedClientWrapper):
                 }
         """
         return self.client.post(
-            'import_files_start_map_data_pk',
-            url_args={'PK': import_file_id},
+            "import_files_start_map_data_pk",
+            url_args={"PK": import_file_id},
             json={"remap": True},
         )
 
@@ -838,8 +928,7 @@ class SeedClient(SeedClientWrapper):
                 }
         """
         return self.client.post(
-            'import_files_start_matching_pk',
-            url_args={'PK': import_file_id}
+            "import_files_start_matching_pk", url_args={"PK": import_file_id}
         )
 
     def get_matching_results(self, import_file_id: int) -> dict:
@@ -863,9 +952,21 @@ class SeedClient(SeedClientWrapper):
                 'geocode_not_possible': 0
             }
         """
-        return self.client.get(None, required_pk=False, endpoint='import_files_matching_results', url_args={'PK': import_file_id})
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="import_files_matching_results",
+            url_args={"PK": import_file_id},
+        )
 
-    def upload_and_match_datafile(self, dataset_name: str, datafile: str, column_mapping_profile_name: str, column_mappings_file: str, **kwargs) -> dict:
+    def upload_and_match_datafile(
+        self,
+        dataset_name: str,
+        datafile: str,
+        column_mapping_profile_name: str,
+        column_mappings_file: str,
+        **kwargs,
+    ) -> dict:
         """Upload a file to the cycle_id that is defined in the constructor. This carries the
         upload of the file through the whole ingestion process (map, merge, pair, geocode).
 
@@ -880,42 +981,39 @@ class SeedClient(SeedClientWrapper):
                 matching summary
             }
         """
-        datafile_type = kwargs.pop('datafile_type', 'Assessed Raw')
+        datafile_type = kwargs.pop("datafile_type", "Assessed Raw")
         dataset = self.get_or_create_dataset(dataset_name)
-        result = self.upload_datafile(
-            dataset['id'],
-            datafile,
-            datafile_type
-        )
-        import_file_id = result['import_file_id']
+        result = self.upload_datafile(dataset["id"], datafile, datafile_type)
+        import_file_id = result["import_file_id"]
 
         # start processing
         result = self.start_save_data(import_file_id)
-        progress_key = result.get('progress_key', None)
+        progress_key = result.get("progress_key", None)
 
         # wait until upload is complete
         result = self.track_progress_result(progress_key)
 
         # create/retrieve the column mappings
         result = self.create_or_update_column_mapping_profile_from_file(
-            column_mapping_profile_name,
-            column_mappings_file
+            column_mapping_profile_name, column_mappings_file
         )
 
         # set the column mappings for the dataset
-        result = self.set_import_file_column_mappings(import_file_id, result['mappings'])
+        result = self.set_import_file_column_mappings(
+            import_file_id, result["mappings"]
+        )
 
         # now start the mapping
         result = self.start_map_data(import_file_id)
-        progress_key = result.get('progress_key', None)
+        progress_key = result.get("progress_key", None)
 
         # wait until upload is complete
         result = self.track_progress_result(progress_key)
 
         # save the mappings, call system matching/geocoding
         result = self.start_system_matching_and_geocoding(import_file_id)
-        progress_data = result.get('progress_data', None)
-        progress_key = progress_data.get('progress_key', None)
+        progress_data = result.get("progress_data", None)
+        progress_key = progress_data.get("progress_key", None)
 
         # wait until upload is complete
         result = self.track_progress_result(progress_key)

@@ -67,6 +67,10 @@ class SeedBaseTest(unittest.TestCase):
         # remove all of the test buildings?
         pass
 
+    def test_get_organizations(self):
+        organizations = self.seed_client.get_organizations()
+        assert len(organizations) > 0
+
     def test_get_create_delete_cycle(self):
         all_cycles = self.seed_client.get_cycles()
         cycle_count = len(all_cycles)
