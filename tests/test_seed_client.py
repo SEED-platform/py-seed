@@ -214,6 +214,10 @@ class SeedClientTest(unittest.TestCase):
         assert result["status"] == "success"
         assert result["progress"] == 100
 
+        # check if there are meter fields (which there are not in this file)
+        meters_exist = self.seed_client.check_meters_tab_exist(import_file_id)
+        assert not meters_exist
+
     @pytest.mark.order(5)
     def test_upload_single_method(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
@@ -237,6 +241,40 @@ class SeedClientTest(unittest.TestCase):
         # test by listing all the buildings
         buildings = self.seed_client.get_buildings()
         assert len(buildings) == 10
+
+    @pytest.mark.order(6)
+    def test_upload_single_method_with_meters(self):
+        # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
+        # data end up in the correct cycle
+        self.seed_client.get_or_create_cycle(
+            "pyseed-single-file-upload",
+            date(2021, 6, 1),
+            date(2022, 6, 1),
+            set_cycle_id=True,
+        )
+
+        result = self.seed_client.upload_and_match_datafile(
+            "pyseed-single-step-test",
+            "tests/data/test-seed-data-with-meters.xlsx",
+            "Single Step Column Mappings",
+            "tests/data/test-seed-data-mappings.csv",
+            import_meters_if_exist=True,
+        )
+
+        assert result is not None
+
+        # test by listing all the buildings
+        buildings = self.seed_client.get_buildings()
+        assert len(buildings) == 10
+
+        # look at the meters of a single building
+        building = self.seed_client.search_buildings(identifier_exact=11111)
+        assert len(building) == 1
+
+        meters = self.seed_client.get_meters(building[0]["id"])
+        assert len(meters) == 4  # elec, elec cost, gas, gas cost
+        meter_data = self.seed_client.get_meter_data(building[0]["id"])
+        assert len(meter_data['readings']) > 24
 
     # def test_get_buildings_with_labels(self):
     #     buildings = self.seed_client.get_view_ids_with_label(['In Violation', 'Compliant', 'Email'])

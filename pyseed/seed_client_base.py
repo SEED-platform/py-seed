@@ -46,6 +46,7 @@ URLS = {
         'labels_property': '/api/v3/labels_property/',
         'labels_taxlot': '/api/v3/labels_taxlot/',
         'import_files': '/api/v3/import_files/',
+        'import_files_reuse_inventory_file_for_meters': '/api/v3/import_files/reuse_inventory_file_for_meters/',
         'organizations': '/api/v3/organizations/',
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
@@ -59,10 +60,13 @@ URLS = {
         'import_files_start_save_data_pk': '/api/v3/import_files/PK/start_save_data/',
         'import_files_start_map_data_pk': '/api/v3/import_files/PK/map/',
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
+        'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
         # GETs with replaceable keys
-        'progress': '/api/v3/progress/PROGRESS_KEY/',
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
+        'progress': '/api/v3/progress/PROGRESS_KEY/',
+        'properties_meters': '/api/v3/properties/PK/meters/',
+        'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
     },
     'v2': {
         'columns': '/api/v2/columns/',
@@ -227,12 +231,14 @@ class SEEDBaseClient(JSONAPI):
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
                 error = status_flag not in ['not-started', 'success']
-            elif not any(key in ['results', 'data', 'status', 'id', 'organizations'] for key in response.json().keys()):
-                # In some cases there is not a 'status' field, so check if the
-                # results or data key don't exist.
-
-                # 'id' -- For some object creates, the response is simply the object back in JSON format with an ID field.
-                # So just check for an ID field.
+            elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations'] for key in response.json().keys()):
+                # In some cases there is not a 'status' field, so check if there are
+                # any other keys in the response that depict a success:
+                # readings - this comes from meters
+                # data - lots of responses just return the data flag
+                # status - sometimes the status comes back as complete
+                # id - For some object creates, the response is simply the object back in JSON format with an ID field.
+                # organizations - this is the only key when returning the list of orgs
                 error = True
 
         elif not isinstance(response.json(), list):

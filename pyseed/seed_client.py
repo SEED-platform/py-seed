@@ -849,6 +849,45 @@ class SeedClient(SeedClientWrapper):
             json={"mappings": mappings},
         )
 
+    def get_meters(self, property_id: int) -> list:
+        """Return the list of meters assigned to a property (the property view id).
+        Note that meters are attached to the property (not the state nor the property view).
+
+        Args:
+            property_id (int): property id to get the meters
+
+        Returns:
+            dict: [
+                {
+                    'id': 584,
+                    'type': 'Cost',
+                    'source': 'PM',
+                    'source_id': '1',
+                    'scenario_id': None,
+                    'scenario_name': None
+                },
+                ...
+            ]
+        """
+        meters = self.client.get(None, required_pk=False, endpoint='properties_meters',
+                                 url_args={"PK": property_id})
+        return meters
+
+    def get_meter_data(self, property_id, interval: str = 'Exact', excluded_meter_ids: list = []):
+        """Return the meter data from the property.
+
+        Args:
+            property_id (_type_): property view id
+            interval (str, optional): How to aggregate the data, can be 'Exact', 'Month', or 'Year'. Defaults to 'Exact'.
+            excluded_meter_ids (list, optional): IDs to exclude. Defaults to []].
+        """
+        payload = {
+            "interval": interval,
+            "excluded_meter_ids": excluded_meter_ids,
+        }
+        meter_data = self.client.post(endpoint='properties_meter_usage', url_args={"PK": property_id}, json=payload)
+        return meter_data
+
     def start_save_data(self, import_file_id: int) -> dict:
         """start the background process to save the data file to the database.
         This is the state before the mapping.
@@ -959,12 +998,52 @@ class SeedClient(SeedClientWrapper):
             url_args={"PK": import_file_id},
         )
 
+    def check_meters_tab_exist(self, import_file_id: int) -> bool:
+        """Check if the imported file has a meter and meter readings tab. If so
+        this tab can be used to import meter data into SEED.
+
+        Args:
+            import_file_id (int): ID of the import file to check
+
+        Returns: bool
+        """
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="import_files_check_meters_tab_exists_pk",
+            url_args={"PK": import_file_id},
+        )
+        # if the data is set to True, then return such
+        return response
+
+    def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
+        """Reuse an import file to create all the meter entries. This method is used
+        for ESPM related data files. The result will be another import_file ID for the
+        meters that will then need to be "resaved". Note that the returning import_file_id
+        is not the same as the argument import file.
+
+        Args:
+            import_file_id (int): ID of the import file to reuse.
+
+        Returns:
+            dict: {
+              "status": "success",
+              "import_file_id": 16
+            }
+        """
+        payload = {"import_file_id": import_file_id}
+        response = self.client.post(
+            endpoint="import_files_reuse_inventory_file_for_meters", json=payload
+        )
+        return response
+
     def upload_and_match_datafile(
         self,
         dataset_name: str,
         datafile: str,
         column_mapping_profile_name: str,
         column_mappings_file: str,
+        import_meters_if_exist: bool = False,
         **kwargs,
     ) -> dict:
         """Upload a file to the cycle_id that is defined in the constructor. This carries the
@@ -975,6 +1054,7 @@ class SeedClient(SeedClientWrapper):
             datafile (str): Full path to the datafile to upload
             column_mapping_profile_name (str): Name of the column mapping profile to use
             column_mappings_file (str): Mapping that will be uploaded to the column_mapping_profile_name
+            import_meters_if_exist (bool): If true, will import meters from the meter tab if they exist in the datafile. Defaults to False.
 
         Returns:
             dict: {
@@ -1019,4 +1099,20 @@ class SeedClient(SeedClientWrapper):
         result = self.track_progress_result(progress_key)
 
         # return summary
-        return self.get_matching_results(import_file_id)
+        matching_results = self.get_matching_results(import_file_id)
+
+        # check if we need to import meters and if they exist
+        if import_meters_if_exist and self.check_meters_tab_exist(import_file_id):
+            reuse_file = self.import_files_reuse_inventory_file_for_meters(
+                import_file_id
+            )
+
+            meter_import_file_id = reuse_file["import_file_id"]
+
+            result = self.start_save_data(meter_import_file_id)
+            progress_key = result.get("progress_key", None)
+
+            # wait until upload is complete
+            result = self.track_progress_result(progress_key)
+
+        return matching_results
