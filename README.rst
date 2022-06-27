@@ -27,7 +27,7 @@ Within Python you can use the client like this:
 
     # The seed-config.json file defines the hosting locaiton and credentials for your SEED instance.
     # If running SEED locally for testing, then you can run the following from your SEED root directory:
-    #    ./manage.py create_test_user_json --username user@seed-platform.org --file ./seed-config.json --pyseed
+    #    ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --file ./seed-config.json --pyseed
 
     config_file = Path('seed-config.json')
     organization_id = 1
