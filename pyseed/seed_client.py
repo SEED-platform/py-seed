@@ -567,6 +567,27 @@ class SeedClient(SeedClientWrapper):
 
         raise ValueError(f"cycle '{cycle_name}' not found")
 
+    def get_org_by_name(self, org_name: str, set_org_id: bool = False) -> dict:
+        """Set the current organization by name.
+
+        Args:
+            org_name (str): name of the organization to set
+            set_org_id (bool): set the org_id on the object for later use. Defaults to None.
+
+        Returns:
+            dict: {
+                    org data
+                }
+        """
+        orgs = self.get_organizations()
+        for org in orgs:
+            if org["name"] == org_name:
+                if set_org_id:
+                    self.client.org_id = org["id"]
+                return org
+
+        raise ValueError(f"Organization '{org_name}' not found")
+
     def delete_cycle(self, cycle_id: str) -> dict:
         """Delete the cycle. This will only work if there are no properties or tax lots in the cycle
 

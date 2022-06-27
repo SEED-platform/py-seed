@@ -83,12 +83,18 @@ class SeedClientTest(unittest.TestCase):
         # remove all of the test buildings?
         pass
 
-    @pytest.mark.order(1)
+    def test_seed_orgs(self):
+        orgs = self.seed_client.get_organizations()
+        assert len(orgs) > 0
+
+        # need to figure out what org to look for
+        # org = self.seed_client.get_org_by_name('nrel', set_org_id=False)
+        # assert org['name'] == 'nrel'
+
     def test_seed_buildings(self):
         buildings = self.seed_client.get_buildings()
         assert len(buildings) == 10
 
-    @pytest.mark.order(2)
     def test_search_buildings(self):
         properties = self.seed_client.search_buildings(identifier_exact="B-1")
         assert len(properties) == 1
@@ -101,7 +107,6 @@ class SeedClientTest(unittest.TestCase):
         properties = self.seed_client.search_buildings(identifier_filter="B-1")
         assert len(properties) == 2
 
-    @pytest.mark.order(3)
     def test_add_label_to_buildings(self):
         # get seed buildings
         prop_ids = []
@@ -145,7 +150,6 @@ class SeedClientTest(unittest.TestCase):
         assert not all(item in properties[0]["is_applied"] for item in prop_ids)
         assert not all(item in properties[1]["is_applied"] for item in prop_ids)
 
-    @pytest.mark.order(4)
     def test_upload_datafile(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
@@ -218,7 +222,6 @@ class SeedClientTest(unittest.TestCase):
         meters_exist = self.seed_client.check_meters_tab_exist(import_file_id)
         assert not meters_exist
 
-    @pytest.mark.order(5)
     def test_upload_single_method(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
@@ -242,7 +245,6 @@ class SeedClientTest(unittest.TestCase):
         buildings = self.seed_client.get_buildings()
         assert len(buildings) == 10
 
-    @pytest.mark.order(6)
     def test_upload_single_method_with_meters(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
