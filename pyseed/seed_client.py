@@ -670,7 +670,7 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict: progress_result
                 {
-                    'status': 'success',
+                    'status': 'success',  # 'not_started', 'in_progress', 'parsing', 'success', 'error'
                     'status_message': '',
                     'progress': 100,
                     'progress_key': ':1:SEED:save_raw_data:PROG:57',

@@ -216,7 +216,6 @@ class SEEDBaseClient(JSONAPI):
         # error, but they are not always set correctly.
         elif isinstance(response.json(), dict):
             status_field = response.json().get('status', None)
-
             if status_field:
                 if status_field == 'error':
                     error = True
@@ -230,7 +229,7 @@ class SEEDBaseClient(JSONAPI):
             elif 'progress_data' in response.json().keys():
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
-                error = status_flag not in ['not-started', 'success']
+                error = status_flag not in ['not-started', 'success', 'parsing']
             elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if there are
                 # any other keys in the response that depict a success:
@@ -248,10 +247,10 @@ class SEEDBaseClient(JSONAPI):
             if response.content:
                 try:
                     error_msg = response.json().get(
-                        'message', 'Unknown SEED Error'
+                        'message', f"Unknown SEED Error {response.status_code}: {response.json()}"
                     )
                 except ValueError:
-                    error_msg = 'Unknown SEED Error'
+                    error_msg = 'Unknown SEED Error: No response returned'
             if args:
                 kwargs['args'] = args
             self._raise_error(response, error_msg, stack_pos=1, **kwargs)
