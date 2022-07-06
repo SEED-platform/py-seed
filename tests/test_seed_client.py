@@ -208,8 +208,6 @@ class SeedClientTest(unittest.TestCase):
         # save the mappings, call system matching/geocoding
         result = self.seed_client.start_system_matching_and_geocoding(import_file_id)
         progress_data = result.get("progress_data", None)
-        print(f"In test: {result}")
-        print(result.json())
         assert progress_data is not None
         assert progress_data["status"] in ["not-started", "success"]
         progress_key = progress_data.get("progress_key", None)
