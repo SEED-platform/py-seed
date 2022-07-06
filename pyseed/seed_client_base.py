@@ -250,7 +250,7 @@ class SEEDBaseClient(JSONAPI):
                         'message', f"Unknown SEED Error {response.status_code}: {response.json()}"
                     )
                 except ValueError:
-                    error_msg = 'Unknown SEED Error: Cound not find'
+                    error_msg = 'Unknown SEED Error: No response returned'
             if args:
                 kwargs['args'] = args
             self._raise_error(response, error_msg, stack_pos=1, **kwargs)
