@@ -228,10 +228,8 @@ class SEEDBaseClient(JSONAPI):
                 error = not success_flag
             elif 'progress_data' in response.json().keys():
                 # this is a system matching response, which is okay. return the success flag of this
-                print(f"Here too -- {response.json()}")
                 status_flag = response.json()['progress_data'].get('status', None)
-                print(f"I am here --- {status_flag}")
-                error = status_flag not in ['not-started', 'success']
+                error = status_flag not in ['not-started', 'success', 'parsing']
             elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if there are
                 # any other keys in the response that depict a success:
