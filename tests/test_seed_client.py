@@ -55,7 +55,7 @@ class SeedClientTest(unittest.TestCase):
         if not cls.output_dir.exists():
             cls.output_dir.mkdir()
 
-        cls.organization_id = 1
+        cls.organization_id = 5
 
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
@@ -208,6 +208,8 @@ class SeedClientTest(unittest.TestCase):
         # save the mappings, call system matching/geocoding
         result = self.seed_client.start_system_matching_and_geocoding(import_file_id)
         progress_data = result.get("progress_data", None)
+        print(result)
+        print(result.json())
         assert progress_data is not None
         assert progress_data["status"] in ["not-started", "success"]
         progress_key = progress_data.get("progress_key", None)
