@@ -276,7 +276,7 @@ class SeedClientTest(unittest.TestCase):
         meters = self.seed_client.get_meters(building[0]["id"])
         assert len(meters) == 4  # elec, elec cost, gas, gas cost
         meter_data = self.seed_client.get_meter_data(building[0]["id"])
-        assert len(meter_data['readings']) > 24
+        assert len(meter_data['readings']) == 24
 
     # def test_get_buildings_with_labels(self):
     #     buildings = self.seed_client.get_view_ids_with_label(['In Violation', 'Compliant', 'Email'])
