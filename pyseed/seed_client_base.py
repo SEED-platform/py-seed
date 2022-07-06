@@ -249,10 +249,10 @@ class SEEDBaseClient(JSONAPI):
             if response.content:
                 try:
                     error_msg = response.json().get(
-                        'message', 'Unknown SEED Error'
+                        'message', f"Unknown SEED Error {response.status_code}: {response.json()}"
                     )
                 except ValueError:
-                    error_msg = 'Unknown SEED Error'
+                    error_msg = 'Unknown SEED Error: Cound not find'
             if args:
                 kwargs['args'] = args
             self._raise_error(response, error_msg, stack_pos=1, **kwargs)

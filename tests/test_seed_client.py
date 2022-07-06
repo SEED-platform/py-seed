@@ -55,7 +55,7 @@ class SeedClientTest(unittest.TestCase):
         if not cls.output_dir.exists():
             cls.output_dir.mkdir()
 
-        cls.organization_id = 5
+        cls.organization_id = 1
 
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
