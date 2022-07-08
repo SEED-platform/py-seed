@@ -7,26 +7,20 @@ All rights reserved
 Tests for SEEDClient
 """
 
-# Imports from Standard Library
+# Imports from Third Party Modules
 import json
-import sys
+import requests
 import unittest
+from unittest import mock
 
 # Local Imports
-import requests
 from pyseed.exceptions import SEEDError
-from pyseed.seedclient import (
+from pyseed.seed_client_base import (
     ReadMixin,
     SEEDBaseClient,
     SEEDOAuthReadWriteClient,
     SEEDReadWriteClient,
 )
-
-PY3 = sys.version_info[0] == 3
-if PY3:
-    from unittest import mock
-else:
-    import mock
 
 # Constants
 URLS = {

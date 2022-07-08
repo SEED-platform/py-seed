@@ -5,12 +5,12 @@ copyright (c) 2016 Earth Advantage. All rights reserved.
 
 Functionality for calls to external API's"""
 
-# Imports from Standard Library
+# Imports from Third Party Modules
 import re
-
-# Local Imports
 # Imports from External Modules
 import requests
+
+# Local Imports
 # Public Functions and Classes
 # Helper functions for use by BaseAPI subclasses
 from pyseed.exceptions import APIClientError
