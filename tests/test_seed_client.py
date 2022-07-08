@@ -209,7 +209,7 @@ class SeedClientTest(unittest.TestCase):
         result = self.seed_client.start_system_matching_and_geocoding(import_file_id)
         progress_data = result.get("progress_data", None)
         assert progress_data is not None
-        assert progress_data["status"] in ["not-started", "success"]
+        assert progress_data["status"] in ["not-started", "success", "parsing"]
         progress_key = progress_data.get("progress_key", None)
         assert progress_key == f":1:SEED:match_buildings:PROG:{import_file_id}"
 
