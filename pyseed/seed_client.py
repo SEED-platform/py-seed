@@ -100,6 +100,10 @@ class SeedClientWrapper(object):
 
         self.client = SEEDReadWriteClient(organization_id, **payload)
 
+        # set org if you can
+        if payload['seed_org_name']:
+            self.get_org_by_name(payload['seed_org_name'], set_org_id=True)
+
     @classmethod
     def read_connection_config_file(cls, filepath: Path) -> dict:
         """Read in the connection config file and return the connection params. This
@@ -114,7 +118,8 @@ class SeedClientWrapper(object):
                 "username": "user@somedomain.com",
                 "api_key": "1b5ea1ee220c8628789c61d66253d90398e6ad03",
                 "port": 8000,
-                "use_ssl": false
+                "use_ssl": false,
+                "seed_org_name: "test-org"
             }
 
         Args:
@@ -138,6 +143,11 @@ class SeedClient(SeedClientWrapper):
         connection_config_filepath: Path = None,
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
+
+    
+    def get_org_id(self) -> int:
+        """Return the org ID that is set"""
+        return self.client.org_id 
 
     def get_organizations(self, brief: bool = True) -> Dict:
         """Get a list organizations (that one is allowed to view)
