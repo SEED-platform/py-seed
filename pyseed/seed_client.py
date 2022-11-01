@@ -104,6 +104,7 @@ class SeedClientWrapper(object):
         if payload['seed_org_name']:
             self.get_org_by_name(payload['seed_org_name'], set_org_id=True)
 
+
     @classmethod
     def read_connection_config_file(cls, filepath: Path) -> dict:
         """Read in the connection config file and return the connection params. This
@@ -176,20 +177,24 @@ class SeedClient(SeedClientWrapper):
         return orgs
 
     def get_buildings(self) -> list:
-        self.client.list(endpoint="properties", data_name="pagination", per_page=1)[
-            "total"
-        ]
-        buildings = self.client.list(
-            endpoint="properties",
-            data_name="results",
-            per_page=100,
-            cycle=self.cycle_id,
-        )
+        total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
-        # TODO: what to do with this if paginated?
+        # print(f" total: {total_qry}")
+        # step through each page of the results
+        buildings = []
+        for i in range(1, total_qry['num_pages'] + 1):
+            buildings = buildings + self.client.list(
+                endpoint="properties",
+                data_name="results",
+                per_page=100,
+                page=i,
+                cycle=self.cycle_id,
+            )
+        # print(f"number of buildings retrieved: {len(buildings)}")
+
         return buildings
 
-    def get_property(self, property_view_id: int) -> dict:
+    def get_property_view(self, property_view_id: int) -> dict:
         """Return a single property (view and state) by the property view id.
 
         Args:
@@ -207,6 +212,30 @@ class SeedClient(SeedClientWrapper):
         """
         return self.client.get(
             property_view_id, endpoint="property_views", data_name="property_views"
+        )
+
+    def get_property(self, property_id: int) -> dict:
+        """Return a single property by the property id.
+
+        Args:
+            property__id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
+
+        Returns:
+            dict: {
+                'id': property__id,
+                'state': {
+                    'extra_data': {},
+                },
+                'cycle': {...},
+                'property': {...},
+                'labels': {...},
+                'measures': {...}
+                ...
+            }
+        """
+        # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
+        return self.client.get(
+            property_id, endpoint="properties", data_name="properties"
         )
 
     def search_buildings(
