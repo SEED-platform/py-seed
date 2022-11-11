@@ -56,6 +56,8 @@ URLS = {
         'taxlots': '/api/v3/taxlots/',
         'upload': '/api/v3/upload/',
         'users': '/api/v3/users/',
+        # No versioning endpoints
+        'version': '/api/version/',
         # POSTs with replaceable keys
         'import_files_start_save_data_pk': '/api/v3/import_files/PK/start_save_data/',
         'import_files_start_map_data_pk': '/api/v3/import_files/PK/map/',
@@ -230,7 +232,7 @@ class SEEDBaseClient(JSONAPI):
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
                 error = status_flag not in ['not-started', 'success', 'parsing']
-            elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations'] for key in response.json().keys()):
+            elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations', 'sha'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if there are
                 # any other keys in the response that depict a success:
                 # readings - this comes from meters
@@ -256,7 +258,10 @@ class SEEDBaseClient(JSONAPI):
             self._raise_error(response, error_msg, stack_pos=1, **kwargs)
 
     def _get_result(self, response, data_name=None, **kwargs):
-        """Extract result data from response."""
+        """Extract result data from response. If no data_name is given, then this method
+        tries to determine what the first element of the resulting JSON is which is then used as
+        the base for the rest of the response. This is not always desired, so pass data_name='all' if
+        you want to get the entire response back."""
         if not data_name:
             url = response.request.url
             # take the last part of the url unless it's a digit
@@ -273,16 +278,19 @@ class SEEDBaseClient(JSONAPI):
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
 
         constrained_result = None
-        for dname in [data_name, 'data', 'detail']:
-            try:
-                # allow a list to be valid (this is the case with labels)
-                if isinstance(result, dict):
-                    constrained_result = result.get(dname)
-                if constrained_result is not None:
-                    result = constrained_result
-                    break
-            except KeyError:
-                pass
+        if data_name == 'all':
+            result = result
+        else:
+            for dname in [data_name, 'data', 'detail']:
+                try:
+                    # allow a list to be valid (this is the case with labels)
+                    if isinstance(result, dict):
+                        constrained_result = result.get(dname)
+                    if constrained_result is not None:
+                        result = constrained_result
+                        break
+                except KeyError:
+                    pass
 
         if result is None:
             error_msg = 'Could not find result using data_name {}.'.format(data_name)
