@@ -232,7 +232,7 @@ class SEEDBaseClient(JSONAPI):
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
                 error = status_flag not in ['not-started', 'success', 'parsing']
-            elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations', 'sha'] for key in response.json().keys()):
+            elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations'] for key in response.json().keys()):
                 # In some cases there is not a 'status' field, so check if there are
                 # any other keys in the response that depict a success:
                 # readings - this comes from meters
