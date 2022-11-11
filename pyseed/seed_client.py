@@ -836,10 +836,10 @@ class SeedClient(SeedClientWrapper):
     ) -> dict:
         """creates or updates a mapping profile. The format of the mapping file is a CSV with the following format:
 
-        # Raw Columns,    units, SEED Table,    SEED Columns
-        # PM Property ID,      , PropertyState, pm_property_id
-        # Building ID,         , PropertyState, custom_id_1
-        # ...
+            Raw Columns,    units, SEED Table,    SEED Columns\n
+            PM Property ID,      , PropertyState, pm_property_id\n
+            Building ID,         , PropertyState, custom_id_1\n
+            ...\n
 
         This only works for 'Normal' column mapping profiles, that is, it does not work for
         BuildingSync column mapping profiles. Use this with caution since it will update
