@@ -197,6 +197,7 @@ class SEEDBaseClient(JSONAPI):
             self.base_url = '{}:{}'.format(self.base_url, self.port)
         if not self.base_url.endswith('/'):
             self.base_url = self.base_url + '/'
+        self.username = username
         self.urls = _get_urls(self.base_url, url_map=url_map, version=version)
         self.endpoints = self.urls.keys()
 
