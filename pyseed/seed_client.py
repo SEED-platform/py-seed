@@ -139,6 +139,20 @@ class SeedClient(SeedClientWrapper):
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
+    def instance_information(self) -> dict:
+        """Return the instance information.
+
+        Returns:
+            dict: instance information
+        """
+        # http://localhost:8000/api/version/
+        # add in URL to the SEED instance
+        # add in username (but not the password/api key)
+        info = self.client.get(None, required_pk=False, endpoint="version", data_name='all')
+        info["host"] = self.client.base_url
+        info["username"] = self.client.username
+        return info
+
     def get_organizations(self, brief: bool = True) -> Dict:
         """Get a list organizations (that one is allowed to view)
 
@@ -513,6 +527,9 @@ class SeedClient(SeedClientWrapper):
         """
         cycles = self.get_cycles()
 
+        # force the name of the cycle to be a string!
+        cycle_name = str(cycle_name)
+
         # note that this picks the first one it finds, even if there are more
         # than one cycle with the name name
         cycle_names = [cycle["name"] for cycle in cycles]
@@ -610,22 +627,21 @@ class SeedClient(SeedClientWrapper):
             dict: resulting dataset record
         """
         post_data = {"name": dataset_name}
-        selected = {}
+
         datasets = self.client.list(endpoint="datasets", data_name="datasets")
         for dataset in datasets:
             if dataset["name"] == dataset_name:
                 logger.info(f"Dataset already created, returning {dataset['name']}")
-                selected = dataset
-                break
+                return dataset
 
         # create a new dataset - this doesn't return the entire dict back
         # so after creating go and get the individual dataset
         dataset = self.client.post(endpoint="datasets", json=post_data)
+        selected = {}
         if dataset["status"] == "success":
             selected = self.client.get(
                 dataset["id"], endpoint="datasets", data_name="dataset"
             )
-
         return selected
 
     def upload_datafile(
@@ -820,10 +836,10 @@ class SeedClient(SeedClientWrapper):
     ) -> dict:
         """creates or updates a mapping profile. The format of the mapping file is a CSV with the following format:
 
-        # Raw Columns,    units, SEED Table,    SEED Columns
-        # PM Property ID,      , PropertyState, pm_property_id
-        # Building ID,         , PropertyState, custom_id_1
-        # ...
+            Raw Columns,    units, SEED Table,    SEED Columns\n
+            PM Property ID,      , PropertyState, pm_property_id\n
+            Building ID,         , PropertyState, custom_id_1\n
+            ...\n
 
         This only works for 'Normal' column mapping profiles, that is, it does not work for
         BuildingSync column mapping profiles. Use this with caution since it will update
