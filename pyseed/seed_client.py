@@ -142,7 +142,7 @@ class SeedClient(SeedClientWrapper):
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
         # set org if you can
-        if self.payload and self.payload['seed_org_name']:
+        if self.payload and self.payload.get('seed_org_name', None):
             self.get_org_by_name(self.payload['seed_org_name'], set_org_id=True)
 
     def get_org_id(self) -> int:
