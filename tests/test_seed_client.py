@@ -87,9 +87,9 @@ class SeedClientTest(unittest.TestCase):
         orgs = self.seed_client.get_organizations()
         assert len(orgs) > 0
 
-        # need to figure out what org to look for
-        # org = self.seed_client.get_org_by_name('nrel', set_org_id=False)
-        # assert org['name'] == 'nrel'
+    def test_seed_client_info(self):
+        info = self.seed_client.instance_information()
+        assert set(("version", "sha")).issubset(info.keys())
 
     def test_seed_buildings(self):
         buildings = self.seed_client.get_buildings()
@@ -100,10 +100,16 @@ class SeedClientTest(unittest.TestCase):
         assert len(properties) == 1
 
         prop = self.seed_client.get_property(properties[0]["id"])
+        assert prop["state"]["address_line_1"] == "111 Street Lane, Chicago, IL"
+        assert prop["state"]["extra_data"]["EUI Target"] == 120
+
+        # test the property view (same as previous, just less data)
+        prop = self.seed_client.get_property_view(properties[0]["id"])
         assert prop["id"] == properties[0]["id"]
         assert prop["state"]["address_line_1"] == "111 Street Lane, Chicago, IL"
         assert prop["state"]["extra_data"]["EUI Target"] == 120
 
+        # There are 2 if filtering, because B-1 and B-10
         properties = self.seed_client.search_buildings(identifier_filter="B-1")
         assert len(properties) == 2
 

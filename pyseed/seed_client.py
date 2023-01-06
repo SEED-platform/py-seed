@@ -89,16 +89,17 @@ class SeedClientWrapper(object):
             )
 
         # favor the connection params over the config file
+        self.payload = {}
         if connection_params:
             # the connetion params are simply squashed on SEEDReadWriteClient init
-            payload = connection_params
+            self.payload = connection_params
         elif connection_config_filepath:
-            payload = SeedClientWrapper.read_connection_config_file(
+            self.payload = SeedClientWrapper.read_connection_config_file(
                 connection_config_filepath
             )
             # read in from config file
 
-        self.client = SEEDReadWriteClient(organization_id, **payload)
+        self.client = SEEDReadWriteClient(organization_id, **self.payload)
 
     @classmethod
     def read_connection_config_file(cls, filepath: Path) -> dict:
@@ -114,7 +115,8 @@ class SeedClientWrapper(object):
                 "username": "user@somedomain.com",
                 "api_key": "1b5ea1ee220c8628789c61d66253d90398e6ad03",
                 "port": 8000,
-                "use_ssl": false
+                "use_ssl": false,
+                "seed_org_name: "test-org"
             }
 
         Args:
@@ -138,6 +140,35 @@ class SeedClient(SeedClientWrapper):
         connection_config_filepath: Path = None,
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
+
+        # set org if you can
+        if self.payload and self.payload.get('seed_org_name', None):
+            self.get_org_by_name(self.payload['seed_org_name'], set_org_id=True)
+
+    def get_org_id(self) -> int:
+        """Return the org ID that is set"""
+        return self.client.org_id
+
+    def get_org_by_name(self, org_name: str, set_org_id: bool = False) -> dict:
+        """Set the current organization by name.
+
+        Args:
+            org_name (str): name of the organization to set
+            set_org_id (bool): set the org_id on the object for later use. Defaults to None.
+
+        Returns:
+            dict: {
+                    org data
+                }
+        """
+        orgs = self.get_organizations()
+        for org in orgs:
+            if org["name"] == org_name:
+                if set_org_id:
+                    self.client.org_id = org["id"]
+                return org
+
+        raise ValueError(f"Organization '{org_name}' not found")
 
     def instance_information(self) -> dict:
         """Return the instance information.
@@ -179,21 +210,25 @@ class SeedClient(SeedClientWrapper):
         )
         return orgs
 
-    def get_buildings(self) -> list:
-        self.client.list(endpoint="properties", data_name="pagination", per_page=1)[
-            "total"
-        ]
-        buildings = self.client.list(
-            endpoint="properties",
-            data_name="results",
-            per_page=100,
-            cycle=self.cycle_id,
-        )
+    def get_buildings(self) -> List[dict]:
+        total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
-        # TODO: what to do with this if paginated?
+        # print(f" total: {total_qry}")
+        # step through each page of the results
+        buildings: List[dict] = []
+        for i in range(1, total_qry['num_pages'] + 1):
+            buildings = buildings + self.client.list(
+                endpoint="properties",
+                data_name="results",
+                per_page=100,
+                page=i,
+                cycle=self.cycle_id,
+            )
+        # print(f"number of buildings retrieved: {len(buildings)}")
+
         return buildings
 
-    def get_property(self, property_view_id: int) -> dict:
+    def get_property_view(self, property_view_id: int) -> dict:
         """Return a single property (view and state) by the property view id.
 
         Args:
@@ -211,6 +246,29 @@ class SeedClient(SeedClientWrapper):
         """
         return self.client.get(
             property_view_id, endpoint="property_views", data_name="property_views"
+        )
+
+    def get_property(self, property_id: int) -> dict:
+        """Return a single property by the property id.
+
+        Args:
+            property__id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
+
+        Returns:
+            dict: {
+                'state': {
+                    'extra_data': {},
+                },
+                'cycle': {...},
+                'property': {...},
+                'labels': {...},
+                'measures': {...}
+                ...
+            }
+        """
+        # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
+        return self.client.get(
+            property_id, endpoint="properties", data_name="properties"
         )
 
     def search_buildings(
@@ -583,27 +641,6 @@ class SeedClient(SeedClientWrapper):
                 return cycle
 
         raise ValueError(f"cycle '{cycle_name}' not found")
-
-    def get_org_by_name(self, org_name: str, set_org_id: bool = False) -> dict:
-        """Set the current organization by name.
-
-        Args:
-            org_name (str): name of the organization to set
-            set_org_id (bool): set the org_id on the object for later use. Defaults to None.
-
-        Returns:
-            dict: {
-                    org data
-                }
-        """
-        orgs = self.get_organizations()
-        for org in orgs:
-            if org["name"] == org_name:
-                if set_org_id:
-                    self.client.org_id = org["id"]
-                return org
-
-        raise ValueError(f"Organization '{org_name}' not found")
 
     def delete_cycle(self, cycle_id: str) -> dict:
         """Delete the cycle. This will only work if there are no properties or tax lots in the cycle
