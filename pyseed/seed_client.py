@@ -256,7 +256,6 @@ class SeedClient(SeedClientWrapper):
 
         Returns:
             dict: {
-                'id': property__id,
                 'state': {
                     'extra_data': {},
                 },
