@@ -109,7 +109,7 @@ class SeedClientTest(unittest.TestCase):
         assert prop["state"]["address_line_1"] == "111 Street Lane, Chicago, IL"
         assert prop["state"]["extra_data"]["EUI Target"] == 120
 
-        # There are 2 if filtering, because B-1 and B-11
+        # There are 2 if filtering, because B-1 and B-10
         properties = self.seed_client.search_buildings(identifier_filter="B-1")
         assert len(properties) == 2
 
