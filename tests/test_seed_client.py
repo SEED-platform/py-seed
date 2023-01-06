@@ -91,6 +91,10 @@ class SeedClientTest(unittest.TestCase):
         # org = self.seed_client.get_org_by_name('nrel', set_org_id=False)
         # assert org['name'] == 'nrel'
 
+    def test_seed_client_info(self):
+        info = self.seed_client.instance_information()
+        assert set(("version", "sha")).issubset(info.keys())
+
     def test_seed_buildings(self):
         buildings = self.seed_client.get_buildings()
         assert len(buildings) == 10

@@ -21,7 +21,6 @@ Within Python you can use the client like this:
 
 .. code-block:: python
 
-    import pyseed
     from pathlib import Path
     from pyseed.seed_client import SeedClient
 

@@ -104,7 +104,6 @@ class SeedClientWrapper(object):
         if payload['seed_org_name']:
             self.get_org_by_name(payload['seed_org_name'], set_org_id=True)
 
-
     @classmethod
     def read_connection_config_file(cls, filepath: Path) -> dict:
         """Read in the connection config file and return the connection params. This
@@ -145,10 +144,9 @@ class SeedClient(SeedClientWrapper):
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
-    
     def get_org_id(self) -> int:
         """Return the org ID that is set"""
-        return self.client.org_id 
+        return self.client.org_id
 
     def get_organizations(self, brief: bool = True) -> Dict:
         """Get a list organizations (that one is allowed to view)
