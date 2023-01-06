@@ -87,10 +87,6 @@ class SeedClientTest(unittest.TestCase):
         orgs = self.seed_client.get_organizations()
         assert len(orgs) > 0
 
-        # need to figure out what org to look for
-        # org = self.seed_client.get_org_by_name('nrel', set_org_id=False)
-        # assert org['name'] == 'nrel'
-
     def test_seed_client_info(self):
         info = self.seed_client.instance_information()
         assert set(("version", "sha")).issubset(info.keys())
