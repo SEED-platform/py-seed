@@ -47,6 +47,7 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 from urllib.parse import _NetlocResultMixinStr
+from typing import Union
 
 # Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
@@ -947,7 +948,7 @@ class SeedClient(SeedClientWrapper):
                                  url_args={"PK": property_id})
         return meters
 
-    def get_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> dict:
+    def get_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Union[dict, None]:
         """get a meter for a property view.
 
         Args:
@@ -967,7 +968,7 @@ class SeedClient(SeedClientWrapper):
         else:
             return None
 
-    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> dict:
+    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Optional[Dict[Any, Any]]:
         """get or create a meter for a property view.
 
         Args:
