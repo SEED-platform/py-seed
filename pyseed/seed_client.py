@@ -47,6 +47,7 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 from urllib.parse import _NetlocResultMixinStr
+from typing import Union
 
 # Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
