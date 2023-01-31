@@ -37,7 +37,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 # Imports from Standard Library
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 # Imports from Third Party Modules
 import json
@@ -47,7 +47,6 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 from urllib.parse import _NetlocResultMixinStr
-from typing import Union
 
 # Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
