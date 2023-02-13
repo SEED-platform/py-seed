@@ -440,7 +440,7 @@ class SeedClient(SeedClientWrapper):
         Args:
             add_label_names (list): list of label names to add, will be converted to IDs
             remove_label_names (list): list of label names to remove, will be converted to IDs
-            building_ids (list): list of building IDs to add/remove labels
+            building_ids (list): list of building IDs (property_view_id) to add/remove labels
             inventory_type (str, optional): taxlot or property inventory. Defaults to 'property'.
 
         Raises:
