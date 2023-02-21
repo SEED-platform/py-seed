@@ -229,10 +229,11 @@ class SeedClient(SeedClientWrapper):
         return buildings
 
     def get_property_view(self, property_view_id: int) -> dict:
-        """Return a single property (view and state) by the property view id.
+        """Return a single property (view and state) by the property view id. It is
+        recommended to use the more verbose version of `get_property` below.
 
         Args:
-            property_view_id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
+            property_view_id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id} and resolves to {host}/api/v3/property_views/{property_view_id}
 
         Returns:
             dict: {
