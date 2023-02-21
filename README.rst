@@ -113,7 +113,7 @@ Releasing
 ---------
 
 * Merge down to main
-* Tag release on GitHub and add in the change log 
+* Tag release on GitHub and add in the change log
 * Release via command line
 
 .. code-block:: bash
