@@ -5,10 +5,8 @@ copyright (c) 2016 Earth Advantage. All rights reserved.
 
 Functionality for calls to external API's"""
 
-# Imports from Standard Library
-import re
-
 # Imports from Third Party Modules
+import re
 # Imports from External Modules
 import requests
 
@@ -32,7 +30,9 @@ def add_pk(url, pk, required=True, slash=False):
         else:
             url = "{}{}".format(url, pk)
     if slash:
-        url = "{}/".format(url)
+        # Only add the trailing slash if it's not already there
+        if not url.endswith('/'):
+            url = "{}/".format(url)
     return url
 
 
@@ -55,7 +55,7 @@ class BaseAPI(object):
         ..Note:
             if use_auth is True the default is to use http basic
             authentication if self.auth is not set. (You will need to
-            to this by overidding __init__ and setting this before
+            to this by overriding __init__ and setting this before
             calling super.
 
             This requires username and password to be supplied as
@@ -93,8 +93,6 @@ class BaseAPI(object):
                 except AttributeError:
                     msg = "{} is a compulsory field".format(param)
                     raise APIClientError(msg)
-        if self.auth:                                        # pragma: no cover
-            params['auth'] = self.auth
         return params
 
     def _construct_url(self, urlstring, use_ssl=None):
@@ -130,7 +128,7 @@ class BaseAPI(object):
         return url
 
     def check_call_success(self, response):
-        """Return true if api call was successfull."""
+        """Return true if api call was successful."""
         # pylint: disable=no-self-use, no-member
         return response.status_code == requests.codes.ok
 
@@ -140,7 +138,7 @@ class BaseAPI(object):
         params = self._construct_payload(kwargs)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -157,7 +155,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -166,9 +164,26 @@ class BaseAPI(object):
         if self.auth:                                       # pragma: no cover
             payload['auth'] = self.auth
         if self.use_json:
-            payload['json'] = kwargs
+            data = kwargs.pop('json', None)
+            if data:
+                payload['json'] = data
+            else:
+                # just put the remaining kwargs into the json field
+                payload['json'] = kwargs
         else:
-            payload['data'] = kwargs
+            data = kwargs.pop('data', None)
+            if data:
+                payload['data'] = data
+            else:
+                # just put the remaining kwargs into the data field
+                payload['data'] = kwargs
+
+        # if there are any remaining kwargs, then put them into the params
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params'].update(**kwargs)
+
+        # now do the actual call to post!
         api_call = requests.post(url, **payload)
         return api_call
 
@@ -181,7 +196,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -190,9 +205,25 @@ class BaseAPI(object):
         if self.auth:                                       # pragma: no cover
             payload['auth'] = self.auth
         if self.use_json:
-            payload['json'] = kwargs
+            data = kwargs.pop('json', None)
+            if data:
+                payload['json'] = data
+            else:
+                # just put the remaining kwargs into the json field
+                payload['json'] = kwargs
         else:
-            payload['data'] = kwargs
+            data = kwargs.pop('data', None)
+            if data:
+                payload['data'] = data
+            else:
+                # just put the remaining kwargs into the data field
+                payload['data'] = kwargs
+
+        # if there are any remaining kwargs, then put them into the params
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params'].update(**kwargs)
+
         api_call = requests.put(url, **payload)
         return api_call
 
@@ -205,7 +236,7 @@ class BaseAPI(object):
         params = self._construct_payload(params)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -214,9 +245,24 @@ class BaseAPI(object):
         if self.auth:                                        # pragma: no cover
             payload['auth'] = self.auth
         if self.use_json:
-            payload['json'] = kwargs
+            data = kwargs.pop('json', None)
+            if data:
+                payload['json'] = data
+            else:
+                # just put the remaining kwargs into the json field
+                payload['json'] = kwargs
         else:
-            payload['data'] = kwargs
+            data = kwargs.pop('data', None)
+            if data:
+                payload['data'] = data
+            else:
+                # just put the remaining kwargs into the data field
+                payload['data'] = kwargs
+
+        # if there are any remaining kwargs, then put them into the params
+        if 'params' not in payload:
+            payload['params'] = {}
+        payload['params'].update(**kwargs)
         api_call = requests.patch(url, **payload)
         return api_call
 
@@ -226,7 +272,7 @@ class BaseAPI(object):
         params = self._construct_payload(kwargs)
         payload = {
             'timeout': self.timeout,
-            'headers': params.get('headers', None)
+            'headers': params.pop('headers', None)
         }
         if params:
             payload['params'] = params
@@ -296,9 +342,8 @@ class OAuthMixin(object):
 
     def _get_access_token(self):
         """Generate OAuth access token"""
-        config = getattr(self, 'config')
-        private_key_file = config.get('private_key_location', default=None)
-        client_id = config.get('client_id', default=None)
+        private_key_file = getattr(self, 'private_key_location', None)
+        client_id = getattr(self, 'client_id', None)
         username = getattr(self, 'username', None)
         with open(private_key_file, 'r') as pk_file:
             sig = pk_file.read()

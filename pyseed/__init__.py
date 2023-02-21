@@ -1,5 +1,5 @@
 # Local Imports
-from pyseed.seedclient import (
+from pyseed.seed_client_base import (  # noqa
     SEEDOAuthReadOnlyClient,
     SEEDOAuthReadWriteClient,
     SEEDReadOnlyClient,

@@ -1,0 +1,15 @@
+Raw Columns,units,SEED Table,SEED Columns
+PM Property ID,,PropertyState,pm_property_id
+Building ID,,PropertyState,custom_id_1
+Property Name,,PropertyState,property_name
+Property Type,,PropertyState,property_type
+Address,,PropertyState,address_line_1
+Sq. Ft,ft**2,PropertyState,gross_floor_area
+Total GHG Emissions Intensity,kgCO2e/ft**2/year,PropertyState,total_ghg_emissions_intensity
+Site EUI,kBtu/ft**2/year,PropertyState,site_eui
+PM Release Date,,PropertyState,release_date
+Year Ending,,PropertyState,Year Ending Excel
+GHGI Target,,PropertyState,GHGI Target
+GHGI Target Year,,PropertyState,GHGI Target Year
+EUI Target,,PropertyState,EUI Target
+EUI Target Year,,PropertyState,EUI Target Year

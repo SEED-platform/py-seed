@@ -1,0 +1,51 @@
+exclude: |
+  (?x)(
+    ^docs/conf.py|
+    ^docs/license.rst
+  )
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ["--maxkb=50000"]
+      - id: check-ast
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-xml
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: requirements-txt-fixer
+      - id: mixed-line-ending
+        args: ["--fix=auto"]
+  - repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: v2.0.1
+    hooks:
+      - id: autopep8
+        args:
+          [
+            "--in-place",
+            "--aggressive",
+            "--aggressive",
+            "--recursive",
+            "--max-line-length=100",
+            "--ignore=E501,E402,W503,W504,E731",
+          ]
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        args: ["--ignore=E501,E402,W503,W504,E731,F401"]
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0-alpha.4
+    hooks:
+      - id: prettier
+        types_or: [css, yaml, markdown, html, scss, javascript]
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
+        args: ["-m=VERTICAL_HANGING_INDENT"] # vertical hanging

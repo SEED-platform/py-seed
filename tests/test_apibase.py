@@ -6,14 +6,14 @@ copyright (c) 2016-2016 Earth Advantage. All rights reserved.
 
 Unit tests for pyseed/apibase
 """
-# Imports from Standard Library
+# Imports from Third Party Modules
 import sys
 import unittest
 
 # Local Imports
 from pyseed.apibase import JSONAPI, BaseAPI, add_pk
 from pyseed.exceptions import APIClientError
-from pyseed.seedclient import _get_urls, _set_default
+from pyseed.seed_client_base import _get_urls, _set_default
 
 NO_URL_ERROR = "APIClientError: No url set"
 SSL_ERROR = "APIClientError: use_ssl is true but url does not starts with https"
@@ -27,8 +27,10 @@ SERVICES_DICT = {
 
 PY3 = sys.version_info[0] == 3
 if PY3:
+    # Imports from Third Party Modules
     from unittest import mock
 else:
+    # Imports from Third Party Modules
     import mock
 
 

@@ -94,3 +94,8 @@ ENV/
 *.bak
 *.old
 .pytest_cache/
+.idea
+.vscode
+
+# Seed config files
+seed-config*.json
