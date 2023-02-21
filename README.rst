@@ -7,7 +7,7 @@ Py-SEED
 .. image:: https://badge.fury.io/py/py-seed.svg
     :target: https://pypi.python.org/pypi/py-seed/
 
-A python API client for the SEED Platform. This is an updated version of the Client. It is compatible with the latest version of the SEED Platform (>2.14.0). This client still has access to the previous format of generating a lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This lower level API is documented below under the `Low-Level Documentation`
+A python API client for the SEED Platform. This is an updated version of the Client. It is compatible with the latest version of the SEED Platform (>2.17.4). This client still has access to the previous format of generating a lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This lower level API is documented below under the `Low-Level Documentation`
 
 Documentation
 -------------
