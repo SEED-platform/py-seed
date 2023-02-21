@@ -64,11 +64,13 @@ URLS = {
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
         'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
+        'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
         # GETs with replaceable keys
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
         'progress': '/api/v3/progress/PROGRESS_KEY/',
         'properties_meters': '/api/v3/properties/PK/meters/',
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
+        'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
     },
     'v2': {
         'columns': '/api/v2/columns/',
@@ -121,7 +123,7 @@ def _replace_url_args(url, url_args):
     """Replace any custom string URL items with values in args"""
     if url_args:
         for key, value in url_args.items():
-            url = url.replace(f"{key}/", f"{value}/")
+            url = url.replace(f"/{key}/", f"/{value}/")
     return url
 
 
@@ -250,9 +252,12 @@ class SEEDBaseClient(JSONAPI):
         if error:
             if response.content:
                 try:
-                    error_msg = response.json().get(
-                        'message', f"Unknown SEED Error {response.status_code}: {response.json()}"
-                    )
+                    if getattr(response.json(), "get", None):
+                        error_msg = response.json().get(
+                            'message', f"Unknown SEED Error {response.status_code}: {response.json()}"
+                        )
+                    else:
+                        error_msg = f"Unknown SEED Error {response.status_code}: {response.json()}"
                 except ValueError:
                     error_msg = 'Unknown SEED Error: No response returned'
             if args:

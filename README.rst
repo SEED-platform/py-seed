@@ -64,9 +64,11 @@ This provides two user authentication based Python clients and two OAuth2 authen
 SEED (Standard Energy Efficiency Data Platform™) is an open source "web-based application that helps organizations easily manage data on the energy performance of large groups of buildings" funded by the United States Department of Energy.
 
 More information can be found here:
+
 * https://energy.gov/eere/buildings/standard-energy-efficiency-data-platform
-* http://seedinfo.lbl.gov/
+* https://seed-platform.org
 * https://github.com/SEED-platform
+* https://buildingdata.energy.gov/#/seed
 
 
 Note the clients do not provide per api-call methods, but does provide the standard CRUD methods: get, list, put, post, patch, delete

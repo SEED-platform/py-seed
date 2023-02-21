@@ -37,7 +37,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 # Imports from Standard Library
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 # Imports from Third Party Modules
 import json
@@ -947,6 +947,87 @@ class SeedClient(SeedClientWrapper):
                                  url_args={"PK": property_id})
         return meters
 
+    def get_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Union[dict, None]:
+        """get a meter for a property view.
+
+        Args:
+            property_view_id (int): property view id
+            meter_type (str): Type of meter, based off the enums in the SEED Meter model
+            source (str): Of GreenButton, Portfolio Manager, or Custom Meter
+            source_id (str): Identifier, if GreenButton, then format is xpath like
+
+        Returns:
+            dict: meter object
+        """
+        # return all the meters for the property and see if the meter exists, if so, return it
+        meters = self.get_meters(property_view_id)
+        for meter in meters:
+            if meter['type'] == meter_type and meter['source'] == source and meter['source_id'] == source_id:
+                return meter
+        else:
+            return None
+
+    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Optional[Dict[Any, Any]]:
+        """get or create a meter for a property view.
+
+        Args:
+            property_view_id (int): property view id
+            meter_type (str): Type of meter, based off the enums in the SEED Meter model
+            source (str): Of GreenButton, Portfolio Manager, or Custom Meter
+            source_id (str): Identifier, if GreenButton, then format is xpath like
+
+        Returns:
+            dict: meter object
+        """
+        # return all the meters for the property and see if the meter exists, if so, return it
+        meter = self.get_meter(property_view_id, meter_type, source, source_id)
+        if meter:
+            return meter
+        else:
+            # create the meter
+            payload = {
+                'type': meter_type,
+                'source': source,
+                'source_id': source_id,
+            }
+
+            meter = self.client.post(
+                endpoint='properties_meters', url_args={"PK": property_view_id}, json=payload
+            )
+
+            return meter
+
+    def delete_meter(self, property_view_id: int, meter_id: int) -> dict:
+        """Delete a meter from the property.
+
+        Args:
+            property_view_id (int): property view id
+            meter_id (int): meter id
+
+        Returns:
+            dict: status of the delete
+        """
+        return self.client.delete(
+            meter_id, endpoint='properties_meters', url_args={"PK": property_view_id}
+        )
+
+    def upsert_meter_readings_bulk(self, property_view_id: int, meter_id: int, data: list) -> dict:
+        """Upsert meter readings for a property's meter with the bulk method.
+
+        Args:
+            property_id (int): property id
+            meter_id (int): meter id
+            data (list): list of dictioanries of meter readings
+
+        Returns:
+            dict: list of all meter reading objects
+        """
+        # get the meter data for the property
+        readings = self.client.post(
+            endpoint='properties_meters_reading', url_args={"PK": property_view_id, "METER_PK": meter_id}, json=data
+        )
+        return readings
+
     def get_meter_data(self, property_id, interval: str = 'Exact', excluded_meter_ids: list = []):
         """Return the meter data from the property.
 
@@ -961,6 +1042,9 @@ class SeedClient(SeedClientWrapper):
         }
         meter_data = self.client.post(endpoint='properties_meter_usage', url_args={"PK": property_id}, json=payload)
         return meter_data
+
+    def save_meter_data(self, property_id: int, meter_id: int, meter_data) -> dict:
+        pass
 
     def start_save_data(self, import_file_id: int) -> dict:
         """start the background process to save the data file to the database.
