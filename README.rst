@@ -73,7 +73,7 @@ More information can be found here:
 
 Note the clients do not provide per api-call methods, but does provide the standard CRUD methods: get, list, put, post, patch, delete
 
-The intended use of these clients is to be futher subclassed or wrapped in functions to provide the desired functionality. The CRUD methods are provided via mixins so its possible to create a client for example without the ability to delete by subclassing SEEDUserAuthBaseClient, or SEEDOAuthBaseClient, and adding only the mixins that provided the Create, Read and Update capabilities.
+The intended use of these clients is to be further subclassed or wrapped in functions to provide the desired functionality. The CRUD methods are provided via mixins so its possible to create a client for example without the ability to delete by subclassing SEEDUserAuthBaseClient, or SEEDOAuthBaseClient, and adding only the mixins that provided the Create, Read and Update capabilities.
 
 Basic usage for the provided clients is below.
 
@@ -108,3 +108,16 @@ Changelog
 py-SEED was developed for use in the greenbuildingregistry project but has been extended for various uses, including Salesforce data transfer and SEED data analysis.
 
 For a full changelog see `CHANGELOG.rst <https://github.com/seed-platform/py-seed/blob/master/CHANGELOG.rst>`_.
+
+Releasing
+---------
+
+* Merge down to main
+* Tag release on GitHub and add in the change log 
+* Release via command line
+.. code-block:: bash
+
+    rm -rf dist
+    python setup.py sdist
+    pip install twine
+    twine upload dist/*
