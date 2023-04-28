@@ -171,6 +171,7 @@ class SeedClientTest(unittest.TestCase):
         properties = self.seed_client.search_buildings(identifier_exact=state['custom_id_1'])
         assert len(properties) == 1
 
+        params2 = {'state': state}
         result2 = self.seed_client.update_building(view_id, params=params2)
         # print(f" !!! results2 are: {result2}")
         assert result2["status"] == "success"

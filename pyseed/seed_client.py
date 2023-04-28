@@ -494,9 +494,8 @@ class SeedClient(SeedClientWrapper):
         )
         return result
 
-
     def create_building(self, params: dict) -> list:
-        """ 
+        """
         Creates a building with unique pm_property_id
         Expects params to contain a state dictionary and a cycle id
 
@@ -511,22 +510,22 @@ class SeedClient(SeedClientWrapper):
 
             if not matching_id:
                 raise Exception(
-                    f"This property does not have a pm_property_id or a custom_id_1 for matching...cannot create."
+                    "This property does not have a pm_property_id or a custom_id_1 for matching...cannot create."
                 )
 
         buildings = self.search_buildings(identifier_exact=matching_id)
 
         if len(buildings) > 0:
             raise Exception(
-                f"A property matching the provided matching ID (pm_property_id or custom_id_1) already exists."
+                "A property matching the provided matching ID (pm_property_id or custom_id_1) already exists."
             )
 
         results = self.client.post(endpoint="properties", json=params)
         return results
 
     def update_building(self, id, params: dict) -> list:
-        """ 
-        Updates a building's property_view 
+        """
+        Updates a building's property_view
         Expects id and params to contain a state dictionary
         """
         results = self.client.put(id, endpoint="properties", json=params)
