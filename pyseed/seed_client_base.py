@@ -213,7 +213,7 @@ class SEEDBaseClient(JSONAPI):
         error = False
         error_msg = 'Unknown error from SEED API'
         # OK, Created, Accepted
-        if response.status_code not in [200, 201, 202]:
+        if response.status_code not in [200, 201, 202, 204]:
             error = True
             error_msg = 'SEED returned status code: {}'.format(response.status_code)
         # SEED adds a status key to the response to indicate success/error

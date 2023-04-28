@@ -9,6 +9,15 @@ Py-SEED
 
 A python API client for the SEED Platform. This is an updated version of the Client. It is compatible with the latest version of the SEED Platform (>2.17.4). This client still has access to the previous format of generating a lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This lower level API is documented below under the `Low-Level Documentation`
 
+Stakeholders
+-------------
+
+The following list of stakeholders should be considered when making changes to this module
+
+- 179D Tax Deduction Web Application
+- Earth Advantage Green Building Registry
+- User scripts for managing building data
+
 Documentation
 -------------
 The SEED client is a read-write client. To install the client run:

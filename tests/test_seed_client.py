@@ -114,6 +114,67 @@ class SeedClientTest(unittest.TestCase):
         properties = self.seed_client.search_buildings(identifier_filter="B-1")
         assert len(properties) == 2
 
+    def test_create_update_building(self):
+        # create a new building (property, propertyState, propertyView)
+        # Update the building
+        completion_date = "02/02/2023"
+        year = '2023'
+        print(f" ORGANIZATION: {self.organization_id}")
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-api-integration-test",
+            date(int(year), 1, 1),
+            date(int(year), 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.organization_id,
+            "custom_id_1": "123456",
+            "address_line_1": "123 Testing St",
+            "city": "Beverly Hills",
+            "state": "CA",
+            "postal_code": "90210",
+            "property_name": "Test Building",
+            "property_type": None,
+            "gross_floor_area": None,
+            "conditioned_floor_area": None,
+            "occupied_floor_area": None,
+            "site_eui": None,
+            "site_eui_modeled": None,
+            "source_eui_weather_normalized": None,
+            "source_eui": None,
+            "source_eui_modeled": None,
+            "site_eui_weather_normalized": None,
+            "total_ghg_emissions": None,
+            "total_marginal_ghg_emissions": None,
+            "total_ghg_emissions_intensity": None,
+            "total_marginal_ghg_emissions_intensity": None,
+            "generation_date": None,
+            "recent_sale_date": None,
+            "release_date": None,
+            "extra_data": {
+                "pathway": "new",
+                "completion_date": completion_date
+            }
+        }
+
+        params = {'state': state, 'cycle_id': cycle["id"]}
+
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+        view_id = result["view"]["id"]
+
+        # update that property (by ID)
+        state['property_name'] = 'New Name Building'
+
+        properties = self.seed_client.search_buildings(identifier_exact=state['custom_id_1'])
+        assert len(properties) == 1
+
+        result2 = self.seed_client.update_building(view_id, params=params2)
+        # print(f" !!! results2 are: {result2}")
+        assert result2["status"] == "success"
+
     def test_add_label_to_buildings(self):
         # get seed buildings
         prop_ids = []

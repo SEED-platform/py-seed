@@ -116,7 +116,7 @@ class SeedClientWrapper(object):
                 "api_key": "1b5ea1ee220c8628789c61d66253d90398e6ad03",
                 "port": 8000,
                 "use_ssl": false,
-                "seed_org_name: "test-org"
+                "seed_org_name": "test-org"
             }
 
         Args:
@@ -493,6 +493,44 @@ class SeedClient(SeedClientWrapper):
             None, required_pk=False, endpoint=endpoint, json=payload
         )
         return result
+
+
+    def create_building(self, params: dict) -> list:
+        """ 
+        Creates a building with unique pm_property_id
+        Expects params to contain a state dictionary and a cycle id
+
+        Returns the created property_view id
+        """
+        # first try matching on pm property id
+        matching_id = params.get('state', {}).get('pm_property_id', None)
+
+        if not matching_id:
+            # then try on custom_id_1
+            matching_id = params.get('state', {}).get('custom_id_1', None)
+
+            if not matching_id:
+                raise Exception(
+                    f"This property does not have a pm_property_id or a custom_id_1 for matching...cannot create."
+                )
+
+        buildings = self.search_buildings(identifier_exact=matching_id)
+
+        if len(buildings) > 0:
+            raise Exception(
+                f"A property matching the provided matching ID (pm_property_id or custom_id_1) already exists."
+            )
+
+        results = self.client.post(endpoint="properties", json=params)
+        return results
+
+    def update_building(self, id, params: dict) -> list:
+        """ 
+        Updates a building's property_view 
+        Expects id and params to contain a state dictionary
+        """
+        results = self.client.put(id, endpoint="properties", json=params)
+        return results
 
     def get_cycles(self) -> list:
         """Return a list of all the cycles for the organization.
