@@ -277,7 +277,7 @@ class SeedClient(SeedClientWrapper):
     ) -> dict:
         if not cycle_id:
             cycle_id = self.cycle_id
-        payload = {
+        payload: Dict[str, Any] = {
             "cycle": cycle_id,
         }
         if identifier_filter is not None:
