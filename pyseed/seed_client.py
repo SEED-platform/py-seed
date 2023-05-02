@@ -273,10 +273,12 @@ class SeedClient(SeedClientWrapper):
         )
 
     def search_buildings(
-        self, identifier_filter: str = None, identifier_exact: str = None
+        self, identifier_filter: str = None, identifier_exact: str = None, cycle_id: int = None
     ) -> dict:
+        if not cycle_id:
+            cycle_id = self.cycle_id
         payload = {
-            "cycle": self.cycle_id,
+            "cycle": cycle_id,
         }
         if identifier_filter is not None:
             payload["identifier"] = identifier_filter
@@ -496,24 +498,27 @@ class SeedClient(SeedClientWrapper):
 
     def create_building(self, params: dict) -> list:
         """
-        Creates a building with unique pm_property_id
+        Creates a building with unique ID (either pm_property_id or custom_id_1 for now)
         Expects params to contain a state dictionary and a cycle id
+        Optionally pass in a cycle ID
 
         Returns the created property_view id
         """
-        # first try matching on pm property id
-        matching_id = params.get('state', {}).get('pm_property_id', None)
+        # first try matching on custom_id_1
+        matching_id = params.get('state', {}).get('custom_id_1', None)
 
         if not matching_id:
-            # then try on custom_id_1
-            matching_id = params.get('state', {}).get('custom_id_1', None)
+            # then try on pm_property_id
+            matching_id = params.get('state', {}).get('pm_property_id', None)
 
             if not matching_id:
                 raise Exception(
                     "This property does not have a pm_property_id or a custom_id_1 for matching...cannot create."
                 )
 
-        buildings = self.search_buildings(identifier_exact=matching_id)
+        cycle_id = params.get('cycle_id', None)
+        # include appropriate cycle in search (if not using the default cycle set on the class)
+        buildings = self.search_buildings(identifier_exact=matching_id, cycle_id=cycle_id)
 
         if len(buildings) > 0:
             raise Exception(
