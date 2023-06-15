@@ -220,9 +220,16 @@ class SEEDBaseClient(JSONAPI):
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
         elif isinstance(response.json(), dict):
+
             status_field = response.json().get('status', None)
+            has_progress_key = 'progress_key' in response.json().keys()
             if status_field:
-                if status_field == 'error':
+                if has_progress_key:
+                    # For the delete cycles, the data returned have a status and a progress_key,
+                    # but no progress_data. In lieu of updating SEED, this check is added
+                    # specifically for this case
+                    error = status_field not in ['not-started', 'success', 'parsing']
+                elif status_field == 'error':
                     error = True
                 elif status_field == 'success':
                     # continue
@@ -504,9 +511,10 @@ class DeleteMixin(object):
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
         response = super(DeleteMixin, self)._delete(url=url, **kwargs)
-        # delete should return 204 and no content
+        # delete should return 204 and no content, unless it is a background task
         if response.status_code != requests.codes.no_content:
             self._check_response(response, **kwargs)
+            return self._get_result(response, data_name=data_name, **kwargs)
 
 
 class SEEDReadOnlyClient(ReadMixin, UserAuthMixin, SEEDBaseClient):

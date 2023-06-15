@@ -652,7 +652,13 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict:
         """
-        return self.client.delete(cycle_id, endpoint="cycles")
+        result = self.client.delete(cycle_id, endpoint="cycles")
+        progress_key = result.get("progress_key", None)
+
+        # wait until delete is complete
+        result = self.track_progress_result(progress_key)
+
+        return result
 
     def get_or_create_dataset(self, dataset_name: str) -> dict:
         """Get or create a SEED dataset which is used to hold
