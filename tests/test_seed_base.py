@@ -94,6 +94,7 @@ class SeedBaseTest(unittest.TestCase):
         assert len(all_cycles) == cycle_count + 1
 
         # now delete the new cycle
+        all_cycles = self.seed_client.get_cycles()
         self.seed_client.delete_cycle(cycle_id)
         all_cycles = self.seed_client.get_cycles()
         assert len(all_cycles) == cycle_count
