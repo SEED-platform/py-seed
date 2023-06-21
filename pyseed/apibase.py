@@ -3,7 +3,7 @@
 copyright (c) 2016 Earth Advantage. All rights reserved.
 ..codeauthor::Paul Munday <paul@paulmunday.net>
 
-Functionality for calls to external API's"""
+Functionality for calls to external APIs"""
 
 # Imports from Third Party Modules
 import re
@@ -47,15 +47,15 @@ class BaseAPI(object):
         # pylint: disable=too-many-arguments
         """Set url,api key, auth usage, ssl usage, timeout etc.
 
-        :param url: url to use, http(s)://can be omitted, an error will
-                   will be used if it is supplied and dose not match use_ssl
-        :param: use_ssl: connect over https, defaults to true
+        :param url: url to use, http(s):// can be omitted, an error will
+                   be used if it is supplied and does not match `use_ssl`
+        :param: use_ssl: connect over https, defaults to True
         :param use_auth: use authentication
 
         ..Note:
-            if use_auth is True the default is to use http basic
+            If `use_auth` is True the default is to use http basic
             authentication if self.auth is not set. (You will need to
-            to this by overriding __init__ and setting this before
+            do this by overriding __init__ and setting this before
             calling super.
 
             This requires username and password to be supplied as
@@ -64,7 +64,7 @@ class BaseAPI(object):
 
             To use Digest Authentication set auth_method='digest'
 
-            If use_ssl is False and the url you supply starts with https
+            If `use_ssl` is False and the url you supply starts with https
             an error will be thrown.
         """
         self.timeout = timeout
@@ -80,7 +80,7 @@ class BaseAPI(object):
     def _construct_payload(self, params):
         """Construct parameters for an api call.
 .
-        :param params: An dictionary of key-value pairs to include
+        :param params: A dictionary of key-value pairs to include
             in the request.
         :return: A dictionary of k-v pairs to send to the server
             in the request.
@@ -319,7 +319,7 @@ class UserAuthMixin(object):
     def _construct_payload(self, params):
         """Construct parameters for an api call.
 .
-        :param params: An dictionary of key-value pairs to include
+        :param params: A dictionary of key-value pairs to include
             in the request.
         :return: A dictionary of k-v pairs to send to the server
             in the request.
@@ -355,8 +355,8 @@ class OAuthMixin(object):
 
     def _construct_payload(self, params):
         """Construct parameters for an api call.
-.
-        :param params: An dictionary of key-value pairs to include
+
+        :param params: A dictionary of key-value pairs to include
             in the request.
         :return: A dictionary of k-v pairs to send to the server
             in the request.

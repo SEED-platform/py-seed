@@ -149,7 +149,7 @@ class SeedBaseTest(unittest.TestCase):
         result = self.seed_client.get_column_mapping_profile('does not exist')
         assert result is None
 
-        # There should always be a portolio manager default unless the
+        # There should always be a portfolio manager default unless the
         # user removed it.
         result = self.seed_client.get_column_mapping_profile('Portfolio Manager Defaults')
         assert isinstance(result, dict)

@@ -91,7 +91,7 @@ class SeedClientWrapper(object):
         # favor the connection params over the config file
         self.payload = {}
         if connection_params:
-            # the connetion params are simply squashed on SEEDReadWriteClient init
+            # the connection params are simply squashed on SEEDReadWriteClient init
             self.payload = connection_params
         elif connection_config_filepath:
             self.payload = SeedClientWrapper.read_connection_config_file(
@@ -632,7 +632,7 @@ class SeedClient(SeedClientWrapper):
         cycle_name = str(cycle_name)
 
         # note that this picks the first one it finds, even if there are more
-        # than one cycle with the name name
+        # than one cycle with the same name
         cycle_names = [cycle["name"] for cycle in cycles]
         counts = Counter(cycle_names)
         for i_cycle_name, count in counts.items():
@@ -866,7 +866,7 @@ class SeedClient(SeedClientWrapper):
         an already existing profile if it is there.
 
         Args:
-            mapping_profile_name (str): cription_
+            mapping_profile_name (str): profile name
             mappings (list): list of mappings in the form of
                 [
                     {
@@ -959,7 +959,7 @@ class SeedClient(SeedClientWrapper):
         """Sets the column mappings onto the import file record.
 
         Args:
-            import_file_id (int): ID of the import file of interet
+            import_file_id (int): ID of the import file of interest
             mappings (list): list of column mappings in the form of the results of column mapping profiles
 
         Returns:
@@ -1054,7 +1054,7 @@ class SeedClient(SeedClientWrapper):
             meter_id (int): meter id
 
         Returns:
-            dict: status of the delete
+            dict: status of the deletion
         """
         return self.client.delete(
             meter_id, endpoint='properties_meters', url_args={"PK": property_view_id}
@@ -1064,9 +1064,9 @@ class SeedClient(SeedClientWrapper):
         """Upsert meter readings for a property's meter with the bulk method.
 
         Args:
-            property_id (int): property id
+            property_view_id (int): property view id
             meter_id (int): meter id
-            data (list): list of dictioanries of meter readings
+            data (list): list of dictionaries of meter readings
 
         Returns:
             dict: list of all meter reading objects
@@ -1226,7 +1226,7 @@ class SeedClient(SeedClientWrapper):
     def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
         """Reuse an import file to create all the meter entries. This method is used
         for ESPM related data files. The result will be another import_file ID for the
-        meters that will then need to be "resaved". Note that the returning import_file_id
+        meters that will then need to be "re-saved". Note that the returning import_file_id
         is not the same as the argument import file.
 
         Args:
