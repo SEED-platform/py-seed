@@ -24,9 +24,9 @@ from pyseed.seed_client_base import (
 
 # Constants
 URLS = {
-    'test1': 'api/v2/test',
-    'test2': 'api/v2/test2',
-    'test3': 'api/v2/test3',
+    'test1': 'api/v3/test',
+    'test2': 'api/v3/test2',
+    'test3': 'api/v3/test3',
 }
 
 CONFIG_DICT = {
@@ -135,13 +135,13 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         """
         Ensure errors are correctly reported.
 
-        SEEDError should show the calling method where the error occured.
+        SEEDError should show the calling method where the error occurred.
         It uses the inspect module to get the calling method from the stack.
 
         Error called in _check_response(), this also tests that method
         as well as _raise_error().
         """
-        url = 'http://example.org/api/v2/test/'
+        url = 'http://example.org/api/v3/test/'
         # Old SEED Style 200 (sic) with error message
         mock_requests.get.return_value = get_mock_response(
             data="No llama!", error=True
@@ -252,7 +252,7 @@ class MixinTests(unittest.TestCase):
 
     def test_delete(self, mock_requests):
         # pylint:disable=no-member
-        url = 'https://example.org:1337/api/v2/test/1/'
+        url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.delete.return_value = get_mock_response(
             status_code=requests.codes.no_content
         )
@@ -261,21 +261,21 @@ class MixinTests(unittest.TestCase):
         mock_requests.delete.assert_called_with(url, **self.call_dict)
 
     def test_get(self, mock_requests):
-        url = 'https://example.org:1337/api/v2/test/1/'
+        url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint='test1')
         self.assertEqual('Llama!', result)
         mock_requests.get.assert_called_with(url, **self.call_dict)
 
     def test_list(self, mock_requests):
-        url = 'https://example.org:1337/api/v2/test/'
+        url = 'https://example.org:1337/api/v3/test/'
         mock_requests.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint='test1')
         self.assertEqual(['Llama!'], result)
         mock_requests.get.assert_called_with(url, **self.call_dict)
 
     def test_patch(self, mock_requests):
-        url = 'https://example.org:1337/api/v2/test/1/'
+        url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.patch.return_value = get_mock_response(data="Llama!")
         result = self.client.patch(1, endpoint='test1', foo='bar', json={'more': 'data'})
         self.assertEqual('Llama!', result)
@@ -292,7 +292,7 @@ class MixinTests(unittest.TestCase):
         mock_requests.patch.assert_called_with(url, **expected)
 
     def test_put(self, mock_requests):
-        url = 'https://example.org:1337/api/v2/test/1/'
+        url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.put.return_value = get_mock_response(data="Llama!")
         result = self.client.put(1, endpoint='test1', foo='bar', json={'more': 'data'})
         self.assertEqual('Llama!', result)
@@ -309,7 +309,7 @@ class MixinTests(unittest.TestCase):
         mock_requests.put.assert_called_with(url, **expected)
 
     def test_post(self, mock_requests):
-        url = 'https://example.org:1337/api/v2/test/'
+        url = 'https://example.org:1337/api/v3/test/'
         mock_requests.post.return_value = get_mock_response(data="Llama!")
         result = self.client.post(endpoint='test1', json={'foo': 'bar', 'not_org': 1})
         self.assertEqual('Llama!', result)
@@ -347,13 +347,13 @@ class SEEDReadWriteClientTests(unittest.TestCase):
         }
 
     def test_get(self, mock_requests):
-        # url = 'https://example.org:1337/api/v2/test/1/'
+        # url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint='test1')
         self.assertEqual('Llama!', result)
 
     def test_list(self, mock_requests):
-        # url = 'https://example.org:1337/api/v2/test/'
+        # url = 'https://example.org:1337/api/v3/test/'
         mock_requests.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint='test1')
         self.assertEqual(['Llama!'], result)

@@ -64,31 +64,13 @@ URLS = {
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
         'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
-        'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
         # GETs with replaceable keys
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
         'progress': '/api/v3/progress/PROGRESS_KEY/',
         'properties_meters': '/api/v3/properties/PK/meters/',
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
+        # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
-    },
-    'v2': {
-        'columns': '/api/v2/columns/',
-        'column_mappings': '/api/v2/column_mappings/',
-        'cycles': '/api/v2/cycles/',
-        'datasets': '/api/v2/datasets/',
-        'gbr_properties': '/api/v2/gbr_properties/',
-        'green_assessment': '/api/v2/green_assessments/',
-        'green_assessment_property': '/api/v2/green_assessment_properties/',
-        'green_assessment_url': '/api/v2/green_assessment_urls/',
-        'labels': '/api/v2/labels/',
-        'import_files': '/api/v2/import_files/',
-        'projects': '/api/v2/projects/',
-        'properties': '/api/v2/properties/',
-        'property_states': '/api/v2/property_states/',
-        'property_views': '/api/v2/property_views/',
-        'taxlots': '/api/v2/taxlots/',
-        'users': '/api/v2/users/',
     }
 }
 
@@ -141,14 +123,14 @@ class SEEDBaseClient(JSONAPI):
     can inherit from them directly and overwrite methods/use mixins as
     appropriate.
 
-    endpoint refers to the endpoint name. This allow you to call an
+    endpoint refers to the endpoint name. This allows you to call an
     endpoint without having to know the full url.
 
     Endpoint names are set in config, and can be accessed as self.endpoints.
 
     data_name is set as an attribute on the view called.
     This constrains the actual response data.
-    If not set it is derived from the url (typically its the view name).
+    If not set it is derived from the url (typically it's the view name).
     In either case 'data' is used as a fallback, then detail.
 
     This is an annoyance, but SEED adds an unnecessary 'status'
@@ -162,7 +144,7 @@ class SEEDBaseClient(JSONAPI):
     :type username: string (email address)
     :param api_key: api_key of use who can access records
     :type api_key: string
-    :param endpoint: seed endpoint e.g properties for /api/v2/properties/
+    :param endpoint: seed endpoint e.g. properties for /api/v3/properties/
     :type endpoint: string
     :param data_name: name of json key in api results containing data
                       not always needed
@@ -207,7 +189,7 @@ class SEEDBaseClient(JSONAPI):
         """Verify we have got a response without any errors.
 
         *Never* call this directly in your methods,
-        *Always use self._get() etc, otherwise errors will not
+        *Always use self._get() etc., otherwise errors will not
         be reported correctly.
         """
         error = False
@@ -315,14 +297,14 @@ class SEEDBaseClient(JSONAPI):
         """
         Raise SEEDError on bad response.
 
-        This method is intended for use only by self_get() etc and the methods
+        This method is intended for use only by self_get(), etc., and the methods
         called there. For most purposes you should raise SEEDError directly.
 
         This method uses the inspect module to derive the method name.
         stack_pos indicates where in the stack to find this: it corresponds
         to the depth of function calls.
 
-        Thus if the error occurs directly in the function calling _raise_error
+        Thus, if the error occurs directly in the function calling _raise_error
         stack_pos=0, if that function is called by another function add 1 etc.
         Note technically *this* method (_raise_error) is at the bottom of the
         stack, but we add 1 to stack_pos so counting starts at the method
