@@ -38,7 +38,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Imports from Standard Library
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
-
+from csv import DictReader
 # Imports from Third Party Modules
 import json
 import logging
@@ -971,6 +971,95 @@ class SeedClient(SeedClientWrapper):
             params={"import_file_id": import_file_id},
             json={"mappings": mappings},
         )
+
+    def get_columns(self) -> dict:
+        """get the list of columns.
+
+        Returns:
+            dict: {
+                    "status": "success",
+                    "columns: [{...}]
+                  }
+        """
+        result = self.client.list(endpoint="columns")
+        return result
+
+    def create_extra_data_column(self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str) -> dict:
+        """ create an extra data column. If column exists, skip
+        Args:
+            'column_name': 'project_type',
+            'display_name': 'Project Type',
+            'inventory_type': 'Property' or 'Taxlot',
+            'column_description': 'Project Type (New or Retrofit)',
+            'data_type': 'string',
+
+        Returns:
+            dict:{
+                    "status": "success",
+                    "column": {
+                      "id": 151,
+                      "name": "project_type_151",
+                        ...
+                    }
+                  }
+        """
+
+        # get extra data columns (only)
+        result = self.client.list(endpoint="columns")
+        columns = result['columns']
+        extra_data_cols = [item for item in columns if item['is_extra_data']]
+
+        # see if extra data column already exists (for now don't update it, just skip it)
+        res = list(filter(lambda extra_data_cols: extra_data_cols['column_name'] == column_name, extra_data_cols))
+        if res:
+            # column already exists
+            result = {"status": "noop", "message": "column already exists"}
+        else:
+            # create
+            payload = {
+                "column_name": column_name,
+                "display_name": display_name,
+                "table_name": "PropertyState" if inventory_type == "Property" else "TaxlotState",
+                "column_description": column_description,
+                "data_type": data_type,
+                "organization_id": self.get_org_id()
+            }
+            result = self.client.post(endpoint="columns", json=payload)
+
+        return result
+
+
+    def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> dict:
+        """ create extra data columns from a csv file. if column exist, skip.
+        Args:
+            'columns_csv_filepath': 'path/to/file'
+            file is expected to have headers: column_name, display_name, column_description,
+            inventory_type (Property or Taxlot), and data_type (SEED column data_types)
+
+            See example file at tests/data/test-seed-create-columns.csv
+
+        Returns:
+            list:[{
+                    "status": "success",
+                    "column": {
+                      "id": 151,
+                      "name": "project_type_151",
+                        ...
+                    }
+                  }]
+        """
+        # open file in read mode
+        with open(columns_csv_filepath, 'r') as f:
+            dict_reader = DictReader(f)
+            columns = list(dict_reader)
+
+        results = []
+        for col in columns:
+            result = self.create_extra_data_column(**col)
+            results.append(result)
+
+        return results
+
 
     def get_meters(self, property_id: int) -> list:
         """Return the list of meters assigned to a property (the property view id).

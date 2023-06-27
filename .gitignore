@@ -99,3 +99,5 @@ ENV/
 
 # Seed config files
 seed-config*.json
+
+*.DS_Store
