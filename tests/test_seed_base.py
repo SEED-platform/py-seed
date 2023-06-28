@@ -144,11 +144,11 @@ class SeedBaseTest(unittest.TestCase):
 
     def test_create_column(self):
         result = self.seed_client.create_extra_data_column(
-                    column_name='test_col',
-                    display_name='A Test Column',
-                    inventory_type="Property",
-                    column_description="this is a test column",
-                    data_type="string")
+            column_name='test_col',
+            display_name='A Test Column',
+            inventory_type="Property",
+            column_description="this is a test column",
+            data_type="string")
 
         assert result['status'] == 'success'
         assert 'id' in result['column']
