@@ -1029,7 +1029,7 @@ class SeedClient(SeedClientWrapper):
 
         return result
 
-    def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> dict:
+    def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> list:
         """ create extra data columns from a csv file. if column exist, skip.
         Args:
             'columns_csv_filepath': 'path/to/file'
