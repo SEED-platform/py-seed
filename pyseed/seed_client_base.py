@@ -194,13 +194,16 @@ class SEEDBaseClient(JSONAPI):
         """
         error = False
         error_msg = 'Unknown error from SEED API'
-        # OK, Created, Accepted
+        # OK, Created, Accepted, No-Content
         if response.status_code not in [200, 201, 202, 204]:
             error = True
             error_msg = 'SEED returned status code: {}'.format(response.status_code)
         # SEED adds a status key to the response to indicate success/error
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
+        elif response.status_code == 204:
+            # there will not be response content with a 204
+            error = False
         elif isinstance(response.json(), dict):
 
             status_field = response.json().get('status', None)
@@ -258,6 +261,7 @@ class SEEDBaseClient(JSONAPI):
         tries to determine what the first element of the resulting JSON is which is then used as
         the base for the rest of the response. This is not always desired, so pass data_name='all' if
         you want to get the entire response back."""
+
         if not data_name:
             url = response.request.url
             # take the last part of the url unless it's a digit
@@ -268,7 +272,12 @@ class SEEDBaseClient(JSONAPI):
             else:
                 data_name = durl[1]
         # actual results should be under data_name or the fallbacks
-        result = response.json()
+        # handle a 204
+        result = None
+        if response.status_code == 204:
+            result = {'status': 'success'}
+        else:
+            result = response.json()
         if result is None:
             error_msg = 'No results returned'
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
