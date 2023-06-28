@@ -38,12 +38,13 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Imports from Standard Library
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
-from csv import DictReader
+
 # Imports from Third Party Modules
 import json
 import logging
 import time
 from collections import Counter
+from csv import DictReader
 from datetime import date
 from pathlib import Path
 from urllib.parse import _NetlocResultMixinStr
@@ -1028,7 +1029,6 @@ class SeedClient(SeedClientWrapper):
 
         return result
 
-
     def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> dict:
         """ create extra data columns from a csv file. if column exist, skip.
         Args:
@@ -1059,7 +1059,6 @@ class SeedClient(SeedClientWrapper):
             results.append(result)
 
         return results
-
 
     def get_meters(self, property_id: int) -> list:
         """Return the list of meters assigned to a property (the property view id).
