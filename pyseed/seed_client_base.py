@@ -48,6 +48,9 @@ URLS = {
         'import_files': '/api/v3/import_files/',
         'import_files_reuse_inventory_file_for_meters': '/api/v3/import_files/reuse_inventory_file_for_meters/',
         'organizations': '/api/v3/organizations/',
+        'portfolio_manager_template_list': '/api/v3/portfolio_manager/template_list/',
+        'portfolio_manager_report': '/api/v3/portfolio_manager/report/',
+        'portfolio_manager_update_report': '/api/v3/portfolio_manager/update_report',
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
         'properties_search': '/api/v3/properties/search/',
@@ -194,6 +197,7 @@ class SEEDBaseClient(JSONAPI):
         """
         error = False
         error_msg = 'Unknown error from SEED API'
+
         # OK, Created, Accepted, No-Content
         if response.status_code not in [200, 201, 202, 204]:
             error = True
@@ -203,6 +207,9 @@ class SEEDBaseClient(JSONAPI):
         # error, but they are not always set correctly.
         elif response.status_code == 204:
             # there will not be response content with a 204
+            error = False
+        elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response.headers.get('Content-Type', ''):
+            # spreadsheet response
             error = False
         elif isinstance(response.json(), dict):
 
@@ -261,6 +268,10 @@ class SEEDBaseClient(JSONAPI):
         tries to determine what the first element of the resulting JSON is which is then used as
         the base for the rest of the response. This is not always desired, so pass data_name='all' if
         you want to get the entire response back."""
+
+        # pass through for spreadsheet (?)
+        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response.headers.get('Content-Type', ''):
+            return response.content
 
         if not data_name:
             url = response.request.url

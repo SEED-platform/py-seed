@@ -1411,3 +1411,75 @@ class SeedClient(SeedClientWrapper):
             result = self.track_progress_result(progress_key)
 
         return matching_results
+
+    def retrieve_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], report_format: str = 'XML') -> dict:
+        """ Connect to portfolio manager, then retrieve all by template """
+
+        # get templates list
+        result = self.client.post(
+            "portfolio_manager_template_list",
+            json={"username": username, "password": password}
+        )
+        if result['status'] != 'success':
+            # return error now
+            return result
+
+        # template list
+        templates = result['templates']
+
+        # check if template name or ID was given
+        match = None
+        if isinstance(template, int):
+            # look up by number
+            match = next((item for item in templates if item["id"] == template), None)
+        else:
+            # look up by name
+            match = next((item for item in templates if item["name"] == template), None)
+
+        if match is None:
+            return {"status": "error", "message": "unable to retrieve template"}
+
+        # now get data (this function wants a full template object)
+        response = self.client.post(
+            "portfolio_manager_report",
+            json={"username": username, "password": password, "template": match, "report_format": report_format}
+        )
+        return response
+
+    def update_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], start_month: int, start_year: int, end_month: int, end_year: int, property_ids: list):
+        """ Update portfolio manager report template programmatically """
+        # get templates list
+        result = self.client.post(
+            "portfolio_manager_template_list",
+            json={"username": username, "password": password}
+        )
+        if result['status'] != 'success':
+            # return error now
+            return result
+
+        # template list
+        templates = result['templates']
+
+        # check if template name or ID was given
+        match = None
+        if isinstance(template, int):
+            # look up by number
+            match = next((item for item in templates if item["id"] == template), None)
+        else:
+            # look up by name
+            match = next((item for item in templates if item["name"] == template), None)
+
+        if match is None:
+            return {"status": "error", "message": "unable to retrieve template"}
+
+        return self.client.post(
+            "portfolio_manager_update_report",
+            json={"username": username,
+                  "password": password,
+                  "template": match,
+                  "start_month": start_month,
+                  "start_year": start_year,
+                  "end_month": end_month,
+                  "end_year": end_year
+                  }
+        )
