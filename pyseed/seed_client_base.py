@@ -67,11 +67,14 @@ URLS = {
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
         'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
+        # PUTs with replaceable keys:
+        'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
         # GETs with replaceable keys
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
         'progress': '/api/v3/progress/PROGRESS_KEY/',
         'properties_meters': '/api/v3/properties/PK/meters/',
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
+        'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
         # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
     }
@@ -198,6 +201,9 @@ class SEEDBaseClient(JSONAPI):
         error = False
         error_msg = 'Unknown error from SEED API'
 
+        # grab the response content type to determine json, spreadsheet, or text
+        response_content_types = response.headers.get('Content-Type', [])
+
         # OK, Created, Accepted, No-Content
         if response.status_code not in [200, 201, 202, 204]:
             error = True
@@ -208,11 +214,14 @@ class SEEDBaseClient(JSONAPI):
         elif response.status_code == 204:
             # there will not be response content with a 204
             error = False
-        elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response.headers.get('Content-Type', ''):
+        elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
             # spreadsheet response
             error = False
+        elif 'application/json' not in response_content_types:
+            # get as text
+            if not response.content:
+                error = True
         elif isinstance(response.json(), dict):
-
             status_field = response.json().get('status', None)
             has_progress_key = 'progress_key' in response.json().keys()
             if status_field:
@@ -269,10 +278,14 @@ class SEEDBaseClient(JSONAPI):
         the base for the rest of the response. This is not always desired, so pass data_name='all' if
         you want to get the entire response back."""
 
-        # pass through for spreadsheet (?)
-        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response.headers.get('Content-Type', ''):
-            return response.content
+        # grab the response content type to determine json, spreadsheet, or text
+        response_content_types = response.headers.get('Content-Type', [])
 
+        # pass through for spreadsheet (?)
+        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
+            return response.content
+        if 'application/json' not in response_content_types:
+            return {'status': 'success', 'content': response.content}
         if not data_name:
             url = response.request.url
             # take the last part of the url unless it's a digit

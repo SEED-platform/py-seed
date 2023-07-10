@@ -1412,6 +1412,37 @@ class SeedClient(SeedClientWrapper):
 
         return matching_results
 
+    def retrieve_at_building_and_update(self, audit_template_building_id, cycle_id, seed_id) -> dict:
+        """ Connect to audit template and retrieve audit XML by building ID """
+
+        # api/v3/audit_template/pk/get_building_xml
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_building_xml",
+            url_args={"PK": audit_template_building_id}
+        )
+
+        if response['status'] == 'success':
+            # now post to api/v3/properties/PK/update_with_buildingsync
+            xml_file = response['content']
+            filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+            files = [
+                ('file', (filename, xml_file)),
+                ('file_type', (None, 1))
+            ]
+
+            response = self.client.put(
+                None,
+                required_pk=False,
+                endpoint="properties_update_with_buildingsync",
+                url_args={"PK": seed_id},
+                files=files,
+                cycle_id=cycle_id
+            )
+
+        return response
+
     def retrieve_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], report_format: str = 'XML') -> dict:
         """ Connect to portfolio manager, then retrieve all by template """
 
