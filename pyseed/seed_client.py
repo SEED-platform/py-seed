@@ -1445,6 +1445,9 @@ class SeedClient(SeedClientWrapper):
 
     def retrieve_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], report_format: str = 'XML') -> dict:
         """ Connect to portfolio manager, then retrieve all by template """
+        # TODO: modify this to pull down the  building.xlsx file from this api resource:
+        # https://portfoliomanager.energystar.gov/pm/property/6455440/download/6455440.xml
+        # this will need to be added to SEED
 
         # get templates list
         result = self.client.post(
@@ -1477,40 +1480,52 @@ class SeedClient(SeedClientWrapper):
         )
         return response
 
-    def update_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], start_month: int, start_year: int, end_month: int, end_year: int, property_ids: list):
-        """ Update portfolio manager report template programmatically """
-        # get templates list
-        result = self.client.post(
-            "portfolio_manager_template_list",
-            json={"username": username, "password": password}
-        )
-        if result['status'] != 'success':
-            # return error now
-            return result
+    def import_portfolio_manager_data(self, file, seed_id: int) -> dict:
+        """ Import the downloaded xlsx file into SEED on a specific propertyID
+            File was downloaded from the retrieve_portfolio_manager_report method above
+            seed_id is the property view ID to update with the ESPM file
+            ESPM file will have meter data that we want to handle (electricity and natural gas)
+            in the 'Meter Entries' tab
+        """
+        # todo
+        response = None
+        return response
 
-        # template list
-        templates = result['templates']
+    # TODO: delete the below...no longer needed
+    # def update_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], start_month: int, start_year: int, end_month: int, end_year: int, property_ids: list):
+    #     """ Update portfolio manager report template programmatically """
+    #     # get templates list
+    #     result = self.client.post(
+    #         "portfolio_manager_template_list",
+    #         json={"username": username, "password": password}
+    #     )
+    #     if result['status'] != 'success':
+    #         # return error now
+    #         return result
 
-        # check if template name or ID was given
-        match = None
-        if isinstance(template, int):
-            # look up by number
-            match = next((item for item in templates if item["id"] == template), None)
-        else:
-            # look up by name
-            match = next((item for item in templates if item["name"] == template), None)
+    #     # template list
+    #     templates = result['templates']
 
-        if match is None:
-            return {"status": "error", "message": "unable to retrieve template"}
+    #     # check if template name or ID was given
+    #     match = None
+    #     if isinstance(template, int):
+    #         # look up by number
+    #         match = next((item for item in templates if item["id"] == template), None)
+    #     else:
+    #         # look up by name
+    #         match = next((item for item in templates if item["name"] == template), None)
 
-        return self.client.post(
-            "portfolio_manager_update_report",
-            json={"username": username,
-                  "password": password,
-                  "template": match,
-                  "start_month": start_month,
-                  "start_year": start_year,
-                  "end_month": end_month,
-                  "end_year": end_year
-                  }
-        )
+    #     if match is None:
+    #         return {"status": "error", "message": "unable to retrieve template"}
+
+    #     return self.client.post(
+    #         "portfolio_manager_update_report",
+    #         json={"username": username,
+    #               "password": password,
+    #               "template": match,
+    #               "start_month": start_month,
+    #               "start_year": start_year,
+    #               "end_month": end_month,
+    #               "end_year": end_year
+    #               }
+    #     )
