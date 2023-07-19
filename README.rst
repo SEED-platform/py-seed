@@ -15,7 +15,7 @@ The SEED client is a read-write client. To install the client run:
 
 .. code-block:: bash
 
-    pip install pyseed
+    pip install py-seed
 
 Within Python you can use the client like this:
 
