@@ -95,7 +95,7 @@ def get_mock_response(data=None, data_name='data', error=False,
     mock_response.status_code = status_code
     mock_response.request = mock_request
     mock_response.headers = {'Content-Type': 'application/json'}
-    
+
     # SEED old style
     if content:
         if error:
@@ -310,7 +310,7 @@ class MixinTests(unittest.TestCase):
         url = 'https://example.org:1337/api/v3/test/'
         mock_requests.post.return_value = get_mock_response(data="Llama!")
         result = self.client.post(endpoint='test1', json={'foo': 'bar', 'not_org': 1})
-        self.assertEqual('Llama!',result)
+        self.assertEqual('Llama!', result)
         expected = {
             'headers': {'Authorization': 'Bearer dfghjk'},
             'params': {

@@ -341,5 +341,9 @@ class SeedClientTest(unittest.TestCase):
                 save_file_name=save_file
             )
 
-        self.assertEqual(str(excpt.exception),
-                         f'Save filename already exists, save to a new file name: {str(save_file)}')
+        self.assertEqual(
+            str(excpt.exception),
+            f'Save filename already exists, save to a new file name: {str(save_file)}'
+        )
+
+    # def test_download_espm_property_and_upload(self):
