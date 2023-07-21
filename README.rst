@@ -97,11 +97,9 @@ Usage:
     # get a single property
     seed_client.get(property_pk, endpoint='properties')
 
-
-
 License
 -------
-py-SEED is released under the terms of the MIT license. Full details in LICENSE file.
+Full details in LICENSE file.
 
 Changelog
 ---------

@@ -1,4 +1,7 @@
-# from __future__ import division
+"""
+SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/seed-platform/py-seed/main/LICENSE
+"""
 
 # Imports from Third Party Modules
 import csv
