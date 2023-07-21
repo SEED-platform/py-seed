@@ -1,0 +1,26 @@
+{
+    "version": "0.2",
+    "ignorePaths": [],
+    "dictionaryDefinitions": [],
+    "dictionaries": [],
+    "words": [
+        "apibase",
+        "buildingsync",
+        "codeauthor",
+        "dname",
+        "durl",
+        "ESPM",
+        "geocoded",
+        "JSONAPI",
+        "Munday",
+        "officedocument",
+        "openxmlformats",
+        "pyseed",
+        "seedrecords",
+        "spreadsheetml",
+        "taxlot",
+        "taxlots"
+    ],
+    "ignoreWords": [],
+    "import": []
+}
