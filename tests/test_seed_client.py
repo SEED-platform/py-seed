@@ -4,6 +4,7 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
 # Imports from Third Party Modules
+import os
 import pytest
 import unittest
 from datetime import date
@@ -314,9 +315,31 @@ class SeedClientTest(unittest.TestCase):
         meter_data = self.seed_client.get_meter_data(building[0]["id"])
         assert len(meter_data['readings']) == 24
 
-    # def test_get_buildings_with_labels(self):
-    #     buildings = self.seed_client.get_view_ids_with_label(['In Violation', 'Compliant', 'Email'])
-    #     for building in buildings:
-    #         print(building)
+    def test_download_espm_property(self):
+        # For testing, read in the ESPM username and password from
+        # environment variables.
 
-    #     assert len(buildings) == 3
+        save_file = self.output_dir / "espm_test_22178850.xlsx"
+        if save_file.exists():
+            save_file.unlink()
+
+        self.seed_client.retrieve_portfolio_manager_property(
+            username=os.environ.get('SEED_PM_UN'),
+            password=os.environ.get('SEED_PM_PW'),
+            pm_property_id=22178850,
+            save_file_name=save_file
+        )
+
+        self.assertTrue(save_file.exists())
+
+        # redownload and show an error
+        with self.assertRaises(Exception) as excpt:
+            self.seed_client.retrieve_portfolio_manager_property(
+                username=os.environ.get('SEED_PM_UN'),
+                password=os.environ.get('SEED_PM_PW'),
+                pm_property_id=22178850,
+                save_file_name=save_file
+            )
+
+        self.assertEqual(str(excpt.exception),
+                         f'Save filename already exists, save to a new file name: {str(save_file)}')

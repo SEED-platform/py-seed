@@ -48,9 +48,6 @@ URLS = {
         'import_files': '/api/v3/import_files/',
         'import_files_reuse_inventory_file_for_meters': '/api/v3/import_files/reuse_inventory_file_for_meters/',
         'organizations': '/api/v3/organizations/',
-        'portfolio_manager_template_list': '/api/v3/portfolio_manager/template_list/',
-        'portfolio_manager_report': '/api/v3/portfolio_manager/report/',
-        'portfolio_manager_update_report': '/api/v3/portfolio_manager/update_report',
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
         'properties_search': '/api/v3/properties/search/',
@@ -67,6 +64,7 @@ URLS = {
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
         'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
+        'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
         # PUTs with replaceable keys:
         'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
         # GETs with replaceable keys

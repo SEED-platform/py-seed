@@ -260,21 +260,21 @@ class MixinTests(unittest.TestCase):
         url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint='test1')
-        self.assertEqual('Llama!', result)
+        self.assertEqual('Llama!', json.loads(result['content'])['data'])
         mock_requests.get.assert_called_with(url, **self.call_dict)
 
     def test_list(self, mock_requests):
         url = 'https://example.org:1337/api/v3/test/'
         mock_requests.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint='test1')
-        self.assertEqual(['Llama!'], result)
+        self.assertEqual(['Llama!'], json.loads(result['content'])['data'])
         mock_requests.get.assert_called_with(url, **self.call_dict)
 
     def test_patch(self, mock_requests):
         url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.patch.return_value = get_mock_response(data="Llama!")
         result = self.client.patch(1, endpoint='test1', foo='bar', json={'more': 'data'})
-        self.assertEqual('Llama!', result)
+        self.assertEqual('Llama!', json.loads(result['content'])['data'])
 
         expected = {
             'headers': {'Authorization': 'Bearer dfghjk'},
@@ -291,7 +291,7 @@ class MixinTests(unittest.TestCase):
         url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.put.return_value = get_mock_response(data="Llama!")
         result = self.client.put(1, endpoint='test1', foo='bar', json={'more': 'data'})
-        self.assertEqual('Llama!', result)
+        self.assertEqual('Llama!', json.loads(result['content'])['data'])
 
         expected = {
             'headers': {'Authorization': 'Bearer dfghjk'},
@@ -308,7 +308,7 @@ class MixinTests(unittest.TestCase):
         url = 'https://example.org:1337/api/v3/test/'
         mock_requests.post.return_value = get_mock_response(data="Llama!")
         result = self.client.post(endpoint='test1', json={'foo': 'bar', 'not_org': 1})
-        self.assertEqual('Llama!', result)
+        self.assertEqual('Llama!', json.loads(result['content'])['data'])
 
         expected = {
             'headers': {'Authorization': 'Bearer dfghjk'},

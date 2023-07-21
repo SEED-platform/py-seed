@@ -182,7 +182,6 @@ class SeedClient(SeedClientWrapper):
     def get_buildings(self) -> List[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
-        # print(f" total: {total_qry}")
         # step through each page of the results
         buildings: List[dict] = []
         for i in range(1, total_qry['num_pages'] + 1):
@@ -1380,8 +1379,17 @@ class SeedClient(SeedClientWrapper):
 
         return matching_results
 
-    def retrieve_at_building_and_update(self, audit_template_building_id, cycle_id, seed_id) -> dict:
-        """ Connect to audit template and retrieve audit XML by building ID """
+    def retrieve_at_building_and_update(self, audit_template_building_id: int, cycle_id: int, seed_id: int) -> dict:
+        """Connect to audit template and retrieve audit XML by building ID
+
+        Args:
+            audit_template_building_id (int): ID of the building in the audit template
+            cycle_id (int): Cycle ID in SEED
+            seed_id (int): PropertyView ID in SEED
+
+        Returns:
+            dict: Response from the SEED API
+        """
 
         # api/v3/audit_template/pk/get_building_xml
         response = self.client.get(
@@ -1411,89 +1419,43 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
-    def retrieve_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], report_format: str = 'XML') -> dict:
-        """ Connect to portfolio manager, then retrieve all by template """
-        # TODO: modify this to pull down the  building.xlsx file from this api resource:
-        # https://portfoliomanager.energystar.gov/pm/property/6455440/download/6455440.xml
-        # this will need to be added to SEED
+    def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> bool:
+        """Connect to portfolio manager and download an individual properties data in Excel format
 
-        # get templates list
-        result = self.client.post(
-            "portfolio_manager_template_list",
-            json={"username": username, "password": password}
-        )
-        if result['status'] != 'success':
-            # return error now
-            return result
+        Args:
+            username (str): ESPM login username
+            password (str): ESPM password
+            pm_property_id (int): ESPM ID of the property to download
+            save_file_name (Path): Location to save the file, preferably an absolute path
 
-        # template list
-        templates = result['templates']
+        Returns:
+            bool: Did the file download?
+        """
+        if save_file_name.exists():
+            raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
 
-        # check if template name or ID was given
-        match = None
-        if isinstance(template, int):
-            # look up by number
-            match = next((item for item in templates if item["id"] == template), None)
-        else:
-            # look up by name
-            match = next((item for item in templates if item["name"] == template), None)
-
-        if match is None:
-            return {"status": "error", "message": "unable to retrieve template"}
-
-        # now get data (this function wants a full template object)
         response = self.client.post(
-            "portfolio_manager_report",
-            json={"username": username, "password": password, "template": match, "report_format": report_format}
+            "portfolio_manager_property_download",
+            json={"username": username, "password": password},
+            url_args={"PK": pm_property_id}
         )
-        return response
+
+        # save the file to the location that was passed
+        # note that the data are returned directly (the ESPM URL directly downloads the file)
+        if isinstance(response, bytes):
+            with open(save_file_name, 'wb') as f:
+                f.write(response)
+
+            return True
+        else:
+            return False
 
     def import_portfolio_manager_data(self, file, seed_id: int) -> dict:
-        """ Import the downloaded xlsx file into SEED on a specific propertyID
-            File was downloaded from the retrieve_portfolio_manager_report method above
-            seed_id is the property view ID to update with the ESPM file
-            ESPM file will have meter data that we want to handle (electricity and natural gas)
-            in the 'Meter Entries' tab
-        """
+        """Import the downloaded xlsx file into SEED on a specific propertyID
+        File was downloaded from the retrieve_portfolio_manager_report method above
+        seed_id is the property view ID to update with the ESPM file
+        ESPM file will have meter data that we want to handle (electricity and natural gas)
+        in the 'Meter Entries' tab"""
         # todo
         response = None
         return response
-
-    # TODO: delete the below...no longer needed
-    # def update_portfolio_manager_report(self, username: str, password: str, template: Union[str, int], start_month: int, start_year: int, end_month: int, end_year: int, property_ids: list):
-    #     """ Update portfolio manager report template programmatically """
-    #     # get templates list
-    #     result = self.client.post(
-    #         "portfolio_manager_template_list",
-    #         json={"username": username, "password": password}
-    #     )
-    #     if result['status'] != 'success':
-    #         # return error now
-    #         return result
-
-    #     # template list
-    #     templates = result['templates']
-
-    #     # check if template name or ID was given
-    #     match = None
-    #     if isinstance(template, int):
-    #         # look up by number
-    #         match = next((item for item in templates if item["id"] == template), None)
-    #     else:
-    #         # look up by name
-    #         match = next((item for item in templates if item["name"] == template), None)
-
-    #     if match is None:
-    #         return {"status": "error", "message": "unable to retrieve template"}
-
-    #     return self.client.post(
-    #         "portfolio_manager_update_report",
-    #         json={"username": username,
-    #               "password": password,
-    #               "template": match,
-    #               "start_month": start_month,
-    #               "start_year": start_year,
-    #               "end_month": end_month,
-    #               "end_year": end_year
-    #               }
-    #     )
