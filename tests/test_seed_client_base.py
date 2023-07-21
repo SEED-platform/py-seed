@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-# encoding: utf-8
 """
-copyright (c) 2016  Earth Advantage.
-All rights reserved
-
-Tests for SEEDClient
+SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
 # Imports from Third Party Modules
