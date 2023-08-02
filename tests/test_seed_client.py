@@ -346,4 +346,39 @@ class SeedClientTest(unittest.TestCase):
             f'Save filename already exists, save to a new file name: {str(save_file)}'
         )
 
-    # def test_download_espm_property_and_upload(self):
+    def test_upload_espm_property_to_seed(self):
+
+        file = Path("tests/data/portfolio-manager-single-22482007.xlsx")
+
+        # need a building
+        buildings = self.seed_client.get_buildings()
+        building = None
+        if buildings:
+            building = buildings[0]
+        self.assertTrue(building)
+
+        # need a column mapping profile
+        mapping_file = Path("tests/data/test-seed-data-mappings.csv")
+        mapping_profile = self.seed_client.create_or_update_column_mapping_profile_from_file('ESPM Test', mapping_file)
+        self.assertTrue('id' in mapping_profile)
+
+        response = self.seed_client.import_portfolio_manager_property(building['id'], self.seed_client.cycle_id, mapping_profile['id'], file)
+        self.assertTrue(response['status'] == 'success')
+
+    # def test_retrieve_at_building_and_update(self):
+    #     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
+
+    #     # need a building
+    #     buildings = self.seed_client.get_buildings()
+    #     building = None
+    #     if buildings:
+    #         building = buildings[0]
+    #     self.assertTrue(building)
+
+    #     # need an Audit Template Building ID (use envvar for this)
+    #     username=os.environ.get('SEED_PM_UN'),
+    #     password=os.environ.get('SEED_PM_PW'),
+    #     at_building_id=os.environ.get('SEED_AT_BUILDING_ID'),
+
+    #     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
+    #     self.assertTrue(response['status'] == 'success')
