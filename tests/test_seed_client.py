@@ -74,7 +74,6 @@ class SeedClientTest(unittest.TestCase):
         # test the property view (same as previous, just less data). It
         # is recommended to use `get_property` instead.
         prop = self.seed_client.get_property_view(properties[0]["id"])
-        print(prop)
         assert prop["id"] == properties[0]["id"]
         assert prop["cycle"]["name"] == "pyseed-api-test"
 
@@ -87,7 +86,6 @@ class SeedClientTest(unittest.TestCase):
         # Update the building
         completion_date = "02/02/2023"
         year = '2023'
-        print(f" ORGANIZATION: {self.organization_id}")
         cycle = self.seed_client.get_or_create_cycle(
             "pyseed-api-integration-test",
             date(int(year), 1, 1),
@@ -141,7 +139,6 @@ class SeedClientTest(unittest.TestCase):
 
         params2 = {'state': state}
         result2 = self.seed_client.update_building(view_id, params=params2)
-        # print(f" !!! results2 are: {result2}")
         assert result2["status"] == "success"
 
     def test_add_label_to_buildings(self):
