@@ -1439,23 +1439,37 @@ class SeedClient(SeedClientWrapper):
             json={"username": username, "password": password},
             url_args={"PK": pm_property_id}
         )
-
+        result = {'status': 'error'}
         # save the file to the location that was passed
         # note that the data are returned directly (the ESPM URL directly downloads the file)
         if isinstance(response, bytes):
             with open(save_file_name, 'wb') as f:
                 f.write(response)
+                result['status'] = 'success'
+        return result
 
-            return True
-        else:
-            return False
-
-    def import_portfolio_manager_data(self, file, seed_id: int) -> dict:
+    def import_portfolio_manager_property(self, seed_id: int, cycle_id: int, mapping_profile_id: int, file_path: str) -> dict:
         """Import the downloaded xlsx file into SEED on a specific propertyID
-        File was downloaded from the retrieve_portfolio_manager_report method above
-        seed_id is the property view ID to update with the ESPM file
+        Args:
+            seed_id (int): Property view ID to update with the ESPM file
+            cycle_id (int): Cycle ID
+            mapping_profile_id (int): Column Mapping Profile ID
+            file: path to file downloaded from the retrieve_portfolio_manager_report method above
         ESPM file will have meter data that we want to handle (electricity and natural gas)
         in the 'Meter Entries' tab"""
-        # todo
-        response = None
+
+        files_params = [
+            ("file", (Path(file_path).name, open(Path(file_path).resolve(), "rb"))),
+        ]
+
+        response = self.client.put(
+            None,
+            required_pk=False,
+            endpoint="property_update_with_espm",
+            url_args={"PK": seed_id},
+            files=files_params,
+            cycle_id=cycle_id,
+            mapping_profile_id=mapping_profile_id
+        )
+
         return response

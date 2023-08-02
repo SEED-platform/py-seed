@@ -67,6 +67,7 @@ URLS = {
         'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
         # PUTs with replaceable keys:
         'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
+        'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
         # GETs with replaceable keys
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
         'progress': '/api/v3/progress/PROGRESS_KEY/',
