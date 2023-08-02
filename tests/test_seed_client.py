@@ -376,8 +376,6 @@ class SeedClientTest(unittest.TestCase):
     #     self.assertTrue(building)
 
     #     # need an Audit Template Building ID (use envvar for this)
-    #     username=os.environ.get('SEED_PM_UN'),
-    #     password=os.environ.get('SEED_PM_PW'),
     #     at_building_id=os.environ.get('SEED_AT_BUILDING_ID'),
 
     #     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
