@@ -1419,7 +1419,7 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
-    def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> bool:
+    def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> dict:
         """Connect to portfolio manager and download an individual properties data in Excel format
 
         Args:
