@@ -1203,7 +1203,6 @@ class SeedClient(SeedClientWrapper):
         import_file_id = result["import_file_id"]
         multiple_cycle_upload = kwargs.pop("multiple_cycle_upload", False)
 
-
         # start processing
         result = self.start_save_data(import_file_id, multiple_cycle_upload)
         progress_key = result.get("progress_key", None)
