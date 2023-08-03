@@ -1021,7 +1021,7 @@ class SeedClient(SeedClientWrapper):
     def save_meter_data(self, property_id: int, meter_id: int, meter_data) -> dict:
         pass
 
-    def start_save_data(self, import_file_id: int) -> dict:
+    def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool) -> dict:
         """start the background process to save the data file to the database.
         This is the state before the mapping.
 
@@ -1039,7 +1039,8 @@ class SeedClient(SeedClientWrapper):
         return self.client.post(
             "import_files_start_save_data_pk",
             url_args={"PK": import_file_id},
-            json={"cycle_id": self.cycle_id},
+            json={"cycle_id": self.cycle_id,
+                  "multiple_cycle_upload": multiple_cycle_upload},
         )
 
     def start_map_data(self, import_file_id: int) -> dict:
@@ -1177,6 +1178,7 @@ class SeedClient(SeedClientWrapper):
         column_mapping_profile_name: str,
         column_mappings_file: str,
         import_meters_if_exist: bool = False,
+        multiple_cycle_upload: bool = False,
         **kwargs,
     ) -> dict:
         """Upload a file to the cycle_id that is defined in the constructor. This carries the
@@ -1200,7 +1202,7 @@ class SeedClient(SeedClientWrapper):
         import_file_id = result["import_file_id"]
 
         # start processing
-        result = self.start_save_data(import_file_id)
+        result = self.start_save_data(import_file_id, multiple_cycle_upload)
         progress_key = result.get("progress_key", None)
 
         # wait until upload is complete
