@@ -1021,12 +1021,13 @@ class SeedClient(SeedClientWrapper):
     def save_meter_data(self, property_id: int, meter_id: int, meter_data) -> dict:
         pass
 
-    def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool) -> dict:
+    def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> dict:
         """start the background process to save the data file to the database.
         This is the state before the mapping.
 
         Args:
             import_file_id (int): id of the import file to save
+            multiple_cycle_upload (bool): whether to use multiple cycle upload
 
         Returns:
             dict: progress key
@@ -1190,6 +1191,7 @@ class SeedClient(SeedClientWrapper):
             column_mapping_profile_name (str): Name of the column mapping profile to use
             column_mappings_file (str): Mapping that will be uploaded to the column_mapping_profile_name
             import_meters_if_exist (bool): If true, will import meters from the meter tab if they exist in the datafile. Defaults to False.
+            multiple_cycle_upload (bool): Whether to use multiple cycle upload. Defaults to False.
 
         Returns:
             dict: {
