@@ -1179,7 +1179,6 @@ class SeedClient(SeedClientWrapper):
         column_mapping_profile_name: str,
         column_mappings_file: str,
         import_meters_if_exist: bool = False,
-        multiple_cycle_upload: bool = False,
         **kwargs,
     ) -> dict:
         """Upload a file to the cycle_id that is defined in the constructor. This carries the
@@ -1202,6 +1201,8 @@ class SeedClient(SeedClientWrapper):
         dataset = self.get_or_create_dataset(dataset_name)
         result = self.upload_datafile(dataset["id"], datafile, datafile_type)
         import_file_id = result["import_file_id"]
+        multiple_cycle_upload = kwargs.pop("multiple_cycle_upload", False)
+
 
         # start processing
         result = self.start_save_data(import_file_id, multiple_cycle_upload)
