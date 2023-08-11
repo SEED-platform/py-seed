@@ -1023,12 +1023,13 @@ class SeedClient(SeedClientWrapper):
     def save_meter_data(self, property_id: int, meter_id: int, meter_data) -> dict:
         pass
 
-    def start_save_data(self, import_file_id: int) -> dict:
+    def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> dict:
         """start the background process to save the data file to the database.
         This is the state before the mapping.
 
         Args:
             import_file_id (int): id of the import file to save
+            multiple_cycle_upload (bool): whether to use multiple cycle upload
 
         Returns:
             dict: progress key
@@ -1041,7 +1042,8 @@ class SeedClient(SeedClientWrapper):
         return self.client.post(
             "import_files_start_save_data_pk",
             url_args={"PK": import_file_id},
-            json={"cycle_id": self.cycle_id},
+            json={"cycle_id": self.cycle_id,
+                  "multiple_cycle_upload": multiple_cycle_upload},
         )
 
     def start_map_data(self, import_file_id: int) -> dict:
@@ -1309,6 +1311,7 @@ class SeedClient(SeedClientWrapper):
             column_mapping_profile_name (str): Name of the column mapping profile to use
             column_mappings_file (str): Mapping that will be uploaded to the column_mapping_profile_name
             import_meters_if_exist (bool): If true, will import meters from the meter tab if they exist in the datafile. Defaults to False.
+            multiple_cycle_upload (bool): Whether to use multiple cycle upload. Defaults to False.
 
         Returns:
             dict: {
@@ -1319,9 +1322,10 @@ class SeedClient(SeedClientWrapper):
         dataset = self.get_or_create_dataset(dataset_name)
         result = self.upload_datafile(dataset["id"], datafile, datafile_type)
         import_file_id = result["import_file_id"]
+        multiple_cycle_upload = kwargs.pop("multiple_cycle_upload", False)
 
         # start processing
-        result = self.start_save_data(import_file_id)
+        result = self.start_save_data(import_file_id, multiple_cycle_upload)
         progress_key = result.get("progress_key", None)
 
         # wait until upload is complete
