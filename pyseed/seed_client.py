@@ -1217,11 +1217,8 @@ class SeedClient(SeedClientWrapper):
                   "template": pm_template},
         )
 
-        # Parse the dict response.
-        data = response
-
         # Get the "properties" key from the dictionary.
-        properties = data["properties"]
+        properties = response["properties"]
 
         # Create an XLSX workbook object.
         workbook = openpyxl.Workbook()
@@ -1244,19 +1241,31 @@ class SeedClient(SeedClientWrapper):
             row = []
             for key in header_row:
                 row.append(property[key])
-                sheet.append(row)
+            sheet.append(row)
+
+        # Report Template name
+        report_template_name = pm_template['name']
+
+        # Filename
+        file_name = f"{pm_username}_{report_template_name}.xlsx"
+
+        # Folder name
+        folder_name = "reports"
+
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+
+        # Set the file path.
+        file_path = os.path.join(folder_name, file_name)
 
         # Save the workbook object.
-        workbook.save("properties.xlsx")
+        workbook.save(file_path)
 
         # Current directory
         curdir = os.getcwd()
 
-        # Filename
-        file_name = "properties.xlsx"
-
         # Define the datafile path
-        datafile_path = os.path.join(curdir, file_name)
+        datafile_path = os.path.join(curdir, file_path)
 
         # Return the report templates
         return datafile_path
