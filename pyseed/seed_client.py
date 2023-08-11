@@ -1150,7 +1150,7 @@ class SeedClient(SeedClientWrapper):
         )
         # if the data is set to True, then return such
         return response
-    
+
     def get_pm_report_template_names(self, pm_username: str, pm_password: str) -> dict:
         """Download the PM report templates.
 
@@ -1190,7 +1190,7 @@ class SeedClient(SeedClientWrapper):
         # Return the report templates
         return response
 
-    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict) -> dict:
+    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict) -> str:
         """Download a PM report.
 
         Args:
