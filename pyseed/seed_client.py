@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 # Imports from Third Party Modules
 import json
 import logging
+import openpyxl
+import os
 import time
 from collections import Counter
 from datetime import date
@@ -1148,6 +1150,116 @@ class SeedClient(SeedClientWrapper):
         )
         # if the data is set to True, then return such
         return response
+    
+    def get_pm_report_template_names(self, pm_username: str, pm_password: str) -> dict:
+        """Download the PM report templates.
+
+        Args:
+            pm_username (str): username for Energystar Portfolio Manager
+            pm_password (str): password for Energystar Portfolio Manager
+
+        Sample return shown below.
+        Returns: dict: {
+            "status": "success",
+            "templates": [
+                {
+                    'id': 4438244,
+                    'name': '179D Test',
+                    'date': '7/03/2023 1:09 PM',
+                    'timestamp': 1688404158086,
+                    'hasData': 1,
+                    'newReport': 0,
+                    'pending': 0,
+                    'errored': 0,
+                    'type': 0,
+                    'subtype': 4,
+                    'hasSiteEUIOrWaterUseNAMessages': False,
+                    'children': [],
+                    'hasChildrenRows': False,
+                    'countOfChildrenRows': 0,
+                    'z_seed_child_row': False,
+                    'display_name': '179D Test'
+                }
+            ],
+        }
+        """
+        response = self.client.post(
+            endpoint="portfolio_manager_report_templates",
+            json={"username": pm_username, "password": pm_password},
+        )
+        # Return the report templates
+        return response
+
+    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict) -> dict:
+        """Download a PM report.
+
+        Args:
+            pm_username (str): username for Energystar Portfolio Manager
+            pm_password (str): password for Energystar Portfolio Manager
+            pm_template (dict): the full template object dict returned from get_pm_report_template_names
+
+        Sample return shown below.
+        Returns:
+            dict: {
+                "status": "success",
+                "properties": [{
+                    "properties_information_1": string,
+                    "properties_information_2": integer,
+                    [other keys....]: string
+                }]
+                "message": string # this includes error message if any
+            }
+        """
+        response = self.client.post(
+            endpoint="portfolio_manager_report",
+            json={"username": pm_username,
+                  "password": pm_password,
+                  "template": pm_template},
+        )
+
+        # Parse the dict response.
+        data = response
+
+        # Get the "properties" key from the dictionary.
+        properties = data["properties"]
+
+        # Create an XLSX workbook object.
+        workbook = openpyxl.Workbook()
+
+        # Create a sheet object in the workbook.
+        sheet = workbook.active
+
+        # Get the header row from the API response.
+        header_row = []
+        for property in properties:
+            for key in property:
+                if key not in header_row:
+                    header_row.append(key)
+
+        # Write the header row to the sheet object.
+        sheet.append(header_row)
+
+        # Loop over the list of dictionaries and write the data to the sheet object.
+        for property in properties:
+            row = []
+            for key in header_row:
+                row.append(property[key])
+                sheet.append(row)
+
+        # Save the workbook object.
+        workbook.save("properties.xlsx")
+
+        # Current directory
+        curdir = os.getcwd()
+
+        # Filename
+        file_name = "properties.xlsx"
+
+        # Define the datafile path
+        datafile_path = os.path.join(curdir, file_name)
+
+        # Return the report templates
+        return datafile_path
 
     def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
         """Reuse an import file to create all the meter entries. This method is used
