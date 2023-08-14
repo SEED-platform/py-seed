@@ -4,8 +4,10 @@ Changelog
 0.3.0
 -----
 
-## What's Changed
-* Add instance info and fix a couple bugs by @nllong in https://github.com/SEED-platform/py-seed/pull/16
+What's Changed
+**************
+
+* Add instance info and fix a couple of bugs by @nllong in https://github.com/SEED-platform/py-seed/pull/16
 * Fix building list and client information by @nllong in https://github.com/SEED-platform/py-seed/pull/17
 * get and create meters and meter readings by @nllong in https://github.com/SEED-platform/py-seed/pull/18
 * Add GeoJSON Area Calc by @nllong in https://github.com/SEED-platform/py-seed/pull/19
