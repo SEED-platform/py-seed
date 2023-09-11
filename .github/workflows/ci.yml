@@ -70,6 +70,9 @@ jobs:
         run: |
           docker exec seed_web ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --pyseed > seed-config.json
       - name: Run tests with pytest
+        env:
+          SEED_PM_UN: ${{ secrets.SEED_PM_UN }}
+          SEED_PM_PW: ${{ secrets.SEED_PM_PW }}
         run: |
           pytest -m "integration" -s
       - name: Dump docker logs on failure
