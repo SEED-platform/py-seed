@@ -60,10 +60,15 @@ class SeedClientTest(unittest.TestCase):
         assert set(("version", "sha")).issubset(info.keys())
 
     def test_seed_buildings(self):
+        # set cycle before retrieving (just in case)
+        self.seed_client.get_cycle_by_name('pyseed-api-test', set_cycle_id=True)
         buildings = self.seed_client.get_buildings()
+        # ESPM test creates a building now too, assert building count is 10 or 11?
         assert len(buildings) == 10
 
     def test_search_buildings(self):
+        # set cycle
+        self.seed_client.get_cycle_by_name('pyseed-api-test', set_cycle_id=True)
         properties = self.seed_client.search_buildings(identifier_exact="B-1")
         assert len(properties) == 1
 

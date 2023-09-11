@@ -107,6 +107,19 @@ Usage:
     # get a single property
     seed_client.get(property_pk, endpoint='properties')
 
+Local Testing
+-------------
+
+Tests can be run via the `pytest` command.
+
+You will need to export environment variables for a test portfolio manager account to test integration. Environment variables should be named:
+```bash
+SEED_PM_UN
+SEED_PM_PW
+```
+
+
+
 License
 -------
 Full details in LICENSE file.

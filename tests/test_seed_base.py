@@ -116,14 +116,12 @@ class SeedBaseTest(unittest.TestCase):
             inventory_type="Property",
             column_description="this is a test column",
             data_type="string")
-
         assert result['status'] == 'success'
         assert 'id' in result['column']
 
     def test_create_columns_from_file(self):
         cols_filepath = 'tests/data/test-seed-create-columns.csv'
         result = self.seed_client.create_extra_data_columns_from_file(cols_filepath)
-        print(f"{len(result)} rows processed")
         assert len(result)
         assert result[0]['status']
 
