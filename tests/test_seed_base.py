@@ -104,6 +104,27 @@ class SeedBaseTest(unittest.TestCase):
         assert dataset['super_organization'] == self.seed_client.client.org_id
         assert dataset is not None
 
+    def test_get_columns(self):
+        result = self.seed_client.get_columns()
+        assert result['status'] == 'success'
+        assert len(result['columns']) >= 1
+
+    def test_create_column(self):
+        result = self.seed_client.create_extra_data_column(
+            column_name='test_col',
+            display_name='A Test Column',
+            inventory_type="Property",
+            column_description="this is a test column",
+            data_type="string")
+        assert result['status'] == 'success'
+        assert 'id' in result['column']
+
+    def test_create_columns_from_file(self):
+        cols_filepath = 'tests/data/test-seed-create-columns.csv'
+        result = self.seed_client.create_extra_data_columns_from_file(cols_filepath)
+        assert len(result)
+        assert result[0]['status']
+
     def test_get_column_mapping_profiles(self):
         result = self.seed_client.get_column_mapping_profiles()
         assert len(result) >= 1

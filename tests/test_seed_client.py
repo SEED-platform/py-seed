@@ -4,6 +4,7 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
 # Imports from Third Party Modules
+import os
 import pytest
 import unittest
 from datetime import date
@@ -59,10 +60,15 @@ class SeedClientTest(unittest.TestCase):
         assert set(("version", "sha")).issubset(info.keys())
 
     def test_seed_buildings(self):
+        # set cycle before retrieving (just in case)
+        self.seed_client.get_cycle_by_name('pyseed-api-test', set_cycle_id=True)
         buildings = self.seed_client.get_buildings()
+        # ESPM test creates a building now too, assert building count is 10 or 11?
         assert len(buildings) == 10
 
     def test_search_buildings(self):
+        # set cycle
+        self.seed_client.get_cycle_by_name('pyseed-api-test', set_cycle_id=True)
         properties = self.seed_client.search_buildings(identifier_exact="B-1")
         assert len(properties) == 1
 
@@ -73,13 +79,72 @@ class SeedClientTest(unittest.TestCase):
         # test the property view (same as previous, just less data). It
         # is recommended to use `get_property` instead.
         prop = self.seed_client.get_property_view(properties[0]["id"])
-        print(prop)
         assert prop["id"] == properties[0]["id"]
         assert prop["cycle"]["name"] == "pyseed-api-test"
 
         # There are 2 if filtering, because B-1 and B-10
         properties = self.seed_client.search_buildings(identifier_filter="B-1")
         assert len(properties) == 2
+
+    def test_create_update_building(self):
+        # create a new building (property, propertyState, propertyView)
+        # Update the building
+        completion_date = "02/02/2023"
+        year = '2023'
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-api-integration-test",
+            date(int(year), 1, 1),
+            date(int(year), 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.organization_id,
+            "custom_id_1": "123456",
+            "address_line_1": "123 Testing St",
+            "city": "Beverly Hills",
+            "state": "CA",
+            "postal_code": "90210",
+            "property_name": "Test Building",
+            "property_type": None,
+            "gross_floor_area": None,
+            "conditioned_floor_area": None,
+            "occupied_floor_area": None,
+            "site_eui": None,
+            "site_eui_modeled": None,
+            "source_eui_weather_normalized": None,
+            "source_eui": None,
+            "source_eui_modeled": None,
+            "site_eui_weather_normalized": None,
+            "total_ghg_emissions": None,
+            "total_marginal_ghg_emissions": None,
+            "total_ghg_emissions_intensity": None,
+            "total_marginal_ghg_emissions_intensity": None,
+            "generation_date": None,
+            "recent_sale_date": None,
+            "release_date": None,
+            "extra_data": {
+                "pathway": "new",
+                "completion_date": completion_date
+            }
+        }
+
+        params = {'state': state, 'cycle_id': cycle["id"]}
+
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+        view_id = result["view"]["id"]
+
+        # update that property (by ID)
+        state['property_name'] = 'New Name Building'
+
+        properties = self.seed_client.search_buildings(identifier_exact=state['custom_id_1'])
+        assert len(properties) == 1
+
+        params2 = {'state': state}
+        result2 = self.seed_client.update_building(view_id, params=params2)
+        assert result2["status"] == "success"
 
     def test_add_label_to_buildings(self):
         # get seed buildings
@@ -252,9 +317,68 @@ class SeedClientTest(unittest.TestCase):
         meter_data = self.seed_client.get_meter_data(building[0]["id"])
         assert len(meter_data['readings']) == 24
 
-    # def test_get_buildings_with_labels(self):
-    #     buildings = self.seed_client.get_view_ids_with_label(['In Violation', 'Compliant', 'Email'])
-    #     for building in buildings:
-    #         print(building)
+    def test_download_espm_property(self):
+        # For testing, read in the ESPM username and password from
+        # environment variables.
 
-    #     assert len(buildings) == 3
+        save_file = self.output_dir / "espm_test_22178850.xlsx"
+        if save_file.exists():
+            save_file.unlink()
+
+        self.seed_client.retrieve_portfolio_manager_property(
+            username=os.environ.get('SEED_PM_UN'),
+            password=os.environ.get('SEED_PM_PW'),
+            pm_property_id=22178850,
+            save_file_name=save_file
+        )
+
+        self.assertTrue(save_file.exists())
+
+        # redownload and show an error
+        with self.assertRaises(Exception) as excpt:
+            self.seed_client.retrieve_portfolio_manager_property(
+                username=os.environ.get('SEED_PM_UN'),
+                password=os.environ.get('SEED_PM_PW'),
+                pm_property_id=22178850,
+                save_file_name=save_file
+            )
+
+        self.assertEqual(
+            str(excpt.exception),
+            f'Save filename already exists, save to a new file name: {str(save_file)}'
+        )
+
+    def test_upload_espm_property_to_seed(self):
+
+        file = Path("tests/data/portfolio-manager-single-22482007.xlsx")
+
+        # need a building
+        buildings = self.seed_client.get_buildings()
+        building = None
+        if buildings:
+            building = buildings[0]
+        self.assertTrue(building)
+
+        # need a column mapping profile
+        mapping_file = Path("tests/data/test-seed-data-mappings.csv")
+        mapping_profile = self.seed_client.create_or_update_column_mapping_profile_from_file('ESPM Test', mapping_file)
+        self.assertTrue('id' in mapping_profile)
+
+        response = self.seed_client.import_portfolio_manager_property(building['id'], self.seed_client.cycle_id, mapping_profile['id'], file)
+        self.assertTrue(response['status'] == 'success')
+
+    # def test_retrieve_at_building_and_update(self):
+    #     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
+
+    #     # need a building
+    #     buildings = self.seed_client.get_buildings()
+    #     building = None
+    #     if buildings:
+    #         building = buildings[0]
+    #     self.assertTrue(building)
+
+    #     # need an Audit Template Building ID (use envvar for this)
+    #     at_building_id=os.environ.get('SEED_AT_BUILDING_ID'),
+
+    #     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
+    #     self.assertTrue(response['status'] == 'success')
