@@ -45,14 +45,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-test.txt
-      - name: Build and run stack
+      - name: Print versions
         run: |
           printenv
+          docker --version
+          docker-compose --version
+      - name: Build and run stack
+        run: |
           docker volume create --name=pyseed_media
           # verify that the stack wasn't cached
           docker-compose -f tests/integration/docker-compose.yml stop
           docker-compose -f tests/integration/docker-compose.yml rm -f
-          docker-compose -f tests/integration/docker-compose.yml up -d
+          docker-compose -f tests/integration/docker-compose.yml up --pull always -d
       - name: Wait for web server
         uses: nev7n/wait_for_response@v1
         with:
@@ -68,7 +72,7 @@ jobs:
         uses: jwalton/gh-docker-logs@v1
       - name: Extract API credentials from SEED docker instance
         run: |
-          docker exec seed_web ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --pyseed > seed-config.json
+          docker exec pyseed_web ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --pyseed > seed-config.json
       - name: Run tests with pytest
         env:
           SEED_PM_UN: ${{ secrets.SEED_PM_UN }}
@@ -77,4 +81,4 @@ jobs:
           pytest -m "integration" -s
       - name: Dump docker logs on failure
         if: failure()
-        uses: jwalton/gh-docker-logs@v1
+        uses: jwalton/gh-docker-logs@v2
