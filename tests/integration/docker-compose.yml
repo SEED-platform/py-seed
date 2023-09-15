@@ -1,7 +1,7 @@
 version: "3.4"
 services:
   db-postgres:
-    container_name: seed_postgres
+    container_name: pyseed_postgres
     image: timescale/timescaledb-postgis:latest-pg12
     environment:
       - POSTGRES_DB=seed
@@ -14,10 +14,10 @@ services:
         max-size: 50m
         max-file: "5"
   db-redis:
-    container_name: seed_redis
+    container_name: pyseed_redis
     image: redis:5.0.1
   web:
-    container_name: seed_web
+    container_name: pyseed_web
     image: seedplatform/seed:develop
     environment:
       - AWS_ACCESS_KEY_ID
@@ -52,7 +52,7 @@ services:
         max-size: 50m
         max-file: "5"
   web-celery:
-    container_name: seed_celery
+    container_name: pyseed_celery
     image: seedplatform/seed:develop
     build: .
     command: /seed/docker/start_celery_docker.sh
