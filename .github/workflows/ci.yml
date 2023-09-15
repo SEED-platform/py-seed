@@ -45,11 +45,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-test.txt
+      - name: Install more recent docker compose
+        uses: ndeloof/install-compose-action@v0.0.1
+        with:
+          version: v2.20.0
+          legacy: true
       - name: Print versions
         run: |
           printenv
           docker --version
           docker-compose --version
+          which docker-compose
       - name: Build and run stack
         run: |
           docker volume create --name=pyseed_media
@@ -69,7 +75,7 @@ jobs:
         with:
           time: "30s"
       - name: Dump docker logs before tests
-        uses: jwalton/gh-docker-logs@v1
+        uses: jwalton/gh-docker-logs@v2
       - name: Extract API credentials from SEED docker instance
         run: |
           docker exec pyseed_web ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --pyseed > seed-config.json
