@@ -70,7 +70,7 @@ jobs:
           # migration take ~6 minutes to run along.
           url: "http://localhost:8000/"
           responseCode: 200
-          timeout: 480000
+          timeout: 640000
           interval: 5000
       - name: Wait another 30s
         uses: jakejarvis/wait-action@master
