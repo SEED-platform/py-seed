@@ -66,10 +66,12 @@ jobs:
       - name: Wait for web server
         uses: nev7n/wait_for_response@v1
         with:
+          # Increase the timeout significanlty, the EEEJ census tract
+          # migration take ~6 minutes to run along.
           url: "http://localhost:8000/"
           responseCode: 200
-          timeout: 120000
-          interval: 2000
+          timeout: 480000
+          interval: 5000
       - name: Wait another 30s
         uses: jakejarvis/wait-action@master
         with:
