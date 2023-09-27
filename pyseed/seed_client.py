@@ -1,39 +1,6 @@
 """
-****************************************************************************************************
-:copyright (c) 2019-2022, Alliance for Sustainable Energy, LLC, and other contributors.
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted
-provided that the following conditions are met:
-
-Redistributions of source code must retain the above copyright notice, this list of conditions
-and the following disclaimer.
-
-Redistributions in binary form must reproduce the above copyright notice, this list of conditions
-and the following disclaimer in the documentation and/or other materials provided with the
-distribution.
-
-Neither the name of the copyright holder nor the names of its contributors may be used to endorse
-or promote products derived from this software without specific prior written permission.
-
-Redistribution of this software, without modification, must refer to the software by the same
-designation. Redistribution of a modified version of this software (i) may not refer to the
-modified version by the same designation, or by any confusingly similar designation, and
-(ii) must refer to the underlying software originally provided by Alliance as “URBANopt”. Except
-to comply with the foregoing, the term “URBANopt”, or any confusingly similar designation may
-not be used to refer to any modified version of this software or any modified version of the
-underlying software originally provided by Alliance without the prior written consent of Alliance.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-****************************************************************************************************
+SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
 # Imports from Standard Library
@@ -44,6 +11,7 @@ import json
 import logging
 import time
 from collections import Counter
+from csv import DictReader
 from datetime import date
 from pathlib import Path
 from urllib.parse import _NetlocResultMixinStr
@@ -91,7 +59,7 @@ class SeedClientWrapper(object):
         # favor the connection params over the config file
         self.payload = {}
         if connection_params:
-            # the connetion params are simply squashed on SEEDReadWriteClient init
+            # the connection params are simply squashed on SEEDReadWriteClient init
             self.payload = connection_params
         elif connection_config_filepath:
             self.payload = SeedClientWrapper.read_connection_config_file(
@@ -116,7 +84,7 @@ class SeedClientWrapper(object):
                 "api_key": "1b5ea1ee220c8628789c61d66253d90398e6ad03",
                 "port": 8000,
                 "use_ssl": false,
-                "seed_org_name: "test-org"
+                "seed_org_name": "test-org"
             }
 
         Args:
@@ -213,7 +181,6 @@ class SeedClient(SeedClientWrapper):
     def get_buildings(self) -> List[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
-        # print(f" total: {total_qry}")
         # step through each page of the results
         buildings: List[dict] = []
         for i in range(1, total_qry['num_pages'] + 1):
@@ -273,10 +240,12 @@ class SeedClient(SeedClientWrapper):
         )
 
     def search_buildings(
-        self, identifier_filter: str = None, identifier_exact: str = None
+        self, identifier_filter: str = None, identifier_exact: str = None, cycle_id: int = None
     ) -> dict:
-        payload = {
-            "cycle": self.cycle_id,
+        if not cycle_id:
+            cycle_id = self.cycle_id
+        payload: Dict[str, Any] = {
+            "cycle": cycle_id,
         }
         if identifier_filter is not None:
             payload["identifier"] = identifier_filter
@@ -494,6 +463,46 @@ class SeedClient(SeedClientWrapper):
         )
         return result
 
+    def create_building(self, params: dict) -> list:
+        """
+        Creates a building with unique ID (either pm_property_id or custom_id_1 for now)
+        Expects params to contain a state dictionary and a cycle id
+        Optionally pass in a cycle ID
+
+        Returns the created property_view id
+        """
+        # first try matching on custom_id_1
+        matching_id = params.get('state', {}).get('custom_id_1', None)
+
+        if not matching_id:
+            # then try on pm_property_id
+            matching_id = params.get('state', {}).get('pm_property_id', None)
+
+            if not matching_id:
+                raise Exception(
+                    "This property does not have a pm_property_id or a custom_id_1 for matching...cannot create."
+                )
+
+        cycle_id = params.get('cycle_id', None)
+        # include appropriate cycle in search (if not using the default cycle set on the class)
+        buildings = self.search_buildings(identifier_exact=matching_id, cycle_id=cycle_id)
+
+        if len(buildings) > 0:
+            raise Exception(
+                "A property matching the provided matching ID (pm_property_id or custom_id_1) already exists."
+            )
+
+        results = self.client.post(endpoint="properties", json=params)
+        return results
+
+    def update_building(self, id, params: dict) -> list:
+        """
+        Updates a building's property_view
+        Expects id and params to contain a state dictionary
+        """
+        results = self.client.put(id, endpoint="properties", json=params)
+        return results
+
     def get_cycles(self) -> list:
         """Return a list of all the cycles for the organization.
 
@@ -590,7 +599,7 @@ class SeedClient(SeedClientWrapper):
         cycle_name = str(cycle_name)
 
         # note that this picks the first one it finds, even if there are more
-        # than one cycle with the name name
+        # than one cycle with the same name
         cycle_names = [cycle["name"] for cycle in cycles]
         counts = Counter(cycle_names)
         for i_cycle_name, count in counts.items():
@@ -652,7 +661,13 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict:
         """
-        return self.client.delete(cycle_id, endpoint="cycles")
+        result = self.client.delete(cycle_id, endpoint="cycles")
+        progress_key = result.get("progress_key", None)
+
+        # wait until delete is complete
+        result = self.track_progress_result(progress_key)
+
+        return result
 
     def get_or_create_dataset(self, dataset_name: str) -> dict:
         """Get or create a SEED dataset which is used to hold
@@ -697,7 +712,7 @@ class SeedClient(SeedClientWrapper):
                 {
                     "import_file_id": 54,
                     "success": true,
-                    "filename": "DataforSEED_dos15.csv"
+                    "filename": "data_for_seed.csv"
                 }
         """
         params = {
@@ -818,7 +833,7 @@ class SeedClient(SeedClientWrapper):
         an already existing profile if it is there.
 
         Args:
-            mapping_profile_name (str): cription_
+            mapping_profile_name (str): profile name
             mappings (list): list of mappings in the form of
                 [
                     {
@@ -911,7 +926,7 @@ class SeedClient(SeedClientWrapper):
         """Sets the column mappings onto the import file record.
 
         Args:
-            import_file_id (int): ID of the import file of interet
+            import_file_id (int): ID of the import file of interest
             mappings (list): list of column mappings in the form of the results of column mapping profiles
 
         Returns:
@@ -923,6 +938,93 @@ class SeedClient(SeedClientWrapper):
             params={"import_file_id": import_file_id},
             json={"mappings": mappings},
         )
+
+    def get_columns(self) -> dict:
+        """get the list of columns.
+
+        Returns:
+            dict: {
+                    "status": "success",
+                    "columns: [{...}]
+                  }
+        """
+        result = self.client.list(endpoint="columns")
+        return result
+
+    def create_extra_data_column(self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str) -> dict:
+        """ create an extra data column. If column exists, skip
+        Args:
+            'column_name': 'project_type',
+            'display_name': 'Project Type',
+            'inventory_type': 'Property' or 'Taxlot',
+            'column_description': 'Project Type (New or Retrofit)',
+            'data_type': 'string',
+
+        Returns:
+            dict:{
+                    "status": "success",
+                    "column": {
+                      "id": 151,
+                      "name": "project_type_151",
+                        ...
+                    }
+                  }
+        """
+
+        # get extra data columns (only)
+        result = self.client.list(endpoint="columns")
+        columns = result['columns']
+        extra_data_cols = [item for item in columns if item['is_extra_data']]
+
+        # see if extra data column already exists (for now don't update it, just skip it)
+        res = list(filter(lambda extra_data_cols: extra_data_cols['column_name'] == column_name, extra_data_cols))
+        if res:
+            # column already exists
+            result = {"status": "noop", "message": "column already exists"}
+        else:
+            # create
+            payload = {
+                "column_name": column_name,
+                "display_name": display_name,
+                "table_name": "PropertyState" if inventory_type == "Property" else "TaxlotState",
+                "column_description": column_description,
+                "data_type": data_type,
+                "organization_id": self.get_org_id()
+            }
+            result = self.client.post(endpoint="columns", json=payload)
+
+        return result
+
+    def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> list:
+        """ create extra data columns from a csv file. if column exist, skip.
+        Args:
+            'columns_csv_filepath': 'path/to/file'
+            file is expected to have headers: column_name, display_name, column_description,
+            inventory_type (Property or Taxlot), and data_type (SEED column data_types)
+
+            See example file at tests/data/test-seed-create-columns.csv
+
+        Returns:
+            list:[{
+                    "status": "success",
+                    "column": {
+                      "id": 151,
+                      "name": "project_type_151",
+                        ...
+                    }
+                  }]
+        """
+        # open file in read mode
+        with open(columns_csv_filepath, 'r') as f:
+            dict_reader = DictReader(f)
+            columns = list(dict_reader)
+
+        results = []
+        for col in columns:
+            result = self.create_extra_data_column(**col)
+            results.append(result)
+
+        return results
 
     def get_meters(self, property_id: int) -> list:
         """Return the list of meters assigned to a property (the property view id).
@@ -1006,7 +1108,7 @@ class SeedClient(SeedClientWrapper):
             meter_id (int): meter id
 
         Returns:
-            dict: status of the delete
+            dict: status of the deletion
         """
         return self.client.delete(
             meter_id, endpoint='properties_meters', url_args={"PK": property_view_id}
@@ -1016,9 +1118,9 @@ class SeedClient(SeedClientWrapper):
         """Upsert meter readings for a property's meter with the bulk method.
 
         Args:
-            property_id (int): property id
+            property_view_id (int): property view id
             meter_id (int): meter id
-            data (list): list of dictioanries of meter readings
+            data (list): list of dictionaries of meter readings
 
         Returns:
             dict: list of all meter reading objects
@@ -1178,7 +1280,7 @@ class SeedClient(SeedClientWrapper):
     def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
         """Reuse an import file to create all the meter entries. This method is used
         for ESPM related data files. The result will be another import_file ID for the
-        meters that will then need to be "resaved". Note that the returning import_file_id
+        meters that will then need to be "re-saved". Note that the returning import_file_id
         is not the same as the argument import file.
 
         Args:
@@ -1275,3 +1377,98 @@ class SeedClient(SeedClientWrapper):
             result = self.track_progress_result(progress_key)
 
         return matching_results
+
+    def retrieve_at_building_and_update(self, audit_template_building_id: int, cycle_id: int, seed_id: int) -> dict:
+        """Connect to audit template and retrieve audit XML by building ID
+
+        Args:
+            audit_template_building_id (int): ID of the building in the audit template
+            cycle_id (int): Cycle ID in SEED
+            seed_id (int): PropertyView ID in SEED
+
+        Returns:
+            dict: Response from the SEED API
+        """
+
+        # api/v3/audit_template/pk/get_building_xml
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_building_xml",
+            url_args={"PK": audit_template_building_id}
+        )
+
+        if response['status'] == 'success':
+            # now post to api/v3/properties/PK/update_with_buildingsync
+            xml_file = response['content']
+            filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+            files = [
+                ('file', (filename, xml_file)),
+                ('file_type', (None, 1))
+            ]
+
+            response = self.client.put(
+                None,
+                required_pk=False,
+                endpoint="properties_update_with_buildingsync",
+                url_args={"PK": seed_id},
+                files=files,
+                cycle_id=cycle_id
+            )
+
+        return response
+
+    def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> dict:
+        """Connect to portfolio manager and download an individual properties data in Excel format
+
+        Args:
+            username (str): ESPM login username
+            password (str): ESPM password
+            pm_property_id (int): ESPM ID of the property to download
+            save_file_name (Path): Location to save the file, preferably an absolute path
+
+        Returns:
+            bool: Did the file download?
+        """
+        if save_file_name.exists():
+            raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
+
+        response = self.client.post(
+            "portfolio_manager_property_download",
+            json={"username": username, "password": password},
+            url_args={"PK": pm_property_id}
+        )
+        result = {'status': 'error'}
+        # save the file to the location that was passed
+        # note that the data are returned directly (the ESPM URL directly downloads the file)
+        if isinstance(response, bytes):
+            with open(save_file_name, 'wb') as f:
+                f.write(response)
+                result['status'] = 'success'
+        return result
+
+    def import_portfolio_manager_property(self, seed_id: int, cycle_id: int, mapping_profile_id: int, file_path: str) -> dict:
+        """Import the downloaded xlsx file into SEED on a specific propertyID
+        Args:
+            seed_id (int): Property view ID to update with the ESPM file
+            cycle_id (int): Cycle ID
+            mapping_profile_id (int): Column Mapping Profile ID
+            file: path to file downloaded from the retrieve_portfolio_manager_report method above
+        ESPM file will have meter data that we want to handle (electricity and natural gas)
+        in the 'Meter Entries' tab"""
+
+        files_params = [
+            ("file", (Path(file_path).name, open(Path(file_path).resolve(), "rb"))),
+        ]
+
+        response = self.client.put(
+            None,
+            required_pk=False,
+            endpoint="property_update_with_espm",
+            url_args={"PK": seed_id},
+            files=files_params,
+            cycle_id=cycle_id,
+            mapping_profile_id=mapping_profile_id
+        )
+
+        return response

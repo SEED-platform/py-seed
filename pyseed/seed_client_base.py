@@ -15,7 +15,7 @@ N.B. Only a Read Only client (with public methods) is supplied.
 This is a deliberate design decision. There is no general purpose client that
 can write to the db, this ensures caching is transparent and always valid.
 
-You *must* always use the class corresponding to the relevant model, i.e.
+You *must* always use the class corresponding to the relevant model, i.e.,
 one that inherits from SEEDRecord to be able to write to the db.
 You *should* generally this for reading too, in order to get the benefits of
 caching.
@@ -64,31 +64,18 @@ URLS = {
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
         'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
-        'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
+        'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
+        # PUTs with replaceable keys:
+        'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
+        'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
         # GETs with replaceable keys
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
         'progress': '/api/v3/progress/PROGRESS_KEY/',
         'properties_meters': '/api/v3/properties/PK/meters/',
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
+        'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
+        # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
-    },
-    'v2': {
-        'columns': '/api/v2/columns/',
-        'column_mappings': '/api/v2/column_mappings/',
-        'cycles': '/api/v2/cycles/',
-        'datasets': '/api/v2/datasets/',
-        'gbr_properties': '/api/v2/gbr_properties/',
-        'green_assessment': '/api/v2/green_assessments/',
-        'green_assessment_property': '/api/v2/green_assessment_properties/',
-        'green_assessment_url': '/api/v2/green_assessment_urls/',
-        'labels': '/api/v2/labels/',
-        'import_files': '/api/v2/import_files/',
-        'projects': '/api/v2/projects/',
-        'properties': '/api/v2/properties/',
-        'property_states': '/api/v2/property_states/',
-        'property_views': '/api/v2/property_views/',
-        'taxlots': '/api/v2/taxlots/',
-        'users': '/api/v2/users/',
     }
 }
 
@@ -141,14 +128,14 @@ class SEEDBaseClient(JSONAPI):
     can inherit from them directly and overwrite methods/use mixins as
     appropriate.
 
-    endpoint refers to the endpoint name. This allow you to call an
+    endpoint refers to the endpoint name. This allows you to call an
     endpoint without having to know the full url.
 
     Endpoint names are set in config, and can be accessed as self.endpoints.
 
     data_name is set as an attribute on the view called.
     This constrains the actual response data.
-    If not set it is derived from the url (typically its the view name).
+    If not set it is derived from the url (typically it's the view name).
     In either case 'data' is used as a fallback, then detail.
 
     This is an annoyance, but SEED adds an unnecessary 'status'
@@ -162,7 +149,7 @@ class SEEDBaseClient(JSONAPI):
     :type username: string (email address)
     :param api_key: api_key of use who can access records
     :type api_key: string
-    :param endpoint: seed endpoint e.g properties for /api/v2/properties/
+    :param endpoint: seed endpoint e.g., properties for /api/v3/properties/
     :type endpoint: string
     :param data_name: name of json key in api results containing data
                       not always needed
@@ -207,22 +194,42 @@ class SEEDBaseClient(JSONAPI):
         """Verify we have got a response without any errors.
 
         *Never* call this directly in your methods,
-        *Always use self._get() etc, otherwise errors will not
+        *Always use self._get() etc., otherwise errors will not
         be reported correctly.
         """
         error = False
         error_msg = 'Unknown error from SEED API'
-        # OK, Created, Accepted
-        if response.status_code not in [200, 201, 202]:
+
+        # grab the response content type to determine json, spreadsheet, or text
+        response_content_types = response.headers.get('Content-Type', [])
+
+        # OK, Created, Accepted, No-Content
+        if response.status_code not in [200, 201, 202, 204]:
             error = True
             error_msg = 'SEED returned status code: {}'.format(response.status_code)
         # SEED adds a status key to the response to indicate success/error
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
+        elif response.status_code == 204:
+            # there will not be response content with a 204
+            error = False
+        elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
+            # spreadsheet response
+            error = False
+        elif 'application/json' not in response_content_types:
+            # get as text
+            if not response.content:
+                error = True
         elif isinstance(response.json(), dict):
             status_field = response.json().get('status', None)
+            has_progress_key = 'progress_key' in response.json().keys()
             if status_field:
-                if status_field == 'error':
+                if has_progress_key:
+                    # For the delete cycles, the data returned have a status and a progress_key,
+                    # but no progress_data. In lieu of updating SEED, this check is added
+                    # specifically for this case
+                    error = status_field not in ['not-started', 'success', 'parsing']
+                elif status_field == 'error':
                     error = True
                 elif status_field == 'success':
                     # continue
@@ -269,6 +276,15 @@ class SEEDBaseClient(JSONAPI):
         tries to determine what the first element of the resulting JSON is which is then used as
         the base for the rest of the response. This is not always desired, so pass data_name='all' if
         you want to get the entire response back."""
+
+        # grab the response content type to determine json, spreadsheet, or text
+        response_content_types = response.headers.get('Content-Type', [])
+
+        # pass through for spreadsheet (?)
+        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
+            return response.content
+        if 'application/json' not in response_content_types:
+            return {'status': 'success', 'content': response.content}
         if not data_name:
             url = response.request.url
             # take the last part of the url unless it's a digit
@@ -279,7 +295,12 @@ class SEEDBaseClient(JSONAPI):
             else:
                 data_name = durl[1]
         # actual results should be under data_name or the fallbacks
-        result = response.json()
+        # handle a 204
+        result = None
+        if response.status_code == 204:
+            result = {'status': 'success'}
+        else:
+            result = response.json()
         if result is None:
             error_msg = 'No results returned'
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
@@ -308,14 +329,14 @@ class SEEDBaseClient(JSONAPI):
         """
         Raise SEEDError on bad response.
 
-        This method is intended for use only by self_get() etc and the methods
+        This method is intended for use only by self_get(), etc., and the methods
         called there. For most purposes you should raise SEEDError directly.
 
         This method uses the inspect module to derive the method name.
         stack_pos indicates where in the stack to find this: it corresponds
         to the depth of function calls.
 
-        Thus if the error occurs directly in the function calling _raise_error
+        Thus, if the error occurs directly in the function calling _raise_error
         stack_pos=0, if that function is called by another function add 1 etc.
         Note technically *this* method (_raise_error) is at the bottom of the
         stack, but we add 1 to stack_pos so counting starts at the method
@@ -330,7 +351,7 @@ class SEEDBaseClient(JSONAPI):
         status_code = response.status_code
         url = response.request.url
         verb = response.request.method
-        # e.g. MyClass.method
+        # e.g., MyClass.method
         caller = caller = '{}.{}'.format(
             self.__class__.__name__, inspect.stack()[stack_pos + 1][3]
         )
@@ -504,9 +525,10 @@ class DeleteMixin(object):
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
         response = super(DeleteMixin, self)._delete(url=url, **kwargs)
-        # delete should return 204 and no content
+        # delete should return 204 and no content, unless it is a background task
         if response.status_code != requests.codes.no_content:
             self._check_response(response, **kwargs)
+            return self._get_result(response, data_name=data_name, **kwargs)
 
 
 class SEEDReadOnlyClient(ReadMixin, UserAuthMixin, SEEDBaseClient):

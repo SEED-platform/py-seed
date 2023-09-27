@@ -9,13 +9,23 @@ Py-SEED
 
 A python API client for the SEED Platform. This is an updated version of the Client. It is compatible with the latest version of the SEED Platform (>2.17.4). This client still has access to the previous format of generating a lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This lower level API is documented below under the `Low-Level Documentation`
 
+Stakeholders
+-------------
+
+The following list of stakeholders should be considered when making changes to this module
+
+- 179D Tax Deduction Web Application
+- Earth Advantage Green Building Registry
+- User scripts for managing building data
+- ECAM
+
 Documentation
 -------------
 The SEED client is a read-write client. To install the client run:
 
 .. code-block:: bash
 
-    pip install pyseed
+    pip install py-seed
 
 Within Python you can use the client like this:
 
@@ -24,7 +34,7 @@ Within Python you can use the client like this:
     from pathlib import Path
     from pyseed.seed_client import SeedClient
 
-    # The seed-config.json file defines the hosting locaiton and credentials for your SEED instance.
+    # The seed-config.json file defines the hosting location and credentials for your SEED instance.
     # If running SEED locally for testing, then you can run the following from your SEED root directory:
     #    ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --file ./seed-config.json --pyseed
 
@@ -97,11 +107,22 @@ Usage:
     # get a single property
     seed_client.get(property_pk, endpoint='properties')
 
+Local Testing
+-------------
+
+Tests can be run via the `pytest` command.
+
+You will need to export environment variables for a test portfolio manager account to test integration. Environment variables should be named:
+
+    ..code-block:: bash
+
+        SEED_PM_UN
+        SEED_PM_PW
 
 
 License
 -------
-py-SEED is released under the terms of the MIT license. Full details in LICENSE file.
+Full details in LICENSE file.
 
 Changelog
 ---------
