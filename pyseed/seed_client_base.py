@@ -15,7 +15,7 @@ N.B. Only a Read Only client (with public methods) is supplied.
 This is a deliberate design decision. There is no general purpose client that
 can write to the db, this ensures caching is transparent and always valid.
 
-You *must* always use the class corresponding to the relevant model, i.e.
+You *must* always use the class corresponding to the relevant model, i.e.,
 one that inherits from SEEDRecord to be able to write to the db.
 You *should* generally this for reading too, in order to get the benefits of
 caching.
@@ -149,7 +149,7 @@ class SEEDBaseClient(JSONAPI):
     :type username: string (email address)
     :param api_key: api_key of use who can access records
     :type api_key: string
-    :param endpoint: seed endpoint e.g. properties for /api/v3/properties/
+    :param endpoint: seed endpoint e.g., properties for /api/v3/properties/
     :type endpoint: string
     :param data_name: name of json key in api results containing data
                       not always needed
@@ -351,7 +351,7 @@ class SEEDBaseClient(JSONAPI):
         status_code = response.status_code
         url = response.request.url
         verb = response.request.method
-        # e.g. MyClass.method
+        # e.g., MyClass.method
         caller = caller = '{}.{}'.format(
             self.__class__.__name__, inspect.stack()[stack_pos + 1][3]
         )

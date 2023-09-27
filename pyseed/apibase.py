@@ -59,7 +59,7 @@ class BaseAPI(object):
             calling super.
 
             This requires username and password to be supplied as
-            keyword arguments. N.B. api keys using basic auth e.g. SEED
+            keyword arguments. N.B. api keys using basic auth e.g., SEED
             should be supplied as password.
 
             To use Digest Authentication set auth_method='digest'
