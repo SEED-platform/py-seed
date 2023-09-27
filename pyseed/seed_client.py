@@ -3,7 +3,6 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-
 # Imports from Standard Library
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -713,7 +712,7 @@ class SeedClient(SeedClientWrapper):
                 {
                     "import_file_id": 54,
                     "success": true,
-                    "filename": "DataforSEED_dos15.csv"
+                    "filename": "data_for_seed.csv"
                 }
         """
         params = {
