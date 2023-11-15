@@ -74,6 +74,7 @@ URLS = {
         'properties_meters': '/api/v3/properties/PK/meters/',
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
         'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
+        'audit_template_submission': '/api/v3/audit_template/PK/get_submission',
         # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
     }
@@ -215,6 +216,9 @@ class SEEDBaseClient(JSONAPI):
             error = False
         elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
             # spreadsheet response
+            error = False
+        elif 'application/pdf' in response_content_types:
+            # PDF report response
             error = False
         elif 'application/json' not in response_content_types:
             # get as text

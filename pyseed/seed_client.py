@@ -1418,6 +1418,58 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
+    def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf') -> dict:
+        """Connect to audit template and retrieve audit report by submission ID
+
+        Args:
+            audit_template_submission_id (int): ID of the AT submission report (different than building ID)
+            cycle_id (int): Cycle ID in SEED
+            seed_id (int): PropertyView ID in SEED
+            file_format (str): pdf or xml report, defaults to pdf
+
+        Returns:
+            dict: Response from the SEED API
+        """
+
+        # api/v3/audit_template/pk/get_submission
+        # accepts pdf or xml
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_submission",
+            url_args={"PK": audit_template_submission_id},
+            report_format=report_format
+        )
+
+        if response['status'] == 'success':
+
+            if report_format.lower() == 'pdf':
+                pdf_file = response['content']
+                response['pdf_report'] = pdf_file
+            else:
+                # assume XML
+                response['xml_report'] = response['content']
+
+            # TODO: add to inventory documents in SEED
+            # now post to api/v3/properties/PK/update_with_buildingsync
+            # xml_file = response['content']
+            # filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+            # files = [
+            #     ('file', (filename, xml_file)),
+            #     ('file_type', (None, 1))
+            # ]
+
+            # response = self.client.put(
+            #     None,
+            #     required_pk=False,
+            #     endpoint="properties_update_with_buildingsync",
+            #     url_args={"PK": seed_id},
+            #     files=files,
+            #     cycle_id=cycle_id
+            # )
+
+        return response
+
     def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> dict:
         """Connect to portfolio manager and download an individual properties data in Excel format
 
