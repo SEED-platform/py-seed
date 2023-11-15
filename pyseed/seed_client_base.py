@@ -51,7 +51,6 @@ URLS = {
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
         'properties_search': '/api/v3/properties/search/',
-        'property_states': '/api/v3/property_states/',
         'property_views': '/api/v3/property_views/',
         'taxlots': '/api/v3/taxlots/',
         'upload': '/api/v3/upload/',
@@ -69,10 +68,12 @@ URLS = {
         'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
         'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
         # GETs with replaceable keys
+        'analyses_views': '/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/',
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
         'progress': '/api/v3/progress/PROGRESS_KEY/',
         'properties_meters': '/api/v3/properties/PK/meters/',
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
+        'properties_analyses': '/api/v3/properties/PK/analyses/',
         'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
         # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
@@ -425,11 +426,14 @@ class ReadMixin(object):
 
         """
         url_args = kwargs.pop('url_args', None)
+        org_id_qp = kwargs.pop('include_org_id_query_param', False)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
+        if org_id_qp:
+            url += f"?organization_id={self.org_id}"
         response = super(ReadMixin, self)._get(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)

@@ -216,8 +216,8 @@ class SeedClient(SeedClientWrapper):
             property_view_id, endpoint="property_views", data_name="property_views"
         )
 
-    def get_property(self, property_id: int) -> dict:
-        """Return a single property by the property id.
+    def get_property(self, property_view_id: int) -> dict:
+        """Return a single property by the property view id.
 
         Args:
             property__id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
@@ -236,7 +236,7 @@ class SeedClient(SeedClientWrapper):
         """
         # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
         return self.client.get(
-            property_id, endpoint="properties", data_name="properties"
+            property_view_id, endpoint="properties", data_name="properties"
         )
 
     def search_buildings(
@@ -379,18 +379,23 @@ class SeedClient(SeedClientWrapper):
 
         return self.client.delete(id, endpoint="labels")
 
-    def get_view_ids_with_label(self, label_names: list = []) -> list:
-        """Get the view IDs of the properties with a given label name.
+    def get_view_ids_with_label(self, label_names: Union[str, list] = []) -> list:
+        """Get the view IDs of the properties with a given label name(s). Can be a single
+        label or a list of labels.
 
         Note that with labels, the data.selected field is for property view ids! SEED was updated
         in June 2022 to add in the label_names to filter on.
 
         Args:
-            label_names (list, optional): list of the labels to filter on. Defaults to [].
+            label_names (str, list, optional): list of the labels to filter on. Defaults to [].
 
         Returns:
             list: list of labels and the views they are associated with
         """
+        # if the label_names is not a list, then make it one
+        if not isinstance(label_names, list):
+            label_names = [label_names]
+
         properties = self.client.post(
             endpoint="properties_labels",
             cycle=self.cycle_id,
@@ -1472,3 +1477,41 @@ class SeedClient(SeedClientWrapper):
         )
 
         return response
+
+    def retrieve_analyses_for_property(self, property_id: int) -> dict:
+        """Retrieve a list of all the analyses for a single property id. Since this
+        is a property ID, then it is all the analyses for the all cycles. Note that this endpoint
+        requires the passing of the organization id as a query parameter, otherwise it fails.
+
+        Args:
+            property_id (int): Property view id to return the list of analyses
+
+        Returns:
+            dict: list of all the analyses that have run (or failed) for the property view
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="properties_analyses",
+            url_args={"PK": property_id},
+            include_org_id_query_param=True,
+        )
+
+    def retrieve_analysis_result(self, analysis_id: int, analysis_view_id: int) -> dict:
+        """Return the detailed JSON of a single analysis view. The endpoint in SEED is
+        typically: https://dev1.seed-platform.org/app/#/analyses/274/runs/14693.
+
+        Args:
+            analysis_id (int): ID of the analysis
+            analysis_view_id (int): ID of the analysis view
+
+        Returns:
+            dict: Return the detailed results of a single analysis view
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="analyses_views",
+            url_args={"PK": analysis_id, "ANALYSIS_VIEW_PK": analysis_view_id},
+            include_org_id_query_param=True,
+        )
