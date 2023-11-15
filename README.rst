@@ -7,8 +7,6 @@ py-SEED
 .. image:: https://badge.fury.io/py/py-seed.svg
     :target: https://pypi.python.org/pypi/py-seed/
 
-py-SEED is a Python client for the SEED Platform API. The library is designed to be used by other Python applications to interact with the SEED Platform API to retrieve list of properties, create properties, connect and pull from ENERGY STAR(R) Portfolio Manager, BETTER, and more. The SEED Platform has a rich API that allows users to interact with every front-end feature via the API. This library currently exposed only the most commonly used API endpoints and will be continually updated based on the needs of the community. py-SEED has two levels of interaction, the first is a high-level API designed to connect to provide easy access to SEED's API through familiar endpoints, whereas the low-level API enabled read-write access to any SEED API, but requires more knowledge of the SEED API.
-
 py-SEED serves as a Python client for the SEED Platform API. This library is purpose-built for Python applications, enabling interaction with the SEED Platform API to access property lists, create properties, establish connections, and retrieve data from ENERGY STAR(R) Portfolio Manager, BETTER, and other sources. The SEED Platform has a robust API, granting users access to every front-end feature seamlessly via the API. Currently, this library exposes the most commonly used SEED API endpoints and will undergo continuous updates tailored to the community's evolving needs. py-SEED offers two interaction levels: a high-level API providing familiar endpoints for easy connectivity to SEED's API, and a low-level API that allows read-write access to any SEED API, demanding a deeper understanding of the SEED API architecture
 
 py-SEED is compatible with the latest version of the SEED Platform (>2.17.4) and only support SEED API Version 3.
@@ -73,7 +71,7 @@ Within Python you can use the client like this:
 
 Low-Level Documentation
 -----------------------
-This client has access to the lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This provides two user authentication based Python clients and two authentication methods, basic and `OAuth2 < https://github.com/GreenBuildingRegistry/jwt_oauth2>`_. More information on authentication can be seen in the following py-SEED classes:
+This client has access to the lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This provides two user authentication based Python clients and two authentication methods, basic and `OAuth2 <https://github.com/GreenBuildingRegistry/jwt_oauth2>`_. More information on authentication can be seen in the following py-SEED classes:
 
 
     SEEDOAuthReadOnlyClient
@@ -136,4 +134,6 @@ Releasing
     rm -rf dist
     python setup.py sdist
     pip install twine
+    # make sure to check the dist package for errors in the RST files
+    twine check dist/*
     twine upload dist/*
