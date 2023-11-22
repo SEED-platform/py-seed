@@ -67,6 +67,7 @@ URLS = {
         # PUTs with replaceable keys:
         'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
         'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
+        'properties_upload_inventory_document': 'api/v3/properties/PK/upload_inventory_document',
         # GETs with replaceable keys
         'analyses_views': '/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/',
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
@@ -75,6 +76,7 @@ URLS = {
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
         'properties_analyses': '/api/v3/properties/PK/analyses/',
         'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
+        'audit_template_submission': '/api/v3/audit_template/PK/get_submission',
         # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
     }
@@ -216,6 +218,9 @@ class SEEDBaseClient(JSONAPI):
             error = False
         elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
             # spreadsheet response
+            error = False
+        elif 'application/pdf' in response_content_types:
+            # PDF report response
             error = False
         elif 'application/json' not in response_content_types:
             # get as text
@@ -481,6 +486,7 @@ class UpdateMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
+
         response = super(UpdateMixin, self)._put(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
