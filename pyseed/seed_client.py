@@ -1427,6 +1427,71 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
+    def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf', filename: str = None) -> dict:
+        """Connect to audit template and retrieve audit report by submission ID
+
+        Args:
+            audit_template_submission_id (int): ID of the AT submission report (different than building ID)
+            cycle_id (int): Cycle ID in SEED (needed for XML but not actually for PDF)
+            seed_id (int): PropertyView ID in SEED
+            file_format (str): pdf or xml report, defaults to pdf
+            filename (str): filename to use to upload to SEED
+
+        Returns:
+            dict: Response from the SEED API
+            including the PDF file (if that format was requested)
+        """
+
+        # api/v3/audit_template/pk/get_submission
+        # accepts pdf or xml
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_submission",
+            url_args={"PK": audit_template_submission_id},
+            report_format=report_format
+        )
+
+        if response['status'] == 'success':
+            if report_format.lower() == 'pdf':
+                pdf_file = response['content']
+                if not filename:
+                    filename = 'at_submission_report_' + str(audit_template_submission_id) + '.pdf'
+                files = [
+                    ('file', (filename, pdf_file)),
+                    ('file_type', (None, 1))
+                ]
+                response2 = self.client.put(
+                    None,
+                    required_pk=False,
+                    endpoint="properties_upload_inventory_document",
+                    url_args={"PK": seed_id},
+                    files=files
+                )
+                response2['pdf_report'] = pdf_file
+            else:
+                # assume XML
+                # now post to api/v3/properties/PK/update_with_buildingsync
+                xml_file = response['content']
+                if not filename:
+                    filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+
+                files = [
+                    ('file', (filename, xml_file)),
+                    ('file_type', (None, 1))
+                ]
+
+                response2 = self.client.put(
+                    None,
+                    required_pk=False,
+                    endpoint="properties_update_with_buildingsync",
+                    url_args={"PK": seed_id},
+                    files=files,
+                    cycle_id=cycle_id
+                )
+
+        return response2
+
     def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> dict:
         """Connect to portfolio manager and download an individual properties data in Excel format
 
