@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.4.1
+-----
+
+What's Changed
+**************
+
+* Add analysis retrieve methods by @nllong in https://github.com/SEED-platform/py-seed/pull/34
+* Added multiple cycle upload argument by @anchapin in https://github.com/SEED-platform/py-seed/pull/27
+* Endpoint to download an Audit Template Report Submission and store in SEED by @kflemin in https://github.com/SEED-platform/py-seed/pull/36
+
+
 0.4.0
 -----
 
