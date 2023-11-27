@@ -125,6 +125,7 @@ Full details in LICENSE file.
 Releasing
 ---------
 
+* Configure your PyPi with token access `https://pypi.org/manage/account/token/`_.
 * Merge down to main
 * Tag release on GitHub and add in the change log
 * Release via command line
@@ -136,4 +137,4 @@ Releasing
     pip install twine
     # make sure to check the dist package for errors in the RST files
     twine check dist/*
-    twine upload dist/*
+    twine upload --repository py-seed dist/*
