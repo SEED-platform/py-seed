@@ -216,8 +216,8 @@ class SeedClient(SeedClientWrapper):
             property_view_id, endpoint="property_views", data_name="property_views"
         )
 
-    def get_property(self, property_id: int) -> dict:
-        """Return a single property by the property id.
+    def get_property(self, property_view_id: int) -> dict:
+        """Return a single property by the property view id.
 
         Args:
             property__id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
@@ -236,7 +236,7 @@ class SeedClient(SeedClientWrapper):
         """
         # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
         return self.client.get(
-            property_id, endpoint="properties", data_name="properties"
+            property_view_id, endpoint="properties", data_name="properties"
         )
 
     def search_buildings(
@@ -379,18 +379,23 @@ class SeedClient(SeedClientWrapper):
 
         return self.client.delete(id, endpoint="labels")
 
-    def get_view_ids_with_label(self, label_names: list = []) -> list:
-        """Get the view IDs of the properties with a given label name.
+    def get_view_ids_with_label(self, label_names: Union[str, list] = []) -> list:
+        """Get the view IDs of the properties with a given label name(s). Can be a single
+        label or a list of labels.
 
         Note that with labels, the data.selected field is for property view ids! SEED was updated
         in June 2022 to add in the label_names to filter on.
 
         Args:
-            label_names (list, optional): list of the labels to filter on. Defaults to [].
+            label_names (str, list, optional): list of the labels to filter on. Defaults to [].
 
         Returns:
             list: list of labels and the views they are associated with
         """
+        # if the label_names is not a list, then make it one
+        if not isinstance(label_names, list):
+            label_names = [label_names]
+
         properties = self.client.post(
             endpoint="properties_labels",
             cycle=self.cycle_id,
@@ -1149,12 +1154,13 @@ class SeedClient(SeedClientWrapper):
     def save_meter_data(self, property_id: int, meter_id: int, meter_data) -> dict:
         pass
 
-    def start_save_data(self, import_file_id: int) -> dict:
+    def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> dict:
         """start the background process to save the data file to the database.
         This is the state before the mapping.
 
         Args:
             import_file_id (int): id of the import file to save
+            multiple_cycle_upload (bool): whether to use multiple cycle upload
 
         Returns:
             dict: progress key
@@ -1167,7 +1173,8 @@ class SeedClient(SeedClientWrapper):
         return self.client.post(
             "import_files_start_save_data_pk",
             url_args={"PK": import_file_id},
-            json={"cycle_id": self.cycle_id},
+            json={"cycle_id": self.cycle_id,
+                  "multiple_cycle_upload": multiple_cycle_upload},
         )
 
     def start_map_data(self, import_file_id: int) -> dict:
@@ -1316,6 +1323,7 @@ class SeedClient(SeedClientWrapper):
             column_mapping_profile_name (str): Name of the column mapping profile to use
             column_mappings_file (str): Mapping that will be uploaded to the column_mapping_profile_name
             import_meters_if_exist (bool): If true, will import meters from the meter tab if they exist in the datafile. Defaults to False.
+            multiple_cycle_upload (bool): Whether to use multiple cycle upload. Defaults to False.
 
         Returns:
             dict: {
@@ -1326,9 +1334,10 @@ class SeedClient(SeedClientWrapper):
         dataset = self.get_or_create_dataset(dataset_name)
         result = self.upload_datafile(dataset["id"], datafile, datafile_type)
         import_file_id = result["import_file_id"]
+        multiple_cycle_upload = kwargs.pop("multiple_cycle_upload", False)
 
         # start processing
-        result = self.start_save_data(import_file_id)
+        result = self.start_save_data(import_file_id, multiple_cycle_upload)
         progress_key = result.get("progress_key", None)
 
         # wait until upload is complete
@@ -1418,6 +1427,71 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
+    def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf', filename: str = None) -> dict:
+        """Connect to audit template and retrieve audit report by submission ID
+
+        Args:
+            audit_template_submission_id (int): ID of the AT submission report (different than building ID)
+            cycle_id (int): Cycle ID in SEED (needed for XML but not actually for PDF)
+            seed_id (int): PropertyView ID in SEED
+            file_format (str): pdf or xml report, defaults to pdf
+            filename (str): filename to use to upload to SEED
+
+        Returns:
+            dict: Response from the SEED API
+            including the PDF file (if that format was requested)
+        """
+
+        # api/v3/audit_template/pk/get_submission
+        # accepts pdf or xml
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_submission",
+            url_args={"PK": audit_template_submission_id},
+            report_format=report_format
+        )
+
+        if response['status'] == 'success':
+            if report_format.lower() == 'pdf':
+                pdf_file = response['content']
+                if not filename:
+                    filename = 'at_submission_report_' + str(audit_template_submission_id) + '.pdf'
+                files = [
+                    ('file', (filename, pdf_file)),
+                    ('file_type', (None, 1))
+                ]
+                response2 = self.client.put(
+                    None,
+                    required_pk=False,
+                    endpoint="properties_upload_inventory_document",
+                    url_args={"PK": seed_id},
+                    files=files
+                )
+                response2['pdf_report'] = pdf_file
+            else:
+                # assume XML
+                # now post to api/v3/properties/PK/update_with_buildingsync
+                xml_file = response['content']
+                if not filename:
+                    filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+
+                files = [
+                    ('file', (filename, xml_file)),
+                    ('file_type', (None, 1))
+                ]
+
+                response2 = self.client.put(
+                    None,
+                    required_pk=False,
+                    endpoint="properties_update_with_buildingsync",
+                    url_args={"PK": seed_id},
+                    files=files,
+                    cycle_id=cycle_id
+                )
+
+        return response2
+
     def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> dict:
         """Connect to portfolio manager and download an individual properties data in Excel format
 
@@ -1472,3 +1546,41 @@ class SeedClient(SeedClientWrapper):
         )
 
         return response
+
+    def retrieve_analyses_for_property(self, property_id: int) -> dict:
+        """Retrieve a list of all the analyses for a single property id. Since this
+        is a property ID, then it is all the analyses for the all cycles. Note that this endpoint
+        requires the passing of the organization id as a query parameter, otherwise it fails.
+
+        Args:
+            property_id (int): Property view id to return the list of analyses
+
+        Returns:
+            dict: list of all the analyses that have run (or failed) for the property view
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="properties_analyses",
+            url_args={"PK": property_id},
+            include_org_id_query_param=True,
+        )
+
+    def retrieve_analysis_result(self, analysis_id: int, analysis_view_id: int) -> dict:
+        """Return the detailed JSON of a single analysis view. The endpoint in SEED is
+        typically: https://dev1.seed-platform.org/app/#/analyses/274/runs/14693.
+
+        Args:
+            analysis_id (int): ID of the analysis
+            analysis_view_id (int): ID of the analysis view
+
+        Returns:
+            dict: Return the detailed results of a single analysis view
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="analyses_views",
+            url_args={"PK": analysis_id, "ANALYSIS_VIEW_PK": analysis_view_id},
+            include_org_id_query_param=True,
+        )
