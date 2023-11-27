@@ -7,10 +7,12 @@ Changelog
 What's Changed
 **************
 
+* Configure seed to load small EEEJ dataset for integration test by @kflemin in https://github.com/SEED-platform/py-seed/pull/33
 * Add analysis retrieve methods by @nllong in https://github.com/SEED-platform/py-seed/pull/34
 * Added multiple cycle upload argument by @anchapin in https://github.com/SEED-platform/py-seed/pull/27
 * Endpoint to download an Audit Template Report Submission and store in SEED by @kflemin in https://github.com/SEED-platform/py-seed/pull/36
 
+**Full Changelog**: https://github.com/SEED-platform/py-seed/commits/v0.4.1
 
 0.4.0
 -----
@@ -26,7 +28,9 @@ What's Changed
 * Add new endpoints to support 179D by @kflemin in https://github.com/SEED-platform/py-seed/pull/22
 * Increase timeout for server start by @nllong in https://github.com/SEED-platform/py-seed/pull/31
 
-## New Contributors
+New Contributors
+****************
+
 * @kflemin made their first contribution in https://github.com/SEED-platform/py-seed/pull/22
 
 **Full Changelog**: https://github.com/SEED-platform/py-seed/commits/v0.4.0
