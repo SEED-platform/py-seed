@@ -15,7 +15,7 @@ N.B. Only a Read Only client (with public methods) is supplied.
 This is a deliberate design decision. There is no general purpose client that
 can write to the db, this ensures caching is transparent and always valid.
 
-You *must* always use the class corresponding to the relevant model, i.e.
+You *must* always use the class corresponding to the relevant model, i.e.,
 one that inherits from SEEDRecord to be able to write to the db.
 You *should* generally this for reading too, in order to get the benefits of
 caching.
@@ -51,7 +51,6 @@ URLS = {
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
         'properties_search': '/api/v3/properties/search/',
-        'property_states': '/api/v3/property_states/',
         'property_views': '/api/v3/property_views/',
         'taxlots': '/api/v3/taxlots/',
         'upload': '/api/v3/upload/',
@@ -66,11 +65,20 @@ URLS = {
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
         'portfolio_manager_report_templates': '/api/v3/portfolio_manager/template_list/',
         'portfolio_manager_report': '/api/v3/portfolio_manager/report/',
+        # PUTs with replaceable keys:
+        'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
+        'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
+        'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
+        'properties_upload_inventory_document': 'api/v3/properties/PK/upload_inventory_document',
         # GETs with replaceable keys
+        'analyses_views': '/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/',
         'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
         'progress': '/api/v3/progress/PROGRESS_KEY/',
         'properties_meters': '/api/v3/properties/PK/meters/',
         'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
+        'properties_analyses': '/api/v3/properties/PK/analyses/',
+        'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
+        'audit_template_submission': '/api/v3/audit_template/PK/get_submission',
         # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
     }
@@ -146,7 +154,7 @@ class SEEDBaseClient(JSONAPI):
     :type username: string (email address)
     :param api_key: api_key of use who can access records
     :type api_key: string
-    :param endpoint: seed endpoint e.g. properties for /api/v3/properties/
+    :param endpoint: seed endpoint e.g., properties for /api/v3/properties/
     :type endpoint: string
     :param data_name: name of json key in api results containing data
                       not always needed
@@ -196,15 +204,31 @@ class SEEDBaseClient(JSONAPI):
         """
         error = False
         error_msg = 'Unknown error from SEED API'
-        # OK, Created, Accepted
-        if response.status_code not in [200, 201, 202]:
+
+        # grab the response content type to determine json, spreadsheet, or text
+        response_content_types = response.headers.get('Content-Type', [])
+
+        # OK, Created, Accepted, No-Content
+        if response.status_code not in [200, 201, 202, 204]:
             error = True
             error_msg = 'SEED returned status code: {}'.format(response.status_code)
         # SEED adds a status key to the response to indicate success/error
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
+        elif response.status_code == 204:
+            # there will not be response content with a 204
+            error = False
+        elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
+            # spreadsheet response
+            error = False
+        elif 'application/pdf' in response_content_types:
+            # PDF report response
+            error = False
+        elif 'application/json' not in response_content_types:
+            # get as text
+            if not response.content:
+                error = True
         elif isinstance(response.json(), dict):
-
             status_field = response.json().get('status', None)
             has_progress_key = 'progress_key' in response.json().keys()
             if status_field:
@@ -260,6 +284,15 @@ class SEEDBaseClient(JSONAPI):
         tries to determine what the first element of the resulting JSON is which is then used as
         the base for the rest of the response. This is not always desired, so pass data_name='all' if
         you want to get the entire response back."""
+
+        # grab the response content type to determine json, spreadsheet, or text
+        response_content_types = response.headers.get('Content-Type', [])
+
+        # pass through for spreadsheet (?)
+        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
+            return response.content
+        if 'application/json' not in response_content_types:
+            return {'status': 'success', 'content': response.content}
         if not data_name:
             url = response.request.url
             # take the last part of the url unless it's a digit
@@ -270,7 +303,12 @@ class SEEDBaseClient(JSONAPI):
             else:
                 data_name = durl[1]
         # actual results should be under data_name or the fallbacks
-        result = response.json()
+        # handle a 204
+        result = None
+        if response.status_code == 204:
+            result = {'status': 'success'}
+        else:
+            result = response.json()
         if result is None:
             error_msg = 'No results returned'
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
@@ -321,7 +359,7 @@ class SEEDBaseClient(JSONAPI):
         status_code = response.status_code
         url = response.request.url
         verb = response.request.method
-        # e.g. MyClass.method
+        # e.g., MyClass.method
         caller = caller = '{}.{}'.format(
             self.__class__.__name__, inspect.stack()[stack_pos + 1][3]
         )
@@ -395,11 +433,14 @@ class ReadMixin(object):
 
         """
         url_args = kwargs.pop('url_args', None)
+        org_id_qp = kwargs.pop('include_org_id_query_param', False)
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, 'endpoint', endpoint)
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
+        if org_id_qp:
+            url += f"?organization_id={self.org_id}"
         response = super(ReadMixin, self)._get(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
@@ -447,6 +488,7 @@ class UpdateMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
+
         response = super(UpdateMixin, self)._put(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)

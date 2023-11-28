@@ -1,0 +1,33 @@
+column_name,display_name,column_description,inventory_type,data_type
+completion_date,Completion Date,Completion Date,Property,string
+pathway,Pathway,Pathway (Traditional or Alternative),Property,string
+project_type,Project Type,Project Type (New or Retrofit),Property,string
+number_of_floors,Number of Floors,Number of Floors,Property,integer
+aspect_ratio,Aspect Ratio,Aspect Ratio,Property,number
+window_wall_ratio,Window to Wall Ratio,Window to Wall Ratio,Property,number
+window_u_factor,Window U Factor,Window U Factor,Property,number
+window_shgc,Window SHGC,Window SHGC,Property,number
+has_skylights,Has Skylights?,Does the building have skylights?,Property,boolean
+hvac_system,HVAC System,HVAC System Type,Property,string
+skylights_u_factor,Skylights U-Factor,Skylights U-Factor value,Property,number
+skylights_shgc,Skylights SHGC,Skylights SHGC value,Property,number
+roof_thermal_perf_type,Roof Thermal Performance Type,U-Factor or R-Value,Property,string
+roof_thermal_perf_value,Roof Thermal Performance Value,Value of U-Factor or R-Value depending on what was selected as Roof Thermal Performance Type,Property,number
+roof_surface_property_type,Roof Surface Property Type,Solar Reflectance or Solar Absorptance,Property,string
+roof_surface_property_value,Roof Surface Property Value,Value of Solar Reflectance or Solar Absorptance depending on what was selected in Roof Surface Property Type,Property,number
+wall_thermal_perf_type,Wall Thermal Performance Type,U-Factor or R-Value,Property,string
+wall_thermal_perf_value,Wall Thermal Performance Value,Value of U-Factor or R-Value depending on what was selected as Roof Thermal Performance Type,Property,number
+occupancy_sensors_used,Occupancy Sensors Used?,True/False whether Occupancy sensors are used,Property,boolean
+percentage_area_using_sensors,Percentage of Area using Occupancy Sensors,"If sensors are used, what percentage of the area do they cover?",Property,number
+water_heating_energy_factor,Water Heating Energy Factor,Water Heating Energy Factor,Property,number
+proposed_lpd,LPD,LPD,Property,number
+air_system_fan_total_efficiency,Air System Fan Total Efficiency,Air System Fan Total Efficiency,Property,number
+boiler_average_efficiency,Boiler Average Efficiency,Boiler Average Efficiency,Property,number
+dx_cooling_cop,DX Cooling COP,DX Cooling COP,Property,number
+zone_hvac_fan_total_efficiency,Zone HVAC Fan Total Efficiency,Zone HVAC Fan Total Efficiency,Property,number
+dx_heating_cop,DX Heating COP,DX Heating COP,Property,number
+gas_coil_average_efficiency,Gas Coil Average Efficiency,Gas Coil Average Efficiency,Property,number
+chiller_average_cop,Chiller Average COP,Chiller Average COP,Property,number
+electricity_savings,Electricity Savings,Electricity Savings,Property,number
+natural_gas_savings,Natural Gas Savings,Natural Gas Savings,Property,number
+deduction,Deduction,Deduction,Property,number
