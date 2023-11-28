@@ -125,7 +125,7 @@ Full details in LICENSE file.
 Releasing
 ---------
 
-* Configure your PyPi with token access `https://pypi.org/manage/account/token/`_.
+* Configure your PyPi with token access `https://pypi.org/manage/account/token/ <https://pypi.org/manage/account/token/>`.
 * Merge down to main
 * Tag release on GitHub and add in the change log
 * Release via command line
