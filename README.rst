@@ -1,5 +1,6 @@
 py-SEED
-=========
+===========
+
 
 .. image:: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg?branch=develop
     :target: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg

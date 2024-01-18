@@ -1455,7 +1455,7 @@ class SeedClient(SeedClientWrapper):
             audit_template_submission_id (int): ID of the AT submission report (different than building ID)
             cycle_id (int): Cycle ID in SEED (needed for XML but not actually for PDF)
             seed_id (int): PropertyView ID in SEED
-            file_format (str): pdf, or xml report, defaults to pdf
+            file_format (str): pdf or xml report, defaults to pdf
             filename (str): filename to use to upload to SEED
 
         Returns:
@@ -1464,7 +1464,8 @@ class SeedClient(SeedClientWrapper):
         """
 
         # api/v3/audit_template/pk/get_submission
-        # accepts pdf, xml
+        # accepts pdf or xml
+
         response = self.client.get(
             None,
             required_pk=False,
@@ -1475,6 +1476,7 @@ class SeedClient(SeedClientWrapper):
 
         if response['status'] == 'success':
             if report_format.lower() == 'pdf':
+
                 # for PDF, store pdf report as inventory document
                 pdf_file = response['content']
                 if not filename:
@@ -1492,6 +1494,7 @@ class SeedClient(SeedClientWrapper):
                 )
                 response2['pdf_report'] = pdf_file
             else:
+
                 # assume XML. for XML, update property with BuildingSync
                 # now post to api/v3/properties/PK/update_with_buildingsync
                 xml_file = response['content']
