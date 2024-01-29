@@ -63,8 +63,10 @@ URLS = {
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
         'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
-        'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
+        'portfolio_manager_report_templates': '/api/v3/portfolio_manager/template_list/',
+        'portfolio_manager_report': '/api/v3/portfolio_manager/report/',
         # PUTs with replaceable keys:
+        'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
         'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
         'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
         'properties_upload_inventory_document': 'api/v3/properties/PK/upload_inventory_document',
