@@ -715,23 +715,42 @@ class SeedClient(SeedClientWrapper):
         """
         if not progress_key:
             raise Exception("No progress key provided")
-        try:
-            progress_result = self.client.get(
-                None,
-                required_pk=False,
-                endpoint="progress",
-                url_args={"PROGRESS_KEY": progress_key},
-            )
-        except Exception:
-            logger.error("Other unknown exception caught")
+        for _ in range(2000):
+            try:
+                progress_result = self.client.get(
+                    None,
+                    required_pk=False,
+                    endpoint="progress",
+                    url_args={"PROGRESS_KEY": progress_key},
+                )
+            except ConnectionResetError as e:
+                print(f'ConnectionResetError: {e}. Retrying...')
+                time.sleep(2)  # Wait for a short interval before retrying
+            except Exception as e:
+                logger.error("Other unknown exception caught: %s", str(e))
+                progress_result = None
+                raise
+            if progress_result and progress_result["progress"] == 100:
+                return progress_result
+            else:
+                # wait a couple seconds before checking the status again
+                time.sleep(2)
+                # Print progress_result "progress"
+                logger.info("Progress value is %i%%", progress_result["progress"])
+
+        # After the loop, you can check if the progress reached 100% or not
+        if progress_result and progress_result["progress"] == 100:
+            print("Progress is 100%")
+        else:
+            print("Progress did not reach 100% after 2000 checks")
             progress_result = None
 
-        if progress_result and progress_result["progress"] == 100:
-            return progress_result
-        else:
-            # wait a couple seconds before checking the status again
-            time.sleep(2)
-            progress_result = self.track_progress_result(progress_key)
+        # if progress_result and progress_result["progress"] == 100:
+        #     return progress_result
+        # else:
+        #     # wait a couple seconds before checking the status again
+        #     time.sleep(2)
+        #     progress_result = self.track_progress_result(progress_key)
 
         return progress_result
 
@@ -1212,62 +1231,58 @@ class SeedClient(SeedClientWrapper):
                 "message": string # this includes error message if any
             }
         """
+        # Make a POST request to the portfolio manager report endpoint
         response = self.client.post(
             endpoint="portfolio_manager_report",
             json={"username": pm_username,
-                  "password": pm_password,
-                  "template": pm_template},
+                "password": pm_password,
+                "template": pm_template},
         )
 
-        # Get the "properties" key from the dictionary.
+        # Extract properties from the response
         properties = response["properties"]
 
-        # Create an XLSX workbook object.
+        # Create a new XLSX workbook
         workbook = openpyxl.Workbook()
-
-        # Create a sheet object in the workbook.
         sheet = workbook.active
 
-        # Get the header row from the API response.
-        header_row = []
-        for property in properties:
-            for key in property:
-                if key not in header_row:
-                    header_row.append(key)
-
-        # Write the header row to the sheet object.
+        # Write header row to the sheet
+        header_row = list(properties[0].keys())
         sheet.append(header_row)
 
-        # Loop over the list of dictionaries and write the data to the sheet object.
+        # Write data to the sheet
         for property in properties:
-            row = []
-            for key in header_row:
-                row.append(property[key])
+            row = [property.get(key, '') for key in header_row]
             sheet.append(row)
 
-        # Report Template name
+        # Get report template name
         report_template_name = pm_template['name']
 
-        # Filename
-        file_name = f"{pm_username}_{report_template_name}.xlsx"
-
-        # Folder name
+        # Define file and folder names
+        base_file_name = f"{pm_username}_{report_template_name}.xlsx"
         folder_name = "reports"
 
+        # Create reports folder if it doesn't exist
         if not os.path.exists(folder_name):
             os.mkdir(folder_name)
 
-        # Set the file path.
-        file_path = os.path.join(folder_name, file_name)
+        # Check if the workbook has more than 30000 rows, then split into multiple workbooks
+        if sheet.max_row > 30000:
+            chunk_size = 30000
+            for i in range(0, sheet.max_row, chunk_size):
+                new_workbook = openpyxl.Workbook()
+                new_sheet = new_workbook.active
+                new_sheet.append(header_row)  # Include the header row
+                for row in sheet.iter_rows(min_row=i + 1, max_row=min(i + chunk_size, sheet.max_row), values_only=True):
+                    new_sheet.append(row)
+                new_workbook.save(f"{folder_name}/{base_file_name}_{i // chunk_size + 1}.xlsx")
+        else:
+            # Save the workbook
+            workbook.save(f"{folder_name}/{base_file_name}")
 
-        # Save the workbook object.
-        workbook.save(file_path)
-
-        # Current directory
-        curdir = os.getcwd()
-
-        # Define the datafile path
-        datafile_path = os.path.join(curdir, file_path)
+        # Define the file paths
+        file_path = f"{folder_name}/{base_file_name}"
+        datafile_path = os.path.join(os.getcwd(), file_path)
 
         # Return the report templates
         return datafile_path
