@@ -9,6 +9,7 @@ import pytest
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
 # Local Imports
 from pyseed.seed_client import SeedClient
@@ -46,10 +47,17 @@ class SeedClientTest(unittest.TestCase):
             "tests/data/test-seed-data-mappings.csv",
         )
 
+        # Mock the API endpoint for get_pm_report_template_names
+        cls.mock_report_templates = patch(
+            "pyseed.seed_client.SeedClient.get_pm_report_template_names",
+            return_value=["Template 1", "Template 2"],
+        )
+        cls.mock_report_templates.start()
+
     @classmethod
     def teardown_class(cls):
-        # remove all of the test buildings?
-        pass
+        # Stop the mock
+        cls.mock_report_templates.stop()
 
     def test_seed_orgs(self):
         orgs = self.seed_client.get_organizations()
@@ -65,6 +73,13 @@ class SeedClientTest(unittest.TestCase):
         buildings = self.seed_client.get_buildings()
         # ESPM test creates a building now too, assert building count is 10 or 11?
         assert len(buildings) == 10
+
+    def test_get_pm_report_template_names(self):
+        template_names = self.seed_client.get_pm_report_template_names()
+        assert isinstance(template_names, list)
+        assert len(template_names) >= 2
+        assert "Template 1" in template_names
+        assert "Template 2" in template_names
 
     def test_search_buildings(self):
         # set cycle
