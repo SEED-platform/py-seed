@@ -47,17 +47,10 @@ class SeedClientTest(unittest.TestCase):
             "tests/data/test-seed-data-mappings.csv",
         )
 
-        # Mock the API endpoint for get_pm_report_template_names
-        cls.mock_report_templates = patch(
-            "pyseed.seed_client.SeedClient.get_pm_report_template_names",
-            return_value=["Template 1", "Template 2"],
-        )
-        cls.mock_report_templates.start()
-
     @classmethod
     def teardown_class(cls):
-        # Stop the mock
-        cls.mock_report_templates.stop()
+        # remove all of the test buildings?
+        pass
 
     def test_seed_orgs(self):
         orgs = self.seed_client.get_organizations()
@@ -79,13 +72,18 @@ class SeedClientTest(unittest.TestCase):
         pm_pw = os.environ.get('SEED_PM_PW', False)
         if not pm_un or not pm_pw:
             self.fail(f"Somehow PM test was initiated without {pm_un} or {pm_pw} in the environment")
-        template_names = self.seed_client.get_pm_report_template_names(pm_un, pm_pw)
+        response = self.seed_client.get_pm_report_template_names(pm_un, pm_pw)
+        templates = response["templates"]
+        # loop through the array templates and make a list of all the name keys
+        template_names = []
+        for template in templates:
+            template_names.append(template["name"])
         assert isinstance(template_names, list)
         assert len(template_names) >= 17
         assert "BPS Workflow 2021" in template_names
         assert "AT Properties" in template_names
         # check that the status is success
-        assert template_names["status"] == "success"
+        assert response["status"] == "success"
 
     def test_search_buildings(self):
         # set cycle
