@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.4.2
+-----
+What's Changed
+**************
+
+* add new method to get AT submission metadata by @kflemin in https://github.com/SEED-platform/py-seed/pull/39
+
 0.4.1
 -----
 

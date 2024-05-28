@@ -1539,7 +1539,32 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
+<<<<<<< HEAD
     def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf', filename: str = None) -> Dict:
+=======
+    def retrieve_at_submission_metadata(self, audit_template_submission_id: int) -> dict:
+        """Connect to audit template and retrieve audit report json (metadata only) by submission ID
+
+        Args:
+            audit_template_submission_id (int): ID of the AT submission report (different than building ID)
+
+        Returns:
+            dict: Response from the SEED API
+        """
+
+        # api/v3/audit_template/pk/get_submission
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_submission",
+            url_args={"PK": audit_template_submission_id},
+            report_format='json'
+        )
+
+        return response
+
+    def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf', filename: str = None) -> dict:
+>>>>>>> develop
         """Connect to audit template and retrieve audit report by submission ID
 
         Args:
@@ -1556,6 +1581,7 @@ class SeedClient(SeedClientWrapper):
 
         # api/v3/audit_template/pk/get_submission
         # accepts pdf or xml
+
         response = self.client.get(
             None,
             required_pk=False,
@@ -1566,6 +1592,8 @@ class SeedClient(SeedClientWrapper):
 
         if response['status'] == 'success':
             if report_format.lower() == 'pdf':
+
+                # for PDF, store pdf report as inventory document
                 pdf_file = response['content']
                 if not filename:
                     filename = 'at_submission_report_' + str(audit_template_submission_id) + '.pdf'
@@ -1582,7 +1610,8 @@ class SeedClient(SeedClientWrapper):
                 )
                 response2['pdf_report'] = pdf_file
             else:
-                # assume XML
+
+                # assume XML. for XML, update property with BuildingSync
                 # now post to api/v3/properties/PK/update_with_buildingsync
                 xml_file = response['content']
                 if not filename:
