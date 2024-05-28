@@ -5,17 +5,17 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 
 # Imports from Third Party Modules
 import os
-import pytest
+# import pytest
 import unittest
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
+from unittest import skipIf
 
 # Local Imports
 from pyseed.seed_client import SeedClient
 
-
-@pytest.mark.integration
+# @pytest.mark.integration
 class SeedClientTest(unittest.TestCase):
     @classmethod
     def setup_class(cls):
@@ -75,11 +75,17 @@ class SeedClientTest(unittest.TestCase):
         assert len(buildings) == 10
 
     def test_get_pm_report_template_names(self):
-        template_names = self.seed_client.get_pm_report_template_names()
+        pm_un = os.environ.get('SEED_PM_UN', False)
+        pm_pw = os.environ.get('SEED_PM_PW', False)
+        if not pm_un or not pm_pw:
+            self.fail(f"Somehow PM test was initiated without {pm_un} or {pm_pw} in the environment")
+        template_names = self.seed_client.get_pm_report_template_names(pm_un, pm_pw)
         assert isinstance(template_names, list)
-        assert len(template_names) >= 2
-        assert "Template 1" in template_names
-        assert "Template 2" in template_names
+        assert len(template_names) >= 17
+        assert "BPS Workflow 2021" in template_names
+        assert "AT Properties" in template_names
+        # check that the status is success
+        assert template_names["status"] == "success"
 
     def test_search_buildings(self):
         # set cycle
