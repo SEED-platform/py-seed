@@ -86,7 +86,7 @@ jobs:
           SEED_PM_UN: ${{ secrets.SEED_PM_UN }}
           SEED_PM_PW: ${{ secrets.SEED_PM_PW }}
         run: |
-          pytest -m "integration" -s
+          pytest -m integration -s
       - name: Dump docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v2

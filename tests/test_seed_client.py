@@ -5,19 +5,16 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 
 # Imports from Third Party Modules
 import os
-# import pytest
+import pytest
 import unittest
 from datetime import date
 from pathlib import Path
-from unittest import skipIf
-from unittest.mock import patch
 
 # Local Imports
 from pyseed.seed_client import SeedClient
 
-# @pytest.mark.integration
 
-
+@pytest.mark.integration
 class SeedClientTest(unittest.TestCase):
     @classmethod
     def setup_class(cls):
