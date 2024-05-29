@@ -103,8 +103,8 @@ class SeedClient(SeedClientWrapper):
     def __init__(
         self,
         organization_id: int,
-        connection_params: Dict = None,
-        connection_config_filepath: Path = None,
+        connection_params: Optional[Dict] = None,
+        connection_config_filepath: Optional[Path] = None,
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
@@ -239,7 +239,10 @@ class SeedClient(SeedClientWrapper):
         )
 
     def search_buildings(
-        self, identifier_filter: str = None, identifier_exact: str = None, cycle_id: int = None
+        self,
+        identifier_filter: Optional[str] = None,
+        identifier_exact: Optional[str] = None,
+        cycle_id: Optional[int] = None,
     ) -> Dict:
         if not cycle_id:
             cycle_id = self.cycle_id
@@ -257,7 +260,7 @@ class SeedClient(SeedClientWrapper):
         )
         return properties
 
-    def get_labels(self, filter_by_name: List = None) -> List:
+    def get_labels(self, filter_by_name: Optional[List] = None) -> List:
         """Get a List of all the labels in the organization. Filter by name if desired.
 
         Args:
@@ -315,9 +318,9 @@ class SeedClient(SeedClientWrapper):
     def update_label(
         self,
         label_name: str,
-        new_label_name: str = None,
-        new_color: str = None,
-        new_show_in_list: bool = None,
+        new_label_name: Optional[str] = None,
+        new_color: Optional[str] = None,
+        new_show_in_list: Optional[bool] = None,
     ) -> Dict:
         """Update an existing label with the new_* fields. If the new_* fields are not provided, then the existing values are used.
 
@@ -630,7 +633,7 @@ class SeedClient(SeedClientWrapper):
         # to keep the response consistent add back in the status
         return selected
 
-    def get_cycle_by_name(self, cycle_name: str, set_cycle_id: bool = None) -> Dict:
+    def get_cycle_by_name(self, cycle_name: str, set_cycle_id: Optional[bool] = None) -> Dict:
         """Set the current cycle by name.
 
         Args:
@@ -1150,9 +1153,6 @@ class SeedClient(SeedClientWrapper):
         meter_data = self.client.post(endpoint='properties_meter_usage', url_args={"PK": property_id}, json=payload)
         return meter_data
 
-    def save_meter_data(self, property_id: int, meter_id: int, meter_data) -> Dict:
-        pass
-
     def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> Dict:
         """start the background process to save the data file to the database.
         This is the state before the mapping.
@@ -1538,14 +1538,21 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
-    def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf', filename: str = None) -> Dict:
+    def retrieve_at_submission_and_update(
+      self,
+      audit_template_submission_id: int,
+      cycle_id: int,
+      seed_id: int,
+      report_format: str = 'pdf',
+      filename: Optional[str] = None,
+    ) -> Dict:
         """Connect to audit template and retrieve audit report by submission ID
 
         Args:
             audit_template_submission_id (int): ID of the AT submission report (different than building ID)
             cycle_id (int): Cycle ID in SEED (needed for XML but not actually for PDF)
             seed_id (int): PropertyView ID in SEED
-            file_format (str): pdf or xml report, defaults to pdf
+            report_format (str): pdf or xml report, defaults to pdf
             filename (str): filename to use to upload to SEED
 
         Returns:
