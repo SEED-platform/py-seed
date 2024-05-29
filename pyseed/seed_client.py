@@ -3,20 +3,17 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Standard Library
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
-
-# Imports from Third Party Modules
 import json
 import logging
-import openpyxl
 import os
 import time
 from collections import Counter
 from csv import DictReader
 from datetime import date
 from pathlib import Path
-from urllib.parse import _NetlocResultMixinStr
+from typing import Any, Dict, List, Optional, Union
+
+from openpyxl import Workbook
 
 # Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
@@ -1347,7 +1344,7 @@ class SeedClient(SeedClientWrapper):
         properties = response["properties"]
 
         # Create an XLSX workbook object.
-        workbook = openpyxl.Workbook()
+        workbook = Workbook()
 
         # Create a sheet object in the workbook.
         sheet = workbook.active
@@ -1360,14 +1357,16 @@ class SeedClient(SeedClientWrapper):
                     header_row.append(key)
 
         # Write the header row to the sheet object.
-        sheet.append(header_row)
+        if sheet:
+            sheet.append(header_row)
 
         # Loop over the list of dictionaries and write the data to the sheet object.
         for property in properties:
             row = []
             for key in header_row:
                 row.append(property[key])
-            sheet.append(row)
+            if sheet:
+                sheet.append(row)
 
         # Report Template name
         report_template_name = pm_template['name']
