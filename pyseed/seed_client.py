@@ -1539,32 +1539,7 @@ class SeedClient(SeedClientWrapper):
 
         return response
 
-<<<<<<< HEAD
     def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf', filename: str = None) -> Dict:
-=======
-    def retrieve_at_submission_metadata(self, audit_template_submission_id: int) -> dict:
-        """Connect to audit template and retrieve audit report json (metadata only) by submission ID
-
-        Args:
-            audit_template_submission_id (int): ID of the AT submission report (different than building ID)
-
-        Returns:
-            dict: Response from the SEED API
-        """
-
-        # api/v3/audit_template/pk/get_submission
-        response = self.client.get(
-            None,
-            required_pk=False,
-            endpoint="audit_template_submission",
-            url_args={"PK": audit_template_submission_id},
-            report_format='json'
-        )
-
-        return response
-
-    def retrieve_at_submission_and_update(self, audit_template_submission_id: int, cycle_id: int, seed_id: int, report_format: str = 'pdf', filename: str = None) -> dict:
->>>>>>> develop
         """Connect to audit template and retrieve audit report by submission ID
 
         Args:
