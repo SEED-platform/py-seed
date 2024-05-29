@@ -984,7 +984,7 @@ class SeedClient(SeedClientWrapper):
         extra_data_cols = [item for item in columns if item['is_extra_data']]
 
         # see if extra data column already exists (for now don't update it, just skip it)
-        res = List(filter(lambda extra_data_cols: extra_data_cols['column_name'] == column_name, extra_data_cols))
+        res = list(filter(lambda extra_data_cols: extra_data_cols['column_name'] == column_name, extra_data_cols))
         if res:
             # column already exists
             result = {"status": "noop", "message": "column already exists"}
@@ -1024,7 +1024,7 @@ class SeedClient(SeedClientWrapper):
         # open file in read mode
         with open(columns_csv_filepath, 'r') as f:
             Dict_reader = DictReader(f)
-            columns = List(Dict_reader)
+            columns = list(Dict_reader)
 
         results = []
         for col in columns:
