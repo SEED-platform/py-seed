@@ -3,6 +3,10 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
+# Imports from Standard Library
+from typing import Any, Dict, List, Optional, Union
+
+# Imports from Third Party Modules
 import json
 import logging
 import os
@@ -10,10 +14,8 @@ import time
 from collections import Counter
 from csv import DictReader
 from datetime import date
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
-
 from openpyxl import Workbook
+from pathlib import Path
 
 # Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
@@ -1539,12 +1541,12 @@ class SeedClient(SeedClientWrapper):
         return response
 
     def retrieve_at_submission_and_update(
-      self,
-      audit_template_submission_id: int,
-      cycle_id: int,
-      seed_id: int,
-      report_format: str = 'pdf',
-      filename: Optional[str] = None,
+        self,
+        audit_template_submission_id: int,
+        cycle_id: int,
+        seed_id: int,
+        report_format: str = 'pdf',
+        filename: Optional[str] = None,
     ) -> Dict:
         """Connect to audit template and retrieve audit report by submission ID
 
