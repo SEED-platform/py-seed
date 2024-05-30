@@ -1,5 +1,6 @@
-Py-SEED
-=======
+py-SEED
+===========
+
 
 .. image:: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg?branch=develop
     :target: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg
@@ -7,7 +8,28 @@ Py-SEED
 .. image:: https://badge.fury.io/py/py-seed.svg
     :target: https://pypi.python.org/pypi/py-seed/
 
-A python API client for the SEED Platform. This is an updated version of the Client. It is compatible with the latest version of the SEED Platform (>2.17.4). This client still has access to the previous format of generating a lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This lower level API is documented below under the `Low-Level Documentation`
+py-SEED serves as a Python client for the SEED Platform API. This library is purpose-built for Python applications, enabling interaction with the SEED Platform API to access property lists, create properties, establish connections, and retrieve data from ENERGY STAR(R) Portfolio Manager, BETTER, and other sources. The SEED Platform has a robust API, granting users access to every front-end feature seamlessly via the API. Currently, this library exposes the most commonly used SEED API endpoints and will undergo continuous updates tailored to the community's evolving needs. py-SEED offers two interaction levels: a high-level API providing familiar endpoints for easy connectivity to SEED's API, and a low-level API that allows read-write access to any SEED API, demanding a deeper understanding of the SEED API architecture
+
+py-SEED is compatible with the latest version of the SEED Platform (>2.17.4) and only support SEED API Version 3.
+
+More information can be found here:
+
+* https://seed-platform.org
+* https://energy.gov/eere/buildings/standard-energy-efficiency-data-platform
+* https://github.com/SEED-platform
+* https://buildingdata.energy.gov/#/seed
+* https://github.com/SEED-platform/pyseed-examples
+
+
+Stakeholders
+-------------
+
+The following list of stakeholders should be considered when making changes to this module
+
+* 179D Tax Deduction Web Application
+* Earth Advantage Green Building Registry
+* User scripts for managing building data
+* ECAM
 
 Documentation
 -------------
@@ -24,7 +46,7 @@ Within Python you can use the client like this:
     from pathlib import Path
     from pyseed.seed_client import SeedClient
 
-    # The seed-config.json file defines the hosting locaiton and credentials for your SEED instance.
+    # The seed-config.json file defines the hosting location and credentials for your SEED instance.
     # If running SEED locally for testing, then you can run the following from your SEED root directory:
     #    ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --file ./seed-config.json --pyseed
 
@@ -45,11 +67,12 @@ Within Python you can use the client like this:
         'tests/data/test-seed-data-mappings.csv'
     )
 
-    # See the projects unit tests for more examples.
+    # See the projects unit tests for more examples. https://github.com/SEED-platform/py-seed/blob/develop/tests/test_seed_client.py
+    # Or look at the py-SEED examples repository: https://github.com/SEED-platform/pyseed-examples
 
 Low-Level Documentation
 -----------------------
-This provides two user authentication based Python clients and two OAuth2 authentication based Python clients for interacting with the SEED Platform Api::
+This client has access to the lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This provides two user authentication based Python clients and two authentication methods, basic and `OAuth2 <https://github.com/GreenBuildingRegistry/jwt_oauth2>`_. More information on authentication can be seen in the following py-SEED classes:
 
 
     SEEDOAuthReadOnlyClient
@@ -57,27 +80,7 @@ This provides two user authentication based Python clients and two OAuth2 authen
     SEEDReadOnlyClient
     SEEDReadWriteClient
 
-
-
-(The OAuthMixin is constructed around the the JWTGrantClient found in jwt-oauth2lib. see https://github.com/GreenBuildingRegistry/jwt_oauth2)
-
-SEED (Standard Energy Efficiency Data Platform™) is an open source "web-based application that helps organizations easily manage data on the energy performance of large groups of buildings" funded by the United States Department of Energy.
-
-More information can be found here:
-
-* https://energy.gov/eere/buildings/standard-energy-efficiency-data-platform
-* https://seed-platform.org
-* https://github.com/SEED-platform
-* https://buildingdata.energy.gov/#/seed
-
-
-Note the clients do not provide per api-call methods, but does provide the standard CRUD methods: get, list, put, post, patch, delete
-
-The intended use of these clients is to be further subclassed or wrapped in functions to provide the desired functionality. The CRUD methods are provided via mixins so its possible to create a client for example without the ability to delete by subclassing SEEDUserAuthBaseClient, or SEEDOAuthBaseClient, and adding only the mixins that provided the Create, Read and Update capabilities.
-
-Basic usage for the provided clients is below.
-
-Usage:
+Note the clients do not provide per api-call methods, but does provide the standard CRUD methods: get, list, put, post, patch, delete. The intended use of these clients is to be further subclassed or wrapped in functions to provide the desired functionality. The CRUD methods are provided via mixins so its possible to create a client for example without the ability to delete by subclassing SEEDUserAuthBaseClient, or SEEDOAuthBaseClient, and adding only the mixins that provided the Create, Read and Update capabilities. Basic usage for the provided low-level clients is as follows:
 
 
 .. code-block:: python
@@ -97,19 +100,33 @@ Usage:
     # get a single property
     seed_client.get(property_pk, endpoint='properties')
 
+Testing
+-------
+
+Tests can be run via the `pytest` command.
+
+You will need to export environment variables for a test portfolio manager account to test integration. Environment variables should be named:
+
+    ..code-block:: bash
+
+        SEED_PM_UN
+        SEED_PM_PW
+
+
+SEED Platform
+-------------
+SEED (Standard Energy Efficiency Data Platform™) is an open source "web-based application that helps organizations easily manage data on the energy performance of large groups of buildings" funded by the United States Department of Energy.
+
+
 License
 -------
 Full details in LICENSE file.
 
-Changelog
----------
-py-SEED was developed for use in the greenbuildingregistry project but has been extended for various uses, including Salesforce data transfer and SEED data analysis.
-
-For a full changelog see `CHANGELOG.rst <https://github.com/seed-platform/py-seed/blob/master/CHANGELOG.rst>`_.
 
 Releasing
 ---------
 
+* Configure your PyPi with token access `https://pypi.org/manage/account/token/ <https://pypi.org/manage/account/token/>`_.
 * Merge down to main
 * Tag release on GitHub and add in the change log
 * Release via command line
@@ -119,4 +136,6 @@ Releasing
     rm -rf dist
     python setup.py sdist
     pip install twine
-    twine upload dist/*
+    # make sure to check the dist package for errors in the RST files
+    twine check dist/*
+    twine upload --repository py-seed dist/*

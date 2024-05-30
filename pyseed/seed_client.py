@@ -3,20 +3,19 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-
 # Imports from Standard Library
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 # Imports from Third Party Modules
 import json
 import logging
-import openpyxl
 import os
 import time
 from collections import Counter
+from csv import DictReader
 from datetime import date
+from openpyxl import Workbook
 from pathlib import Path
-from urllib.parse import _NetlocResultMixinStr
 
 # Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
@@ -86,7 +85,7 @@ class SeedClientWrapper(object):
                 "api_key": "1b5ea1ee220c8628789c61d66253d90398e6ad03",
                 "port": 8000,
                 "use_ssl": false,
-                "seed_org_name: "test-org"
+                "seed_org_name": "test-org"
             }
 
         Args:
@@ -106,8 +105,8 @@ class SeedClient(SeedClientWrapper):
     def __init__(
         self,
         organization_id: int,
-        connection_params: dict = None,
-        connection_config_filepath: Path = None,
+        connection_params: Optional[dict] = None,
+        connection_config_filepath: Optional[Path] = None,
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
@@ -154,13 +153,13 @@ class SeedClient(SeedClientWrapper):
         info["username"] = self.client.username
         return info
 
-    def get_organizations(self, brief: bool = True) -> Dict:
+    def get_organizations(self, brief: bool = True) -> dict:
         """Get a list organizations (that one is allowed to view)
 
         Args:
             brief (bool, optional): if True, then only return the organization id with some other basic info. Defaults to True.
         Returns:
-            Dict: [
+            dict: [
                 {
                     "name": "test-org",
                     "org_id": 1,
@@ -180,12 +179,11 @@ class SeedClient(SeedClientWrapper):
         )
         return orgs
 
-    def get_buildings(self) -> List[dict]:
+    def get_buildings(self) -> list[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
-        # print(f" total: {total_qry}")
         # step through each page of the results
-        buildings: List[dict] = []
+        buildings: list[dict] = []
         for i in range(1, total_qry['num_pages'] + 1):
             buildings = buildings + self.client.list(
                 endpoint="properties",
@@ -219,11 +217,11 @@ class SeedClient(SeedClientWrapper):
             property_view_id, endpoint="property_views", data_name="property_views"
         )
 
-    def get_property(self, property_id: int) -> dict:
-        """Return a single property by the property id.
+    def get_property(self, property_view_id: int) -> dict:
+        """Return a single property by the property view id.
 
         Args:
-            property__id (int): ID of the property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
+            property_view_id (int): ID of the property view with a property to return. This is the ID that is in the URL http://SEED_URL/app/#/properties/{property_view_id}
 
         Returns:
             dict: {
@@ -239,14 +237,19 @@ class SeedClient(SeedClientWrapper):
         """
         # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
         return self.client.get(
-            property_id, endpoint="properties", data_name="properties"
+            property_view_id, endpoint="properties", data_name="properties"
         )
 
     def search_buildings(
-        self, identifier_filter: str = None, identifier_exact: str = None
+        self,
+        identifier_filter: Optional[str] = None,
+        identifier_exact: Optional[str] = None,
+        cycle_id: Optional[int] = None,
     ) -> dict:
-        payload = {
-            "cycle": self.cycle_id,
+        if not cycle_id:
+            cycle_id = self.cycle_id
+        payload: dict[str, Any] = {
+            "cycle": cycle_id,
         }
         if identifier_filter is not None:
             payload["identifier"] = identifier_filter
@@ -259,11 +262,11 @@ class SeedClient(SeedClientWrapper):
         )
         return properties
 
-    def get_labels(self, filter_by_name: list = None) -> list:
+    def get_labels(self, filter_by_name: Optional[list] = None) -> list:
         """Get a list of all the labels in the organization. Filter by name if desired.
 
         Args:
-            filter_by_name (list, optional): List of subset of labels to return. Defaults to None.
+            filter_by_name (list, optional): list of subset of labels to return. Defaults to None.
 
         Returns:
             list: [
@@ -317,9 +320,9 @@ class SeedClient(SeedClientWrapper):
     def update_label(
         self,
         label_name: str,
-        new_label_name: str = None,
-        new_color: str = None,
-        new_show_in_list: bool = None,
+        new_label_name: Optional[str] = None,
+        new_color: Optional[str] = None,
+        new_show_in_list: Optional[bool] = None,
     ) -> dict:
         """Update an existing label with the new_* fields. If the new_* fields are not provided, then the existing values are used.
 
@@ -380,18 +383,23 @@ class SeedClient(SeedClientWrapper):
 
         return self.client.delete(id, endpoint="labels")
 
-    def get_view_ids_with_label(self, label_names: list = []) -> list:
-        """Get the view IDs of the properties with a given label name.
+    def get_view_ids_with_label(self, label_names: Union[str, list] = []) -> list:
+        """Get the view IDs of the properties with a given label name(s). Can be a single
+        label or a list of labels.
 
         Note that with labels, the data.selected field is for property view ids! SEED was updated
         in June 2022 to add in the label_names to filter on.
 
         Args:
-            label_names (list, optional): list of the labels to filter on. Defaults to [].
+            label_names (str, list, optional): list of the labels to filter on. Defaults to [].
 
         Returns:
             list: list of labels and the views they are associated with
         """
+        # if the label_names is not a list, then make it one
+        if not isinstance(label_names, list):
+            label_names = [label_names]
+
         properties = self.client.post(
             endpoint="properties_labels",
             cycle=self.cycle_id,
@@ -463,6 +471,46 @@ class SeedClient(SeedClientWrapper):
             None, required_pk=False, endpoint=endpoint, json=payload
         )
         return result
+
+    def create_building(self, params: dict) -> list:
+        """
+        Creates a building with unique ID (either pm_property_id or custom_id_1 for now)
+        Expects params to contain a state dictionary and a cycle id
+        Optionally pass in a cycle ID
+
+        Returns the created property_view id
+        """
+        # first try matching on custom_id_1
+        matching_id = params.get('state', {}).get('custom_id_1', None)
+
+        if not matching_id:
+            # then try on pm_property_id
+            matching_id = params.get('state', {}).get('pm_property_id', None)
+
+            if not matching_id:
+                raise Exception(
+                    "This property does not have a pm_property_id or a custom_id_1 for matching...cannot create."
+                )
+
+        cycle_id = params.get('cycle_id', None)
+        # include appropriate cycle in search (if not using the default cycle set on the class)
+        buildings = self.search_buildings(identifier_exact=matching_id, cycle_id=cycle_id)
+
+        if len(buildings) > 0:
+            raise Exception(
+                "A property matching the provided matching ID (pm_property_id or custom_id_1) already exists."
+            )
+
+        results = self.client.post(endpoint="properties", json=params)
+        return results
+
+    def update_building(self, id, params: dict) -> list:
+        """
+        Updates a building's property_view
+        Expects id and params to contain a state dictionary
+        """
+        results = self.client.put(id, endpoint="properties", json=params)
+        return results
 
     def get_cycles(self) -> list:
         """Return a list of all the cycles for the organization.
@@ -587,12 +635,12 @@ class SeedClient(SeedClientWrapper):
         # to keep the response consistent add back in the status
         return selected
 
-    def get_cycle_by_name(self, cycle_name: str, set_cycle_id: bool = None) -> dict:
+    def get_cycle_by_name(self, cycle_name: str, set_cycle_id: bool = False) -> dict:
         """Set the current cycle by name.
 
         Args:
             cycle_name (str): name of the cycle to set
-            set_cycle_id (bool): set the cycle_id on the object for later use. Defaults to None.
+            set_cycle_id (bool): set the cycle_id on the object for later use. Defaults to False.
 
         Returns:
             dict: {
@@ -673,7 +721,7 @@ class SeedClient(SeedClientWrapper):
                 {
                     "import_file_id": 54,
                     "success": true,
-                    "filename": "DataforSEED_dos15.csv"
+                    "filename": "data_for_seed.csv"
                 }
         """
         params = {
@@ -900,6 +948,92 @@ class SeedClient(SeedClientWrapper):
             json={"mappings": mappings},
         )
 
+    def get_columns(self) -> dict:
+        """get the list of columns.
+
+        Returns:
+            dict: {
+                    "status": "success",
+                    "columns: [{...}]
+                  }
+        """
+        result = self.client.list(endpoint="columns")
+        return result
+
+    def create_extra_data_column(self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str) -> dict:
+        """ create an extra data column. If column exists, skip
+        Args:
+            'column_name': 'project_type',
+            'display_name': 'Project Type',
+            'inventory_type': 'Property' or 'Taxlot',
+            'column_description': 'Project Type (New or Retrofit)',
+            'data_type': 'string',
+
+        Returns:
+            dict:{
+                    "status": "success",
+                    "column": {
+                      "id": 151,
+                      "name": "project_type_151",
+                        ...
+                    }
+                  }
+        """
+
+        # get extra data columns (only)
+        result = self.client.list(endpoint="columns")
+        columns = result['columns']
+        extra_data_cols = [item for item in columns if item['is_extra_data']]
+
+        # see if extra data column already exists (for now don't update it, just skip it)
+        res = list(filter(lambda extra_data_cols: extra_data_cols['column_name'] == column_name, extra_data_cols))
+        if res:
+            # column already exists
+            result = {"status": "noop", "message": "column already exists"}
+        else:
+            # create
+            payload = {
+                "column_name": column_name,
+                "display_name": display_name,
+                "table_name": "PropertyState" if inventory_type == "Property" else "TaxlotState",
+                "column_description": column_description,
+                "data_type": data_type,
+                "organization_id": self.get_org_id()
+            }
+            result = self.client.post(endpoint="columns", json=payload)
+
+        return result
+
+    def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> list:
+        """ create extra data columns from a csv file. if column exist, skip.
+        Args:
+            'columns_csv_filepath': 'path/to/file'
+            file is expected to have headers: column_name, display_name, column_description,
+
+            See example file at tests/data/test-seed-create-columns.csv
+
+        Returns:
+            list:[{
+                    "status": "success",
+                    "column": {
+                      "id": 151,
+                      "name": "project_type_151",
+                        ...
+                    }
+                  }]
+        """
+        # open file in read mode
+        with open(columns_csv_filepath, 'r') as f:
+            dict_reader = DictReader(f)
+            columns = list(dict_reader)
+
+        results = []
+        for col in columns:
+            result = self.create_extra_data_column(**col)
+            results.append(result)
+
+        return results
+
     def get_meters(self, property_id: int) -> list:
         """Return the list of meters assigned to a property (the property view id).
         Note that meters are attached to the property (not the state nor the property view).
@@ -944,7 +1078,7 @@ class SeedClient(SeedClientWrapper):
         else:
             return None
 
-    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Optional[Dict[Any, Any]]:
+    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Optional[dict[Any, Any]]:
         """get or create a meter for a property view.
 
         Args:
@@ -1152,7 +1286,7 @@ class SeedClient(SeedClientWrapper):
         )
         # if the data is set to True, then return such
         return response
-    
+
     def get_pm_report_template_names(self, pm_username: str, pm_password: str) -> dict:
         """Download the PM report templates.
 
@@ -1192,7 +1326,7 @@ class SeedClient(SeedClientWrapper):
         # Return the report templates
         return response
 
-    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict) -> dict:
+    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict) -> str:
         """Download a PM report.
 
         Args:
@@ -1201,16 +1335,7 @@ class SeedClient(SeedClientWrapper):
             pm_template (dict): the full template object dict returned from get_pm_report_template_names
 
         Sample return shown below.
-        Returns:
-            dict: {
-                "status": "success",
-                "properties": [{
-                    "properties_information_1": string,
-                    "properties_information_2": integer,
-                    [other keys....]: string
-                }]
-                "message": string # this includes error message if any
-            }
+        Returns the path to the report template workbook file
         """
         response = self.client.post(
             endpoint="portfolio_manager_report",
@@ -1223,7 +1348,7 @@ class SeedClient(SeedClientWrapper):
         properties = response["properties"]
 
         # Create an XLSX workbook object.
-        workbook = openpyxl.Workbook()
+        workbook = Workbook()
 
         # Create a sheet object in the workbook.
         sheet = workbook.active
@@ -1236,14 +1361,16 @@ class SeedClient(SeedClientWrapper):
                     header_row.append(key)
 
         # Write the header row to the sheet object.
-        sheet.append(header_row)
+        if sheet:
+            sheet.append(header_row)
 
         # Loop over the list of dictionaries and write the data to the sheet object.
         for property in properties:
             row = []
             for key in header_row:
                 row.append(property[key])
-            sheet.append(row)
+            if sheet:
+                sheet.append(row)
 
         # Report Template name
         report_template_name = pm_template['name']
@@ -1374,3 +1501,212 @@ class SeedClient(SeedClientWrapper):
             result = self.track_progress_result(progress_key)
 
         return matching_results
+
+    def retrieve_at_building_and_update(self, audit_template_building_id: int, cycle_id: int, seed_id: int) -> dict:
+        """Connect to audit template and retrieve audit XML by building ID
+
+        Args:
+            audit_template_building_id (int): ID of the building in the audit template
+            cycle_id (int): Cycle ID in SEED
+            seed_id (int): PropertyView ID in SEED
+
+        Returns:
+            dict: Response from the SEED API
+        """
+
+        # api/v3/audit_template/pk/get_building_xml
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_building_xml",
+            url_args={"PK": audit_template_building_id}
+        )
+
+        if response['status'] == 'success':
+            # now post to api/v3/properties/PK/update_with_buildingsync
+            xml_file = response['content']
+            filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+            files = [
+                ('file', (filename, xml_file)),
+                ('file_type', (None, 1))
+            ]
+
+            response = self.client.put(
+                None,
+                required_pk=False,
+                endpoint="properties_update_with_buildingsync",
+                url_args={"PK": seed_id},
+                files=files,
+                cycle_id=cycle_id
+            )
+
+        return response
+
+    def retrieve_at_submission_and_update(
+        self,
+        audit_template_submission_id: int,
+        cycle_id: int,
+        seed_id: int,
+        report_format: str = 'pdf',
+        filename: Optional[str] = None,
+    ) -> dict:
+        """Connect to audit template and retrieve audit report by submission ID
+
+        Args:
+            audit_template_submission_id (int): ID of the AT submission report (different than building ID)
+            cycle_id (int): Cycle ID in SEED (needed for XML but not actually for PDF)
+            seed_id (int): PropertyView ID in SEED
+            report_format (str): pdf or xml report, defaults to pdf
+            filename (str): filename to use to upload to SEED
+
+        Returns:
+            dict: Response from the SEED API
+            including the PDF file (if that format was requested)
+        """
+
+        # api/v3/audit_template/pk/get_submission
+        # accepts pdf or xml
+
+        response = self.client.get(
+            None,
+            required_pk=False,
+            endpoint="audit_template_submission",
+            url_args={"PK": audit_template_submission_id},
+            report_format=report_format
+        )
+
+        if response['status'] == 'success':
+            if report_format.lower() == 'pdf':
+
+                # for PDF, store pdf report as inventory document
+                pdf_file = response['content']
+                if not filename:
+                    filename = 'at_submission_report_' + str(audit_template_submission_id) + '.pdf'
+                files = [
+                    ('file', (filename, pdf_file)),
+                    ('file_type', (None, 1))
+                ]
+                response2 = self.client.put(
+                    None,
+                    required_pk=False,
+                    endpoint="properties_upload_inventory_document",
+                    url_args={"PK": seed_id},
+                    files=files
+                )
+                response2['pdf_report'] = pdf_file
+            else:
+
+                # assume XML. for XML, update property with BuildingSync
+                # now post to api/v3/properties/PK/update_with_buildingsync
+                xml_file = response['content']
+                if not filename:
+                    filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+
+                files = [
+                    ('file', (filename, xml_file)),
+                    ('file_type', (None, 1))
+                ]
+
+                response2 = self.client.put(
+                    None,
+                    required_pk=False,
+                    endpoint="properties_update_with_buildingsync",
+                    url_args={"PK": seed_id},
+                    files=files,
+                    cycle_id=cycle_id
+                )
+
+        return response2
+
+    def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> dict:
+        """Connect to portfolio manager and download an individual properties data in Excel format
+
+        Args:
+            username (str): ESPM login username
+            password (str): ESPM password
+            pm_property_id (int): ESPM ID of the property to download
+            save_file_name (Path): Location to save the file, preferably an absolute path
+
+        Returns:
+            dict: Did the file download?
+        """
+        if save_file_name.exists():
+            raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
+
+        response = self.client.post(
+            "portfolio_manager_property_download",
+            json={"username": username, "password": password},
+            url_args={"PK": pm_property_id}
+        )
+        result = {'status': 'error'}
+        # save the file to the location that was passed
+        # note that the data are returned directly (the ESPM URL directly downloads the file)
+        if isinstance(response, bytes):
+            with open(save_file_name, 'wb') as f:
+                f.write(response)
+                result['status'] = 'success'
+        return result
+
+    def import_portfolio_manager_property(self, seed_id: int, cycle_id: int, mapping_profile_id: int, file_path: str) -> dict:
+        """Import the downloaded xlsx file into SEED on a specific propertyID
+        Args:
+            seed_id (int): Property view ID to update with the ESPM file
+            cycle_id (int): Cycle ID
+            mapping_profile_id (int): Column Mapping Profile ID
+            file_path: path to file downloaded from the retrieve_portfolio_manager_report method above
+        ESPM file will have meter data that we want to handle (electricity and natural gas)
+        in the 'Meter Entries' tab"""
+
+        files_params = [
+            ("file", (Path(file_path).name, open(Path(file_path).resolve(), "rb"))),
+        ]
+
+        response = self.client.put(
+            None,
+            required_pk=False,
+            endpoint="property_update_with_espm",
+            url_args={"PK": seed_id},
+            files=files_params,
+            cycle_id=cycle_id,
+            mapping_profile_id=mapping_profile_id
+        )
+
+        return response
+
+    def retrieve_analyses_for_property(self, property_id: int) -> dict:
+        """Retrieve a list of all the analyses for a single property id. Since this
+        is a property ID, then it is all the analyses for the all cycles. Note that this endpoint
+        requires the passing of the organization id as a query parameter, otherwise it fails.
+
+        Args:
+            property_id (int): Property view id to return the list of analyses
+
+        Returns:
+            dict: list of all the analyses that have run (or failed) for the property view
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="properties_analyses",
+            url_args={"PK": property_id},
+            include_org_id_query_param=True,
+        )
+
+    def retrieve_analysis_result(self, analysis_id: int, analysis_view_id: int) -> dict:
+        """Return the detailed JSON of a single analysis view. The endpoint in SEED is
+        typically: https://dev1.seed-platform.org/app/#/analyses/274/runs/14693.
+
+        Args:
+            analysis_id (int): ID of the analysis
+            analysis_view_id (int): ID of the analysis view
+
+        Returns:
+            dict: Return the detailed results of a single analysis view
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="analyses_views",
+            url_args={"PK": analysis_id, "ANALYSIS_VIEW_PK": analysis_view_id},
+            include_org_id_query_param=True,
+        )

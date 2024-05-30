@@ -45,6 +45,7 @@ coverage.xml
 *,cover
 .hypothesis/
 coverage-report
+tests/output
 
 # Translations
 *.mo
@@ -99,3 +100,6 @@ ENV/
 
 # Seed config files
 seed-config*.json
+
+*.DS_Store
+*credentials.json

@@ -17,10 +17,9 @@ def _rad(value):
 
 
 def _ring_area(coordinates):
-    """
-    Calculate the approximate total_area of the polygon were it projected onto
-        the earth.  Note that this _area will be positive if ring is oriented
-        clockwise, otherwise it will be negative.
+    """Calculate the approximate total_area of the polygon were it projected onto
+    the earth. Note that this _area will be positive if ring is oriented
+    clockwise, otherwise it will be negative.
 
     Reference:
         Robert. G. Chamberlain and William H. Duquette, "Some Algorithms for
