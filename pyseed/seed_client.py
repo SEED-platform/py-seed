@@ -761,25 +761,30 @@ class SeedClient(SeedClientWrapper):
                 }
 
         """
+        import time
+
         if not progress_key:
             raise Exception("No progress key provided")
-        try:
-            progress_result = self.client.get(
-                None,
-                required_pk=False,
-                endpoint="progress",
-                url_args={"PROGRESS_KEY": progress_key},
-            )
-        except Exception:
-            logger.error("Other unknown exception caught")
-            progress_result = None
 
-        if progress_result and progress_result["progress"] == 100:
-            return progress_result
-        else:
-            # wait a couple seconds before checking the status again
+        progress_result = None
+        while True:
+            try:
+                progress_result = self.client.get(
+                    None,
+                    required_pk=False,
+                    endpoint="progress",
+                    url_args={"PROGRESS_KEY": progress_key},
+                )
+            except Exception:
+                logger.error("Other unknown exception caught")
+                break
+
+            if progress_result and progress_result["progress"] == 100:
+                break
+            elif progress_result and progress_result.get("status") == "error":
+                break
+
             time.sleep(2)
-            progress_result = self.track_progress_result(progress_key)
 
         return progress_result
 
