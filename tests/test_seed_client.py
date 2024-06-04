@@ -66,6 +66,24 @@ class SeedClientTest(unittest.TestCase):
         # ESPM test creates a building now too, assert building count is 10 or 11?
         assert len(buildings) == 10
 
+    def test_get_pm_report_template_names(self):
+        pm_un = os.environ.get('SEED_PM_UN', False)
+        pm_pw = os.environ.get('SEED_PM_PW', False)
+        if not pm_un or not pm_pw:
+            self.fail(f"Somehow PM test was initiated without {pm_un} or {pm_pw} in the environment")
+        response = self.seed_client.get_pm_report_template_names(pm_un, pm_pw)
+        templates = response["templates"]
+        # loop through the array templates and make a list of all the name keys
+        template_names = []
+        for template in templates:
+            template_names.append(template["name"])
+        assert isinstance(template_names, list)
+        assert len(template_names) >= 17
+        assert "BPS Workflow 2021" in template_names
+        assert "AT Properties" in template_names
+        # check that the status is success
+        assert response["status"] == "success"
+
     def test_search_buildings(self):
         # set cycle
         self.seed_client.get_cycle_by_name('pyseed-api-test', set_cycle_id=True)
