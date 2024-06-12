@@ -1,7 +1,6 @@
 py-SEED
 ===========
 
-
 .. image:: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg?branch=develop
     :target: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg
 
@@ -74,6 +73,7 @@ Low-Level Documentation
 -----------------------
 This client has access to the lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This provides two user authentication based Python clients and two authentication methods, basic and `OAuth2 <https://github.com/GreenBuildingRegistry/jwt_oauth2>`_. More information on authentication can be seen in the following py-SEED classes:
 
+.. code-block:: bash
 
     SEEDOAuthReadOnlyClient
     SEEDOAuthReadWriteClient
@@ -107,10 +107,10 @@ Tests can be run via the `pytest` command.
 
 You will need to export environment variables for a test portfolio manager account to test integration. Environment variables should be named:
 
-    ..code-block:: bash
+.. code-block:: bash
 
-        SEED_PM_UN
-        SEED_PM_PW
+    SEED_PM_UN
+    SEED_PM_PW
 
 
 SEED Platform
