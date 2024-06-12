@@ -126,16 +126,12 @@ Full details in LICENSE file.
 Releasing
 ---------
 
-* Configure your PyPi with token access `https://pypi.org/manage/account/token/ <https://pypi.org/manage/account/token/>`_.
-* Merge down to main
-* Tag release on GitHub and add in the change log
-* Release via command line
+This project is configured with GitHub Actions to automatically release to PyPi when a new tag is created. To release a new version:
 
-.. code-block:: bash
+* Create a branch with the prepared release change log
+* Merge branch to develop, and open PR to main
+* Once deployed to main, create a new tag in GitHub against main and copy the change log notes into the tag description
+* GitHub Actions will automatically prepare the release the new version to PyPi
+* Go to GitHub actions to approve the release
 
-    rm -rf dist
-    python setup.py sdist
-    pip install twine
-    # make sure to check the dist package for errors in the RST files
-    twine check dist/*
-    twine upload --repository py-seed dist/*
+The GitHub Action required updates to the GitHub repo to only release on tags (https://github.com/SEED-platform/py-seed/settings/environments) after approval and on PyPi to add an authorized publisher (https://pypi.org/manage/project/py-SEED/settings/publishing/).
