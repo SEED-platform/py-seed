@@ -242,11 +242,11 @@ class SEEDBaseClient(JSONAPI):
                 elif status_field == 'success':
                     # continue
                     error = False
-            elif 'success' in response.json().keys():
+            elif 'success' in response.json():
                 success_flag = response.json().get('success', None)
                 # For file uploads the response key is 'success'
                 error = not success_flag
-            elif 'progress_data' in response.json().keys():
+            elif 'progress_data' in response.json():
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
                 error = status_flag not in ['not-started', 'success', 'parsing']
