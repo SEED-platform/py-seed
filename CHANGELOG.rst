@@ -1,6 +1,27 @@
 Changelog
 =========
 
+0.4.3
+-----
+
+## What's Changed
+
+* Fix delete cycle progress key and race condition by @nllong in https://github.com/SEED-platform/py-seed/pull/24
+* Remove Deprecated APIs, Fix Typos by @axelstudios in https://github.com/SEED-platform/py-seed/pull/23
+* Update license dates by @nllong in https://github.com/SEED-platform/py-seed/pull/26
+* 179D updates by @kflemin in https://github.com/SEED-platform/py-seed/pull/22
+* Increase timeout for server start by @nllong in https://github.com/SEED-platform/py-seed/pull/31
+* Cleanup changelog and a few docstrings by @nllong in https://github.com/SEED-platform/py-seed/pull/32
+* configure seed to load small EEEJ dataset for integration test by @kflemin in https://github.com/SEED-platform/py-seed/pull/33
+* Add analysis retrieve methods by @nllong in https://github.com/SEED-platform/py-seed/pull/34
+* Added multiple cycle upload argument by @anchapin in https://github.com/SEED-platform/py-seed/pull/27
+* Cleanup README.rst  by @nllong in https://github.com/SEED-platform/py-seed/pull/35
+* Endpoint to download an Audit Template Report Submission and store in SEED by @kflemin in https://github.com/SEED-platform/py-seed/pull/36
+* add new method to get AT submission metadata by @kflemin in https://github.com/SEED-platform/py-seed/pull/39
+* Added ESPM functions to py-seed client by @anchapin in https://github.com/SEED-platform/py-seed/pull/28
+
+**Full Changelog**: https://github.com/SEED-platform/py-seed/compare/v0.4.2...v0.4.3
+
 0.4.2
 -----
 What's Changed
