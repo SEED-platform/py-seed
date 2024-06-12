@@ -1,7 +1,6 @@
 py-SEED
 ===========
 
-
 .. image:: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg?branch=develop
     :target: https://github.com/seed-platform/py-seed/actions/workflows/ci.yml/badge.svg
 
@@ -74,6 +73,7 @@ Low-Level Documentation
 -----------------------
 This client has access to the lower level API client by accessing `seed_client_base.SEEDOAuthReadOnlyClient`, `seed_client_base.SEEDOAuthReadWriteClient`, `seed_client_base.SEEDReadOnlyClient`, and `seed_client_base.SEEDReadWriteClient`. This provides two user authentication based Python clients and two authentication methods, basic and `OAuth2 <https://github.com/GreenBuildingRegistry/jwt_oauth2>`_. More information on authentication can be seen in the following py-SEED classes:
 
+.. code-block:: bash
 
     SEEDOAuthReadOnlyClient
     SEEDOAuthReadWriteClient
@@ -107,10 +107,10 @@ Tests can be run via the `pytest` command.
 
 You will need to export environment variables for a test portfolio manager account to test integration. Environment variables should be named:
 
-    ..code-block:: bash
+.. code-block:: bash
 
-        SEED_PM_UN
-        SEED_PM_PW
+    SEED_PM_UN
+    SEED_PM_PW
 
 
 SEED Platform
@@ -126,16 +126,12 @@ Full details in LICENSE file.
 Releasing
 ---------
 
-* Configure your PyPi with token access `https://pypi.org/manage/account/token/ <https://pypi.org/manage/account/token/>`_.
-* Merge down to main
-* Tag release on GitHub and add in the change log
-* Release via command line
+This project is configured with GitHub Actions to automatically release to PyPi when a new tag is created. To release a new version:
 
-.. code-block:: bash
+* Create a branch with the prepared release change log
+* Merge branch to develop, and open PR to main
+* Once deployed to main, create a new tag in GitHub against main and copy the change log notes into the tag description
+* GitHub Actions will automatically prepare the release the new version to PyPi
+* Go to GitHub actions to approve the release
 
-    rm -rf dist
-    python setup.py sdist
-    pip install twine
-    # make sure to check the dist package for errors in the RST files
-    twine check dist/*
-    twine upload --repository py-seed dist/*
+The GitHub Action required updates to the GitHub repo to only release on tags (https://github.com/SEED-platform/py-seed/settings/environments) after approval and on PyPi to add an authorized publisher (https://pypi.org/manage/project/py-SEED/settings/publishing/).

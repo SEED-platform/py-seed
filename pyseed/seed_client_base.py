@@ -33,21 +33,23 @@ from pyseed.exceptions import SEEDError
 # Constants (Should end with a slash)
 URLS = {
     'v3': {
-        'columns': '/api/v3/columns/',
         'column_mapping_profiles': '/api/v3/column_mapping_profiles/',
         'column_mapping_profiles_filter': '/api/v3/column_mapping_profiles/filter/',
+        'columns': '/api/v3/columns/',
         'cycles': '/api/v3/cycles/',
         'datasets': '/api/v3/datasets/',
         'gbr_properties': '/api/v3/gbr_properties/',
         'green_assessment': '/api/v3/green_assessments/',
         'green_assessment_property': '/api/v3/green_assessment_properties/',
         'green_assessment_url': '/api/v3/green_assessment_urls/',
+        'import_files': '/api/v3/import_files/',
+        'import_files_reuse_inventory_file_for_meters': '/api/v3/import_files/reuse_inventory_file_for_meters/',
         'labels': '/api/v3/labels/',
         'labels_property': '/api/v3/labels_property/',
         'labels_taxlot': '/api/v3/labels_taxlot/',
-        'import_files': '/api/v3/import_files/',
-        'import_files_reuse_inventory_file_for_meters': '/api/v3/import_files/reuse_inventory_file_for_meters/',
         'organizations': '/api/v3/organizations/',
+        'portfolio_manager_report': '/api/v3/portfolio_manager/report/',
+        'portfolio_manager_report_templates': '/api/v3/portfolio_manager/template_list/',
         'properties': '/api/v3/properties/',
         'properties_labels': '/api/v3/properties/labels/',
         'properties_search': '/api/v3/properties/search/',
@@ -58,25 +60,25 @@ URLS = {
         # No versioning endpoints
         'version': '/api/version/',
         # POSTs with replaceable keys
-        'import_files_start_save_data_pk': '/api/v3/import_files/PK/start_save_data/',
+        'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
         'import_files_start_map_data_pk': '/api/v3/import_files/PK/map/',
         'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
-        'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
+        'import_files_start_save_data_pk': '/api/v3/import_files/PK/start_save_data/',
         'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
         'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
         # PUTs with replaceable keys:
         'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
-        'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
         'properties_upload_inventory_document': 'api/v3/properties/PK/upload_inventory_document',
+        'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
         # GETs with replaceable keys
         'analyses_views': '/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/',
-        'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
-        'progress': '/api/v3/progress/PROGRESS_KEY/',
-        'properties_meters': '/api/v3/properties/PK/meters/',
-        'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
-        'properties_analyses': '/api/v3/properties/PK/analyses/',
         'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
         'audit_template_submission': '/api/v3/audit_template/PK/get_submission',
+        'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
+        'progress': '/api/v3/progress/PROGRESS_KEY/',
+        'properties_analyses': '/api/v3/properties/PK/analyses/',
+        'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
+        'properties_meters': '/api/v3/properties/PK/meters/',
         # GET & POST with replaceable keys
         'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
     }
@@ -240,11 +242,11 @@ class SEEDBaseClient(JSONAPI):
                 elif status_field == 'success':
                     # continue
                     error = False
-            elif 'success' in response.json().keys():
+            elif 'success' in response.json():
                 success_flag = response.json().get('success', None)
                 # For file uploads the response key is 'success'
                 error = not success_flag
-            elif 'progress_data' in response.json().keys():
+            elif 'progress_data' in response.json():
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()['progress_data'].get('status', None)
                 error = status_flag not in ['not-started', 'success', 'parsing']
