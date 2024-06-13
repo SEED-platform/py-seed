@@ -13,7 +13,7 @@ from pathlib import Path
 # Local Imports
 from pyseed.seed_client import SeedClient
 
-ORGANIZATION_ID = 13
+ORGANIZATION_ID = 23
 
 
 @pytest.mark.integration
@@ -424,7 +424,8 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         if not cls.output_dir.exists():
             cls.output_dir.mkdir()
 
-        # Use the default organization to create the client
+        # Use the default organization to create the client,
+        # but this will be overwritten in the test class below.
         cls.organization_id = ORGANIZATION_ID
 
         # The seed-config.json file needs to be added to the project root directory
