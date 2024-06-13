@@ -164,7 +164,7 @@ class SeedClient(SeedClientWrapper):
         """
         users = self.client.list(endpoint="users")
         return users
-                
+
     def get_organizations(self, brief: bool = True) -> dict:
         """Get a list organizations (that one is allowed to view)
 
@@ -190,7 +190,7 @@ class SeedClient(SeedClientWrapper):
             brief="true" if brief else "false",
         )
         return orgs
-    
+
     def get_user_id(self, username: str) -> int:
         """Get the user ID for the given username
 
@@ -204,7 +204,7 @@ class SeedClient(SeedClientWrapper):
             # compare string case insensitive
             if user["email"].lower() == username.lower():
                 return user["user_id"]
-        
+
         return None
 
     def create_organization(self, org_name: str) -> dict:
@@ -215,25 +215,25 @@ class SeedClient(SeedClientWrapper):
 
         Returns:
             dict: {
-                    'status': 'success', 
-                    'message': 'Organization created', 
+                    'status': 'success',
+                    'message': 'Organization created',
                     'organization': {
-                        'name': 'NEW ORG', 
-                        'org_id': 17, 
-                        'id': 17, 
-                        'number_of_users': 1, 
-                        'user_is_owner': True, 
-                        'user_role': 'owner', 
-                        'owners': [...], 
-                        'sub_orgs': [...], 
+                        'name': 'NEW ORG',
+                        'org_id': 17,
+                        'id': 17,
+                        'number_of_users': 1,
+                        'user_is_owner': True,
+                        'user_role': 'owner',
+                        'owners': [...],
+                        'sub_orgs': [...],
                         'is_parent': True,
-                        'parent_id': 17, 
+                        'parent_id': 17,
                         ...
                         'display_units_eui': 'kBtu/ft**2/year',
-                        'cycles': [...], 
+                        'cycles': [...],
                         'created': '2024-06-13',
                         'mapquest_api_key': '',
-                        
+
                     }
                 }
         """
@@ -242,16 +242,16 @@ class SeedClient(SeedClientWrapper):
         for org in orgs:
             if org["name"].lower() == org_name.lower():
                 raise Exception(f"Organization '{org_name}' already exists")
-            
+
         user_id = self.get_user_id(self.client.username)
-        
+
         payload = {
             "user_id": user_id,
             "organization_name": org_name,
         }
         org = self.client.post(endpoint="organizations", json=payload)
         return org
-    
+
     def get_buildings(self) -> list[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 

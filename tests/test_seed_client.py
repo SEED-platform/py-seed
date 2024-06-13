@@ -62,7 +62,7 @@ class SeedClientTest(unittest.TestCase):
         assert set(("version", "sha")).issubset(info.keys())
 
     def test_create_organization(self):
-        # create a new organization. This test requires that the 
+        # create a new organization. This test requires that the
         # org does not already exist, which is common in the CI.
         org = self.seed_client.create_organization("NEW ORG")
         assert org["organization"]["id"] is not None
@@ -439,7 +439,7 @@ class SeedClientMultiCycleTest(unittest.TestCase):
     def teardown_class(cls):
         # remove all of the test buildings?
         pass
-        
+
     def test_upload_multiple_cycles_and_read_back(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
