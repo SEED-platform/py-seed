@@ -191,7 +191,7 @@ class SeedClient(SeedClientWrapper):
         )
         return orgs
 
-    def get_user_id(self, username: str) -> int:
+    def get_user_id(self, username: str) -> Union[None, int]:
         """Get the user ID for the given username
 
         Args:
