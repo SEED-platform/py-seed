@@ -326,7 +326,6 @@ class UserAuthMixin(object):
         """
         if getattr(self, 'use_auth', None) and not getattr(self, 'auth', None):
             self.auth = self._get_auth()
-            print(self.auth)
         return super(UserAuthMixin, self)._construct_payload(params)
 
 

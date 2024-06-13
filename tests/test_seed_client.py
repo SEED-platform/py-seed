@@ -13,7 +13,8 @@ from pathlib import Path
 # Local Imports
 from pyseed.seed_client import SeedClient
 
-ORGANIZATION_ID = 23
+# For CI the test org is 1, but for local testing it may be different
+ORGANIZATION_ID = 1
 
 
 @pytest.mark.integration
