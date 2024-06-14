@@ -657,13 +657,14 @@ class SeedClient(SeedClientWrapper):
         end_date: date,
         set_cycle_id: bool = False,
     ) -> dict:
-        """Get or create a new cycle. If the cycle_name already exists, then it simply returns the existing cycle. However, if the cycle_name does not exist, then it will create a new cycle.
+        """Get or create a new cycle. If the cycle_name already exists, then it simply returns
+        the existing cycle. However, if the cycle_name does not exist, then it will create a new cycle.
 
         Args:
             cycle_name (str): name of the cycle to get or create
             start_date (date): MM/DD/YYYY of start date cycle
             end_date (date): MM/DD/YYYY of end data for cycle
-            set_cycle_id (str): Set the object's cycle_id to the resulting cycle that is returned (either   existing or newly created)
+            set_cycle_id (str): Set the object's cycle_id to the resulting cycle that is returned (either existing or newly created)
 
         Returns:
             dict: {
@@ -1022,7 +1023,7 @@ class SeedClient(SeedClientWrapper):
         )
 
     def get_columns(self) -> dict:
-        """get the list of columns.
+        """Get the list of columns
 
         Returns:
             dict: {
@@ -1034,7 +1035,8 @@ class SeedClient(SeedClientWrapper):
         return result
 
     def create_extra_data_column(self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str) -> dict:
-        """ create an extra data column. If column exists, skip
+        """Create an extra data column. If column exists, skip
+
         Args:
             'column_name': 'project_type',
             'display_name': 'Project Type',
@@ -1052,7 +1054,6 @@ class SeedClient(SeedClientWrapper):
                     }
                   }
         """
-
         # get extra data columns (only)
         result = self.client.list(endpoint="columns")
         columns = result['columns']
@@ -1078,7 +1079,8 @@ class SeedClient(SeedClientWrapper):
         return result
 
     def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> list:
-        """ create extra data columns from a csv file. if column exist, skip.
+        """Create extra data columns from a csv file. if column exist, skip.
+
         Args:
             'columns_csv_filepath': 'path/to/file'
             file is expected to have headers: column_name, display_name, column_description,
@@ -1229,9 +1231,9 @@ class SeedClient(SeedClientWrapper):
 
     def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> dict:
         """start the background process to save the data file to the database.
-        This is the state before the mapping. If multiple_cycle_upload is set
-        to True, then the importing file's year_ending column will be used to
-        determine the cycle. Note that the cycles must be created in SEED for the multiple cycle upload to work correctly
+        This is the state before the mapping. If multiple_cycle_upload is set to True, then the
+        importing file's year_ending column will be used to determine the cycle. Note that the
+        cycles must be created in SEED for the multiple cycle upload to work correctly
 
         Args:
             import_file_id (int): id of the import file to save
