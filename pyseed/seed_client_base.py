@@ -418,7 +418,7 @@ class CreateMixin(object):
 
 
 class ReadMixin(object):
-    """Add get &  list method"""
+    """Add get & list method"""
 
     # pylint:disable=too-few-public-methods
 

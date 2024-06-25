@@ -5,7 +5,7 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 
 # Imports from Third Party Modules
 import json
-import requests
+import httpx
 import unittest
 from unittest import mock
 
@@ -34,7 +34,6 @@ CONFIG_DICT = {
 SERVICES_DICT = {
     'seed': {
         'urls': URLS,
-
     }
 }
 
@@ -109,7 +108,7 @@ def get_mock_response(data=None, data_name='data', error=False,
 
 
 # Tests
-@mock.patch('pyseed.apibase.requests')
+@mock.patch('pyseed.apibase.httpx')
 class SEEDClientErrorHandlingTests(unittest.TestCase):
     """
     The error handling uses the inspect module to examine the stack
@@ -129,7 +128,7 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
             base_url=self.base_url, port=self.port, url_map=self.urls_map
         )
 
-    def test_check_response_inheritance(self, mock_requests):
+    def test_check_response_inheritance(self, mock_httpx):
         """
         Ensure errors are correctly reported.
 
@@ -141,7 +140,7 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         """
         url = 'http://example.org/api/v3/test/'
         # Old SEED Style 200 (sic) with error message
-        mock_requests.get.return_value = get_mock_response(
+        mock_httpx.get.return_value = get_mock_response(
             data="No llama!", error=True
         )
         with self.assertRaises(SEEDError) as conm:
@@ -155,7 +154,7 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         self.assertEqual(conm.exception.status_code, 200)
 
         # newer/correct using status codes (no message)
-        mock_requests.get.return_value = get_mock_response(
+        mock_httpx.get.return_value = get_mock_response(
             status_code=404, data="No llama!", error=True, content=False
         )
         with self.assertRaises(SEEDError) as conm:
@@ -171,7 +170,7 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         self.assertEqual(conm.exception.status_code, 404)
 
         # newer/correct using status codes (with message)
-        mock_requests.get.return_value = get_mock_response(
+        mock_httpx.get.return_value = get_mock_response(
             status_code=404, data="No llama!", error=True, content=True
         )
         with self.assertRaises(SEEDError) as conm:
@@ -227,7 +226,7 @@ class SEEDClientMethodTests(unittest.TestCase):
         self.assertEqual('test', result)
 
 
-@mock.patch('pyseed.apibase.requests')
+@mock.patch('pyseed.apibase.httpx')
 class MixinTests(unittest.TestCase):
     """Test Mixins via SEEDOAuthReadWriteClient"""
 
@@ -248,33 +247,33 @@ class MixinTests(unittest.TestCase):
             'timeout': None
         }
 
-    def test_delete(self, mock_requests):
+    def test_delete(self, mock_httpx):
         # pylint:disable=no-member
         url = 'https://example.org:1337/api/v3/test/1/'
-        mock_requests.delete.return_value = get_mock_response(
-            status_code=requests.codes.no_content
+        mock_httpx.delete.return_value = get_mock_response(
+            status_code=httpx.codes.NO_CONTENT
         )
         result = self.client.delete(1, endpoint='test1')
         self.assertEqual(None, result)
-        mock_requests.delete.assert_called_with(url, **self.call_dict)
+        mock_httpx.delete.assert_called_with(url, **self.call_dict)
 
-    def test_get(self, mock_requests):
+    def test_get(self, mock_httpx):
         url = 'https://example.org:1337/api/v3/test/1/'
-        mock_requests.get.return_value = get_mock_response(data="Llama!")
+        mock_httpx.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint='test1')
         self.assertEqual('Llama!', result)
-        mock_requests.get.assert_called_with(url, **self.call_dict)
+        mock_httpx.get.assert_called_with(url, **self.call_dict)
 
-    def test_list(self, mock_requests):
+    def test_list(self, mock_httpx):
         url = 'https://example.org:1337/api/v3/test/'
-        mock_requests.get.return_value = get_mock_response(data=["Llama!"])
+        mock_httpx.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint='test1')
         self.assertEqual(['Llama!'], result)
-        mock_requests.get.assert_called_with(url, **self.call_dict)
+        mock_httpx.get.assert_called_with(url, **self.call_dict)
 
-    def test_patch(self, mock_requests):
+    def test_patch(self, mock_httpx):
         url = 'https://example.org:1337/api/v3/test/1/'
-        mock_requests.patch.return_value = get_mock_response(data="Llama!")
+        mock_httpx.patch.return_value = get_mock_response(data="Llama!")
         result = self.client.patch(1, endpoint='test1', foo='bar', json={'more': 'data'})
         self.assertEqual('Llama!', result)
 
@@ -287,11 +286,11 @@ class MixinTests(unittest.TestCase):
             'json': {'more': 'data'},
             'timeout': None
         }
-        mock_requests.patch.assert_called_with(url, **expected)
+        mock_httpx.patch.assert_called_with(url, **expected)
 
-    def test_put(self, mock_requests):
+    def test_put(self, mock_httpx):
         url = 'https://example.org:1337/api/v3/test/1/'
-        mock_requests.put.return_value = get_mock_response(data="Llama!")
+        mock_httpx.put.return_value = get_mock_response(data="Llama!")
         result = self.client.put(1, endpoint='test1', foo='bar', json={'more': 'data'})
         self.assertEqual('Llama!', result)
 
@@ -304,11 +303,11 @@ class MixinTests(unittest.TestCase):
             'json': {'more': 'data'},
             'timeout': None
         }
-        mock_requests.put.assert_called_with(url, **expected)
+        mock_httpx.put.assert_called_with(url, **expected)
 
-    def test_post(self, mock_requests):
+    def test_post(self, mock_httpx):
         url = 'https://example.org:1337/api/v3/test/'
-        mock_requests.post.return_value = get_mock_response(data="Llama!")
+        mock_httpx.post.return_value = get_mock_response(data="Llama!")
         result = self.client.post(endpoint='test1', json={'foo': 'bar', 'not_org': 1})
         self.assertEqual('Llama!', result)
         expected = {
@@ -319,10 +318,10 @@ class MixinTests(unittest.TestCase):
             'json': {'not_org': 1, 'foo': 'bar'},
             'timeout': None
         }
-        mock_requests.post.assert_called_with(url, **expected)
+        mock_httpx.post.assert_called_with(url, **expected)
 
 
-@mock.patch('pyseed.apibase.requests')
+@mock.patch('pyseed.apibase.httpx')
 class SEEDReadWriteClientTests(unittest.TestCase):
     """Test SEEDReadWriteClient"""
 
@@ -343,14 +342,14 @@ class SEEDReadWriteClientTests(unittest.TestCase):
             'timeout': None
         }
 
-    def test_get(self, mock_requests):
+    def test_get(self, mock_httpx):
         # url = 'https://example.org:1337/api/v3/test/1/'
-        mock_requests.get.return_value = get_mock_response(data="Llama!")
+        mock_httpx.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint='test1')
         self.assertEqual('Llama!', result)
 
-    def test_list(self, mock_requests):
+    def test_list(self, mock_httpx):
         # url = 'https://example.org:1337/api/v3/test/'
-        mock_requests.get.return_value = get_mock_response(data=["Llama!"])
+        mock_httpx.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint='test1')
         self.assertEqual(['Llama!'], result)
