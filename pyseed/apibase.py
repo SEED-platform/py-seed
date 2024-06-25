@@ -139,8 +139,8 @@ class BaseAPI(object):
         headers = params.pop('headers', None)
         auth = self.auth if self.auth else None
 
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.get(
+        with httpx.Client(http2=True) as client:
+            response = client.get(
                 url, params=params, headers=headers, auth=auth, timeout=self.timeout
             )
         return response
@@ -158,8 +158,8 @@ class BaseAPI(object):
         if not data:
             data = kwargs
 
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.post(
+        with httpx.Client(http2=True) as client:
+            response = client.post(
                 url, params=params, headers=headers, auth=auth, files=files, json=data if self.use_json else None, data=data if not self.use_json else None, timeout=self.timeout
             )
         return response
@@ -178,8 +178,8 @@ class BaseAPI(object):
         if not data:
             data = kwargs
 
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.put(
+        with httpx.Client(http2=True) as client:
+            response = client.put(
                 url, params=params, headers=headers, auth=auth, files=files, json=data if self.use_json else None, data=data if not self.use_json else None, timeout=self.timeout
             )
         return response
@@ -198,8 +198,8 @@ class BaseAPI(object):
         if not data:
             data = kwargs
 
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.patch(
+        with httpx.Client(http2=True) as client:
+            response = client.patch(
                 url, params=params, headers=headers, auth=auth, files=files, json=data if self.use_json else None, data=data if not self.use_json else None, timeout=self.timeout
             )
         return response
@@ -211,8 +211,8 @@ class BaseAPI(object):
         headers = params.pop('headers', None)
         auth = self.auth if self.auth else None
 
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.delete(
+        with httpx.Client(http2=True) as client:
+            response = client.delete(
                 url, params=params, headers=headers, auth=auth, timeout=self.timeout
             )
         return response

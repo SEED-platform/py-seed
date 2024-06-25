@@ -411,8 +411,8 @@ class CreateMixin(object):
         if not url.endswith('/'):
             url = url + '/'
         url = _replace_url_args(url, url_args)
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.post(url, json=kwargs)
+        with httpx.Client(http2=True) as client:
+            response = client.post(url, json=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -442,8 +442,8 @@ class ReadMixin(object):
         url = _replace_url_args(url, url_args)
         if org_id_qp:
             url += f"?organization_id={self.org_id}"
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.get(url, params=kwargs)
+        with httpx.Client(http2=True) as client:
+            response = client.get(url, params=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -464,8 +464,8 @@ class ReadMixin(object):
         if not url.endswith('/'):
             url = url + '/'
         url = _replace_url_args(url, url_args)
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.get(url, params=kwargs)
+        with httpx.Client(http2=True) as client:
+            response = client.get(url, params=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -491,8 +491,8 @@ class UpdateMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.put(url, json=kwargs)
+        with httpx.Client(http2=True) as client:
+            response = client.put(url, json=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -512,8 +512,8 @@ class UpdateMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.patch(url, json=kwargs)
+        with httpx.Client(http2=True) as client:
+            response = client.patch(url, json=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -540,8 +540,8 @@ class DeleteMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
-        async with httpx.AsyncClient(http2=True) as client:
-            response = await client.delete(url, params=kwargs)
+        with httpx.Client(http2=True) as client:
+            response = client.delete(url, params=kwargs)
         # delete should return 204 and no content, unless it is a background task
         if response.status_code != httpx.codes.NO_CONTENT:
             self._check_response(response, **kwargs)
