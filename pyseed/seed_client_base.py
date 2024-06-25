@@ -23,8 +23,8 @@ caching.
 """
 
 # Imports from Third Party Modules
+import httpx
 import inspect
-import requests
 
 # Local Imports
 from pyseed.apibase import JSONAPI, OAuthMixin, UserAuthMixin, add_pk
@@ -360,7 +360,7 @@ class SEEDBaseClient(JSONAPI):
         url = response.request.url
         verb = response.request.method
         # e.g., MyClass.method
-        caller = caller = '{}.{}'.format(
+        caller = '{}.{}'.format(
             self.__class__.__name__, inspect.stack()[stack_pos + 1][3]
         )
         if args:
@@ -411,7 +411,8 @@ class CreateMixin(object):
         if not url.endswith('/'):
             url = url + '/'
         url = _replace_url_args(url, url_args)
-        response = super(CreateMixin, self)._post(url=url, **kwargs)
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.post(url, json=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -441,7 +442,8 @@ class ReadMixin(object):
         url = _replace_url_args(url, url_args)
         if org_id_qp:
             url += f"?organization_id={self.org_id}"
-        response = super(ReadMixin, self)._get(url=url, **kwargs)
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.get(url, params=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -462,7 +464,8 @@ class ReadMixin(object):
         if not url.endswith('/'):
             url = url + '/'
         url = _replace_url_args(url, url_args)
-        response = super(ReadMixin, self)._get(url=url, **kwargs)
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.get(url, params=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -488,8 +491,8 @@ class UpdateMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
-
-        response = super(UpdateMixin, self)._put(url=url, **kwargs)
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.put(url, json=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -509,7 +512,8 @@ class UpdateMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
-        response = super(UpdateMixin, self)._patch(url=url, **kwargs)
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.patch(url, json=kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -536,9 +540,10 @@ class DeleteMixin(object):
         data_name = _set_default(self, 'data_name', data_name, required=False)
         url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
         url = _replace_url_args(url, url_args)
-        response = super(DeleteMixin, self)._delete(url=url, **kwargs)
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.delete(url, params=kwargs)
         # delete should return 204 and no content, unless it is a background task
-        if response.status_code != requests.codes.no_content:
+        if response.status_code != httpx.codes.NO_CONTENT:
             self._check_response(response, **kwargs)
             return self._get_result(response, data_name=data_name, **kwargs)
 

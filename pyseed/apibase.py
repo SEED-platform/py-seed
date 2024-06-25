@@ -6,9 +6,9 @@ copyright (c) 2016 Earth Advantage. All rights reserved.
 Functionality for calls to external APIs"""
 
 # Imports from Third Party Modules
-import re
 # Imports from External Modules
-import requests
+import httpx
+import re
 
 # Local Imports
 # Public Functions and Classes
@@ -130,22 +130,20 @@ class BaseAPI(object):
     def check_call_success(self, response):
         """Return true if api call was successful."""
         # pylint: disable=no-self-use, no-member
-        return response.status_code == requests.codes.ok
+        return response.status_code == httpx.codes.OK
 
     def _get(self, url=None, use_ssl=None, **kwargs):
         """Internal method to make api calls using GET."""
         url = self._construct_url(url, use_ssl=use_ssl)
         params = self._construct_payload(kwargs)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
-        if params:
-            payload['params'] = params
-        if self.auth:                                       # pragma: no cover
-            payload['auth'] = self.auth
-        api_call = requests.get(url, **payload)
-        return api_call
+        headers = params.pop('headers', None)
+        auth = self.auth if self.auth else None
+
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.get(
+                url, params=params, headers=headers, auth=auth, timeout=self.timeout
+            )
+        return response
 
     def _post(self, url=None, use_ssl=None, params=None, files=None, **kwargs):
         """Internal method to make api calls using POST."""
@@ -153,39 +151,18 @@ class BaseAPI(object):
         if not params:
             params = {}
         params = self._construct_payload(params)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
-        if params:
-            payload['params'] = params
-        if files:
-            payload['files'] = files
-        if self.auth:                                       # pragma: no cover
-            payload['auth'] = self.auth
-        if self.use_json:
-            data = kwargs.pop('json', None)
-            if data:
-                payload['json'] = data
-            else:
-                # just put the remaining kwargs into the json field
-                payload['json'] = kwargs
-        else:
-            data = kwargs.pop('data', None)
-            if data:
-                payload['data'] = data
-            else:
-                # just put the remaining kwargs into the data field
-                payload['data'] = kwargs
+        headers = params.pop('headers', None)
+        auth = self.auth if self.auth else None
 
-        # if there are any remaining kwargs, then put them into the params
-        if 'params' not in payload:
-            payload['params'] = {}
-        payload['params'].update(**kwargs)
+        data = kwargs.pop('json', None) if self.use_json else kwargs.pop('data', None)
+        if not data:
+            data = kwargs
 
-        # now do the actual call to post!
-        api_call = requests.post(url, **payload)
-        return api_call
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.post(
+                url, params=params, headers=headers, auth=auth, files=files, json=data if self.use_json else None, data=data if not self.use_json else None, timeout=self.timeout
+            )
+        return response
 
     def _put(self, url=None, use_ssl=None, params=None, files=None,
              **kwargs):
@@ -194,38 +171,18 @@ class BaseAPI(object):
         if not params:
             params = {}
         params = self._construct_payload(params)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
-        if params:
-            payload['params'] = params
-        if files:                                           # pragma: no cover
-            payload['files'] = files
-        if self.auth:                                       # pragma: no cover
-            payload['auth'] = self.auth
-        if self.use_json:
-            data = kwargs.pop('json', None)
-            if data:
-                payload['json'] = data
-            else:
-                # just put the remaining kwargs into the json field
-                payload['json'] = kwargs
-        else:
-            data = kwargs.pop('data', None)
-            if data:
-                payload['data'] = data
-            else:
-                # just put the remaining kwargs into the data field
-                payload['data'] = kwargs
+        headers = params.pop('headers', None)
+        auth = self.auth if self.auth else None
 
-        # if there are any remaining kwargs, then put them into the params
-        if 'params' not in payload:
-            payload['params'] = {}
-        payload['params'].update(**kwargs)
+        data = kwargs.pop('json', None) if self.use_json else kwargs.pop('data', None)
+        if not data:
+            data = kwargs
 
-        api_call = requests.put(url, **payload)
-        return api_call
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.put(
+                url, params=params, headers=headers, auth=auth, files=files, json=data if self.use_json else None, data=data if not self.use_json else None, timeout=self.timeout
+            )
+        return response
 
     def _patch(self, url=None, use_ssl=None, params=None, files=None,
                **kwargs):
@@ -234,52 +191,31 @@ class BaseAPI(object):
         if not params:
             params = {}
         params = self._construct_payload(params)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
-        if params:
-            payload['params'] = params
-        if files:
-            payload['files'] = files
-        if self.auth:                                        # pragma: no cover
-            payload['auth'] = self.auth
-        if self.use_json:
-            data = kwargs.pop('json', None)
-            if data:
-                payload['json'] = data
-            else:
-                # just put the remaining kwargs into the json field
-                payload['json'] = kwargs
-        else:
-            data = kwargs.pop('data', None)
-            if data:
-                payload['data'] = data
-            else:
-                # just put the remaining kwargs into the data field
-                payload['data'] = kwargs
+        headers = params.pop('headers', None)
+        auth = self.auth if self.auth else None
 
-        # if there are any remaining kwargs, then put them into the params
-        if 'params' not in payload:
-            payload['params'] = {}
-        payload['params'].update(**kwargs)
-        api_call = requests.patch(url, **payload)
-        return api_call
+        data = kwargs.pop('json', None) if self.use_json else kwargs.pop('data', None)
+        if not data:
+            data = kwargs
+
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.patch(
+                url, params=params, headers=headers, auth=auth, files=files, json=data if self.use_json else None, data=data if not self.use_json else None, timeout=self.timeout
+            )
+        return response
 
     def _delete(self, url=None, use_ssl=None, **kwargs):
         """Internal method to make api calls using DELETE."""
         url = self._construct_url(url, use_ssl=use_ssl)
         params = self._construct_payload(kwargs)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
-        if params:
-            payload['params'] = params
-        if self.auth:                                        # pragma: no cover
-            payload['auth'] = self.auth
-        api_call = requests.delete(url, **payload)
-        return api_call
+        headers = params.pop('headers', None)
+        auth = self.auth if self.auth else None
+
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.delete(
+                url, params=params, headers=headers, auth=auth, timeout=self.timeout
+            )
+        return response
 
 
 class JSONAPI(BaseAPI):
@@ -311,9 +247,9 @@ class UserAuthMixin(object):
         if not password:
             password = getattr(self, 'api_key', None)
         if getattr(self, 'auth_method', None) == 'digest':
-            auth = requests.auth.HTTPDigestAuth(username, password)
+            auth = httpx.DigestAuth(username, password)
         else:
-            auth = requests.auth.HTTPBasicAuth(username, password)
+            auth = httpx.BasicAuth(username, password)
         return auth
 
     def _construct_payload(self, params):
