@@ -8,7 +8,7 @@ Sq. Ft,ft**2,PropertyState,gross_floor_area
 Total GHG Emissions Intensity,kgCO2e/ft**2/year,PropertyState,total_ghg_emissions_intensity
 Site EUI,kBtu/ft**2/year,PropertyState,site_eui
 PM Release Date,,PropertyState,release_date
-Year Ending,,PropertyState,Year Ending Excel
+Year Ending,,PropertyState,year_ending
 GHGI Target,,PropertyState,GHGI Target
 GHGI Target Year,,PropertyState,GHGI Target Year
 EUI Target,,PropertyState,EUI Target

@@ -153,6 +153,18 @@ class SeedClient(SeedClientWrapper):
         info["username"] = self.client.username
         return info
 
+    def get_users(self) -> dict:
+        """Get a list of users visible to the current user
+
+        Returns:
+            dict: { "users": [{
+                        "email": "abc@def.com",
+                        "user_id": 1
+                        }]}
+        """
+        users = self.client.list(endpoint="users")
+        return users
+
     def get_organizations(self, brief: bool = True) -> dict:
         """Get a list organizations (that one is allowed to view)
 
@@ -178,6 +190,67 @@ class SeedClient(SeedClientWrapper):
             brief="true" if brief else "false",
         )
         return orgs
+
+    def get_user_id(self, username: str) -> Union[None, int]:
+        """Get the user ID for the given username
+
+        Args:
+            username (str): username to get the ID for
+
+        Returns:
+            int: user ID
+        """
+        for user in self.get_users()['users']:
+            # compare string case insensitive
+            if user["email"].lower() == username.lower():
+                return user["user_id"]
+
+        return None
+
+    def create_organization(self, org_name: str) -> dict:
+        """Create an organization with the given name
+
+        Args:
+            org_name (str): name of the organization to create
+
+        Returns:
+            dict: {
+                    'status': 'success',
+                    'message': 'Organization created',
+                    'organization': {
+                        'name': 'NEW ORG',
+                        'org_id': 17,
+                        'id': 17,
+                        'number_of_users': 1,
+                        'user_is_owner': True,
+                        'user_role': 'owner',
+                        'owners': [...],
+                        'sub_orgs': [...],
+                        'is_parent': True,
+                        'parent_id': 17,
+                        ...
+                        'display_units_eui': 'kBtu/ft**2/year',
+                        'cycles': [...],
+                        'created': '2024-06-13',
+                        'mapquest_api_key': '',
+
+                    }
+                }
+        """
+        # see if the organization already exists
+        orgs = self.get_organizations()
+        for org in orgs:
+            if org["name"].lower() == org_name.lower():
+                raise Exception(f"Organization '{org_name}' already exists")
+
+        user_id = self.get_user_id(self.client.username)
+
+        payload = {
+            "user_id": user_id,
+            "organization_name": org_name,
+        }
+        org = self.client.post(endpoint="organizations", json=payload)
+        return org
 
     def get_buildings(self) -> list[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
@@ -584,13 +657,14 @@ class SeedClient(SeedClientWrapper):
         end_date: date,
         set_cycle_id: bool = False,
     ) -> dict:
-        """Get or create a new cycle. If the cycle_name already exists, then it simply returns the existing cycle. However, if the cycle_name does not exist, then it will create a new cycle.
+        """Get or create a new cycle. If the cycle_name already exists, then it simply returns
+        the existing cycle. However, if the cycle_name does not exist, then it will create a new cycle.
 
         Args:
             cycle_name (str): name of the cycle to get or create
             start_date (date): MM/DD/YYYY of start date cycle
             end_date (date): MM/DD/YYYY of end data for cycle
-            set_cycle_id (str): Set the object's cycle_id to the resulting cycle that is returned (either   existing or newly created)
+            set_cycle_id (str): Set the object's cycle_id to the resulting cycle that is returned (either existing or newly created)
 
         Returns:
             dict: {
@@ -949,7 +1023,7 @@ class SeedClient(SeedClientWrapper):
         )
 
     def get_columns(self) -> dict:
-        """get the list of columns.
+        """Get the list of columns
 
         Returns:
             dict: {
@@ -961,7 +1035,8 @@ class SeedClient(SeedClientWrapper):
         return result
 
     def create_extra_data_column(self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str) -> dict:
-        """ create an extra data column. If column exists, skip
+        """Create an extra data column. If column exists, skip
+
         Args:
             'column_name': 'project_type',
             'display_name': 'Project Type',
@@ -979,7 +1054,6 @@ class SeedClient(SeedClientWrapper):
                     }
                   }
         """
-
         # get extra data columns (only)
         result = self.client.list(endpoint="columns")
         columns = result['columns']
@@ -1005,7 +1079,8 @@ class SeedClient(SeedClientWrapper):
         return result
 
     def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> list:
-        """ create extra data columns from a csv file. if column exist, skip.
+        """Create extra data columns from a csv file. if column exist, skip.
+
         Args:
             'columns_csv_filepath': 'path/to/file'
             file is expected to have headers: column_name, display_name, column_description,
@@ -1156,11 +1231,13 @@ class SeedClient(SeedClientWrapper):
 
     def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> dict:
         """start the background process to save the data file to the database.
-        This is the state before the mapping.
+        This is the state before the mapping. If multiple_cycle_upload is set to True, then the
+        importing file's year_ending column will be used to determine the cycle. Note that the
+        cycles must be created in SEED for the multiple cycle upload to work correctly
 
         Args:
             import_file_id (int): id of the import file to save
-            multiple_cycle_upload (bool): whether to use multiple cycle upload
+            multiple_cycle_upload (bool): whether to use multiple cycle upload.
 
         Returns:
             dict: progress key
@@ -1435,7 +1512,11 @@ class SeedClient(SeedClientWrapper):
             column_mapping_profile_name (str): Name of the column mapping profile to use
             column_mappings_file (str): Mapping that will be uploaded to the column_mapping_profile_name
             import_meters_if_exist (bool): If true, will import meters from the meter tab if they exist in the datafile. Defaults to False.
+
+        Kwargs:
+            datafile_type (str): Type of datafile
             multiple_cycle_upload (bool): Whether to use multiple cycle upload. Defaults to False.
+
 
         Returns:
             dict: {
@@ -1705,5 +1786,24 @@ class SeedClient(SeedClientWrapper):
             required_pk=False,
             endpoint="analyses_views",
             url_args={"PK": analysis_id, "ANALYSIS_VIEW_PK": analysis_view_id},
+            include_org_id_query_param=True,
+        )
+
+    def get_cross_cycle_data(self, property_view_id: int) -> dict:
+        """Retrieve the cross cycle data for a property. This is the data that
+        is shared across all the cycles used to populate a property's cross
+        cycle view.
+
+        Args:
+            property_view_id (int): Property view id
+
+        Returns:
+            dict: Cross cycle data for the property view
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="properties_cross_cycle_data",
+            url_args={"PK": property_view_id},
             include_org_id_query_param=True,
         )
