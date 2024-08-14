@@ -924,6 +924,7 @@ class SeedClient(SeedClientWrapper):
                         "from_units": null,
                         "to_table_name": "PropertyState"
                         "to_field": "address_line_1",
+                        "isOmitted": False
                     },
                     {
                         "from_field": "address1",
@@ -934,6 +935,7 @@ class SeedClient(SeedClientWrapper):
                     ...
                 ]
 
+            The isOmitted mapping may be absent - it is treated as False if it is not present.
         Returns:
             dict: {
                 'id': 1
@@ -972,9 +974,9 @@ class SeedClient(SeedClientWrapper):
     ) -> dict:
         """creates or updates a mapping profile. The format of the mapping file is a CSV with the following format:
 
-            Raw Columns,    units, SEED Table,    SEED Columns\n
-            PM Property ID,      , PropertyState, pm_property_id\n
-            Building ID,         , PropertyState, custom_id_1\n
+            Raw Columns,    units, SEED Table,    SEED Columns, Omit\n
+            PM Property ID,      , PropertyState, pm_property_id, False\n
+            Building ID,         , PropertyState, custom_id_1, False\n
             ...\n
 
         This only works for 'Normal' column mapping profiles, that is, it does not work for
