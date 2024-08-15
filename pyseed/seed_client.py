@@ -924,7 +924,7 @@ class SeedClient(SeedClientWrapper):
                         "from_units": null,
                         "to_table_name": "PropertyState"
                         "to_field": "address_line_1",
-                        "isOmitted": False
+                        "is_omitted": False
                     },
                     {
                         "from_field": "address1",
@@ -935,7 +935,7 @@ class SeedClient(SeedClientWrapper):
                     ...
                 ]
 
-            The isOmitted mapping may be absent - it is treated as False if it is not present.
+            The is_omitted mapping may be absent - it is treated as False if it is not present.
         Returns:
             dict: {
                 'id': 1

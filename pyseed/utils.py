@@ -121,9 +121,9 @@ def read_map_file(mapfile_path):
                     "to_field": rowitem[3],
                 }
         try:
-            data["isOmitted"] = True if rowitem[4].lower().strip() == "true" else False
+            data["is_omitted"] = True if rowitem[4].lower().strip() == "true" else False
         except IndexError:
-            data["isOmitted"] = False
+            data["is_omitted"] = False
 
         maplist.append(data)
 
