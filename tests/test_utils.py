@@ -22,5 +22,6 @@ class UtilsTest(unittest.TestCase):
             "from_units": "ft**2",
             "to_field": "gross_floor_area",
             "to_table_name": "PropertyState",
+            "is_omitted": False
         }
         assert mappings[5] == expected

@@ -113,15 +113,18 @@ def read_map_file(mapfile_path):
 
     # Open the mapping file and fill list
     maplist = list()
-
     for rowitem in map_reader:
-        maplist.append(
-            {
-                'from_field': rowitem[0],
-                'from_units': rowitem[1],
-                'to_table_name': rowitem[2],
-                'to_field': rowitem[3],
-            }
-        )
+        data = {
+            "from_field": rowitem[0],
+            "from_units": rowitem[1],
+            "to_table_name": rowitem[2],
+            "to_field": rowitem[3],
+        }
+        try:
+            data["is_omitted"] = True if rowitem[4].lower().strip() == "true" else False
+        except IndexError:
+            data["is_omitted"] = False
+
+        maplist.append(data)
 
     return maplist
