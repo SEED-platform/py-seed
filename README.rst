@@ -23,7 +23,7 @@ More information can be found here:
 Compatibility Matrix
 -------------
 
-.. list-table:: Title
+.. list-table::
    :widths: 50 50
    :header-rows: 1
 
