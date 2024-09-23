@@ -29,8 +29,10 @@ Compatibility Matrix
 
    * - py-SEED Version
      - SEED Version
-   * - 0.4.4, 3.1.0
-     - 0.4.3, 2.21.0 - 3.0.0
+   * - 0.4.4
+     - 3.1.0
+   * - 0.4.3
+     - 2.21.0 - 3.0.0
 
 Stakeholders
 -------------
