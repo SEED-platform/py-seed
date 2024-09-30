@@ -20,6 +20,20 @@ More information can be found here:
 * https://github.com/SEED-platform/pyseed-examples
 
 
+Compatibility Matrix
+-------------
+
+.. list-table::
+   :widths: 50 50
+   :header-rows: 1
+
+   * - py-SEED Version
+     - SEED Version
+   * - 0.5.0
+     - 3.1.0
+   * - 0.4.3
+     - 2.21.0 - 3.0.0
+
 Stakeholders
 -------------
 
