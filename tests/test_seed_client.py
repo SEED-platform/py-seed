@@ -13,6 +13,9 @@ from pathlib import Path
 # Local Imports
 from pyseed.seed_client import SeedClient
 
+# For CI the test org is 1, but for local testing it may be different
+ORGANIZATION_ID = 1
+
 
 @pytest.mark.integration
 class SeedClientTest(unittest.TestCase):
@@ -23,7 +26,7 @@ class SeedClientTest(unittest.TestCase):
         if not cls.output_dir.exists():
             cls.output_dir.mkdir()
 
-        cls.organization_id = 1
+        cls.organization_id = ORGANIZATION_ID
 
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
@@ -58,6 +61,17 @@ class SeedClientTest(unittest.TestCase):
     def test_seed_client_info(self):
         info = self.seed_client.instance_information()
         assert set(("version", "sha")).issubset(info.keys())
+
+    def test_create_organization(self):
+        # create a new organization. This test requires that the
+        # org does not already exist, which is common in the CI.
+        org = self.seed_client.create_organization("NEW ORG")
+        assert org["organization"]["id"] is not None
+
+        # try to create again and it should raise an error
+        with self.assertRaises(Exception) as excpt:
+            self.seed_client.create_organization("NEW ORG")
+        assert "already exists" in str(excpt.exception)
 
     def test_seed_buildings(self):
         # set cycle before retrieving (just in case)
@@ -400,3 +414,71 @@ class SeedClientTest(unittest.TestCase):
 
     #     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
     #     self.assertTrue(response['status'] == 'success')
+
+
+@pytest.mark.integration
+class SeedClientMultiCycleTest(unittest.TestCase):
+    @classmethod
+    def setup_class(cls):
+        """setup for all of the tests below"""
+        cls.output_dir = Path("tests/output")
+        if not cls.output_dir.exists():
+            cls.output_dir.mkdir()
+
+        # Use the default organization to create the client,
+        # but this will be overwritten in the test class below.
+        cls.organization_id = ORGANIZATION_ID
+
+        # The seed-config.json file needs to be added to the project root directory
+        # If running SEED locally for testing, then you can run the following from your SEED root directory:
+        #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
+        config_file = Path("seed-config.json")
+        cls.seed_client = SeedClient(
+            cls.organization_id, connection_config_filepath=config_file
+        )
+
+    @classmethod
+    def teardown_class(cls):
+        # remove all of the test buildings?
+        pass
+
+    def test_upload_multiple_cycles_and_read_back(self):
+        # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
+        # data end up in the correct cycle
+        new_org = self.seed_client.create_organization("pyseed-multi-cycle")
+        self.seed_client.client.org_id = new_org["organization"]["id"]
+
+        for year_start, year_end in [(2020, 2021), (2021, 2022), (2022, 2023)]:
+            self.seed_client.get_or_create_cycle(
+                f"pyseed-multi-cycle-test-{year_start}",
+                date(year_start, 6, 1),
+                date(year_end, 6, 1),
+                set_cycle_id=True,
+            )
+
+        # due to structure of loop above, the cycle_id is set to the last cycle
+
+        result = self.seed_client.upload_and_match_datafile(
+            "pyseed-multiple-cycle-test",
+            "tests/data/test-seed-data-with-multiple-cycles.xlsx",
+            "Single Step Column Mappings",
+            "tests/data/test-seed-data-mappings.csv",
+            import_meters_if_exist=False,
+            multiple_cycle_upload=True
+        )
+
+        assert result is not None
+
+        # retrieve the single building
+        building = self.seed_client.search_buildings(identifier_exact=11111)
+        assert len(building) == 1
+        property_view_id = building[0]["id"]
+
+        # retrieve cross cycle
+        building_cycles = self.seed_client.get_cross_cycle_data(property_view_id)
+
+        assert len(building_cycles) == 3
+        # check that the site_euis are correct
+        assert building_cycles[0]['site_eui'] == 95
+        assert building_cycles[1]['site_eui'] == 181
+        assert building_cycles[2]['site_eui'] == 129

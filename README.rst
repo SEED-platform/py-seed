@@ -20,6 +20,20 @@ More information can be found here:
 * https://github.com/SEED-platform/pyseed-examples
 
 
+Compatibility Matrix
+-------------
+
+.. list-table::
+   :widths: 50 50
+   :header-rows: 1
+
+   * - py-SEED Version
+     - SEED Version
+   * - 0.5.0
+     - 3.1.0
+   * - 0.4.3
+     - 2.21.0 - 3.0.0
+
 Stakeholders
 -------------
 
@@ -133,5 +147,6 @@ This project is configured with GitHub Actions to automatically release to PyPi 
 * Once deployed to main, create a new tag in GitHub against main and copy the change log notes into the tag description
 * GitHub Actions will automatically prepare the release the new version to PyPi
 * Go to GitHub actions to approve the release
+* After merging into main, then in the command line with the develop branch run `git merge origin main` and push the changes. This might have to be done with a person with elevated privileges to bypass the protected branch settings.
 
 The GitHub Action required updates to the GitHub repo to only release on tags (https://github.com/SEED-platform/py-seed/settings/environments) after approval and on PyPi to add an authorized publisher (https://pypi.org/manage/project/py-SEED/settings/publishing/).
