@@ -3,7 +3,6 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Third Party Modules
 import csv
 import json
 from math import pi, sin
@@ -30,14 +29,14 @@ def _ring_area(coordinates):
 
     {float} The approximate signed geodesic total_area of the polygon in square meters.
     """
-
-    assert isinstance(coordinates, (list, tuple))
+    if not isinstance(coordinates, (list, tuple)):
+        raise ValueError("coordinates must be a list or tuple")
 
     total_area = 0
     coordinates_length = len(coordinates)
 
     if coordinates_length > 2:
-        for i in range(0, coordinates_length):
+        for i in range(coordinates_length):
             if i == (coordinates_length - 2):
                 lower_index = coordinates_length - 2
                 middle_index = coordinates_length - 1
@@ -63,8 +62,8 @@ def _ring_area(coordinates):
 
 
 def _polygon_area(coordinates):
-
-    assert isinstance(coordinates, (list, tuple))
+    if not isinstance(coordinates, (list, tuple)):
+        raise ValueError("coordinates must be a list or tuple")
 
     total_area = 0
     if len(coordinates) > 0:
@@ -86,18 +85,19 @@ def geojson_area(geometry):
     if isinstance(geometry, str):
         geometry = json.loads(geometry)
 
-    assert isinstance(geometry, dict)
+    if not isinstance(geometry, dict):
+        raise ValueError("geometry must be a GeoJSON dict")
 
     total_area = 0
 
-    if geometry['type'] == 'Polygon':
-        return _polygon_area(geometry['coordinates'])
-    elif geometry['type'] == 'MultiPolygon':
-        for i in range(0, len(geometry['coordinates'])):
-            total_area += _polygon_area(geometry['coordinates'][i])
-    elif geometry['type'] == 'GeometryCollection':
-        for i in range(0, len(geometry['geometries'])):
-            total_area += geojson_area(geometry['geometries'][i])
+    if geometry["type"] == "Polygon":
+        return _polygon_area(geometry["coordinates"])
+    elif geometry["type"] == "MultiPolygon":
+        for i in range(len(geometry["coordinates"])):
+            total_area += _polygon_area(geometry["coordinates"][i])
+    elif geometry["type"] == "GeometryCollection":
+        for i in range(len(geometry["geometries"])):
+            total_area += geojson_area(geometry["geometries"][i])
 
     return total_area
 
@@ -106,25 +106,30 @@ def read_map_file(mapfile_path):
     """Read in the mapping file"""
 
     mapfile_path = Path(mapfile_path)
-    assert mapfile_path.exists(), f"Cannot find file: {str(mapfile_path)}"
+    if not mapfile_path.exists():
+        raise ValueError(f"Mapping file {mapfile_path} does not exist")
 
-    map_reader = csv.reader(open(mapfile_path, 'r'))
-    map_reader.__next__()  # Skip the header
+    with open(mapfile_path) as f:
+        map_reader = csv.reader(f)
+        map_reader.__next__()  # Skip the header
 
-    # Open the mapping file and fill list
-    maplist = list()
-    for rowitem in map_reader:
-        data = {
-            "from_field": rowitem[0],
-            "from_units": rowitem[1],
-            "to_table_name": rowitem[2],
-            "to_field": rowitem[3],
-        }
-        try:
-            data["is_omitted"] = True if rowitem[4].lower().strip() == "true" else False
-        except IndexError:
-            data["is_omitted"] = False
+        # Open the mapping file and fill list
+        maplist = []
+        for rowitem in map_reader:
+            data = {
+                "from_field": rowitem[0],
+                "from_units": rowitem[1],
+                "to_table_name": rowitem[2],
+                "to_field": rowitem[3],
+            }
+            try:
+                if rowitem[4].lower().strip() == "true":
+                    data["is_omitted"] = True
+                else:
+                    False
+            except IndexError:
+                data["is_omitted"] = False
 
-        maplist.append(data)
+            maplist.append(data)
 
     return maplist

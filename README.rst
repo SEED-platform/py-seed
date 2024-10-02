@@ -21,7 +21,7 @@ More information can be found here:
 
 
 Compatibility Matrix
--------------
+--------------------
 
 .. list-table::
    :widths: 50 50

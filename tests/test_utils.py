@@ -3,12 +3,9 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-
-# Imports from Third Party Modules
 import unittest
 from pathlib import Path
 
-# Local Imports
 from pyseed.utils import read_map_file
 
 
@@ -22,6 +19,6 @@ class UtilsTest(unittest.TestCase):
             "from_units": "ft**2",
             "to_field": "gross_floor_area",
             "to_table_name": "PropertyState",
-            "is_omitted": False
+            "is_omitted": False,
         }
         assert mappings[5] == expected

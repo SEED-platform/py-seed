@@ -1,49 +1,38 @@
-#!/usr/bin/env python
 """
 copyright (c) 2016 Earth Advantage. All rights reserved.
 ..codeauthor::Paul Munday <paul@paulmunday.net>
 
 Functionality for calls to external APIs"""
 
-# Imports from Third Party Modules
 import re
-# Imports from External Modules
+
 import requests
 
-# Local Imports
-# Public Functions and Classes
-# Helper functions for use by BaseAPI subclasses
 from pyseed.exceptions import APIClientError
 
 
 def add_pk(url, pk, required=True, slash=False):
     """Add id/primary key to url"""
     if required and not pk:
-        raise APIClientError('id/pk must be supplied')
+        raise APIClientError("id/pk must be supplied")
     if pk:
-        if isinstance(pk, str) and not pk.isdigit():
-            raise TypeError('id/pk must be a positive integer')
-        elif not isinstance(pk, (int, str)) or int(pk) < 0:
-            raise TypeError('id/pk must be a positive integer')
-        if not url.endswith('/'):
-            url = "{}/{}".format(url, pk)
-        else:
-            url = "{}{}".format(url, pk)
-    if slash:
-        # Only add the trailing slash if it's not already there
-        if not url.endswith('/'):
-            url = "{}/".format(url)
+        if isinstance(pk, str) and not pk.isdigit() or (not isinstance(pk, (int, str)) or int(pk) < 0):
+            raise TypeError("id/pk must be a positive integer")
+        url = f"{url}/{pk}" if not url.endswith("/") else f"{url}{pk}"
+    # Only add the trailing slash if it's not already there
+    if slash and not url.endswith("/"):
+        url = f"{url}/"
     return url
 
 
-class BaseAPI(object):
+class BaseAPI:
     """
     Base class for API Calls
     """
+
     # pylint: disable=too-few-public-methods, too-many-instance-attributes
 
-    def __init__(self, url=None, use_ssl=True, timeout=None, use_json=False,
-                 use_auth=False, auth=None, **kwargs):
+    def __init__(self, url=None, use_ssl=True, timeout=None, use_json=False, use_auth=False, auth=None, **kwargs):
         # pylint: disable=too-many-arguments
         """Set url,api key, auth usage, ssl usage, timeout etc.
 
@@ -79,19 +68,19 @@ class BaseAPI(object):
 
     def _construct_payload(self, params):
         """Construct parameters for an api call.
-.
-        :param params: A dictionary of key-value pairs to include
-            in the request.
-        :return: A dictionary of k-v pairs to send to the server
-            in the request.
+        .
+                :param params: A dictionary of key-value pairs to include
+                    in the request.
+                :return: A dictionary of k-v pairs to send to the server
+                    in the request.
         """
-        compulsory = getattr(self, 'compulsory_params', [])
+        compulsory = getattr(self, "compulsory_params", [])
         for param in compulsory:
             if param not in params:
                 try:
                     params[param] = getattr(self, param)
                 except AttributeError:
-                    msg = "{} is a compulsory field".format(param)
+                    msg = f"{param} is a compulsory field"
                     raise APIClientError(msg)
         return params
 
@@ -100,31 +89,23 @@ class BaseAPI(object):
         # self.use_ssl takes priority to enforce ssl use
         use_ssl = self.use_ssl if self.use_ssl is not None else use_ssl
         if not urlstring and not self.url:
-            raise APIClientError('No url set')
+            raise APIClientError("No url set")
         elif not urlstring:
             url = self.url
+        elif urlstring.startswith("https://") and not use_ssl:
+            # We strip off url prefix
+            # raise an error if https is used  in url without use_ssl
+            raise APIClientError("use_ssl is false but url starts with https")
+        elif urlstring.startswith("http://") and use_ssl:
+            # We strip off url prefix
+            # raise an error if http is used in url with use_ssl
+            raise APIClientError("use_ssl is true but url does not starts with https")
         else:
-            if urlstring.startswith('https://') and not use_ssl:
-                # We strip off url prefix
-                # raise an error if https is used  in url without use_ssl
-                raise APIClientError(
-                    'use_ssl is false but url starts with https'
-                )
-            elif urlstring.startswith('http://') and use_ssl:
-                # We strip off url prefix
-                # raise an error if http is used in url with use_ssl
-                raise APIClientError(
-                    'use_ssl is true but url does not starts with https'
-                )
-            else:
-                # strip http(s):// off url
-                regex = re.compile('^https?://')
-                urlstring = regex.sub('', urlstring)
-                if use_ssl:
-                    start = 'https://'
-                else:
-                    start = 'http://'
-                url = "{}{}".format(start, urlstring)
+            # strip http(s):// off url
+            regex = re.compile("^https?://")
+            urlstring = regex.sub("", urlstring)
+            start = "https://" if use_ssl else "http://"
+            url = f"{start}{urlstring}"
         return url
 
     def check_call_success(self, response):
@@ -136,15 +117,13 @@ class BaseAPI(object):
         """Internal method to make api calls using GET."""
         url = self._construct_url(url, use_ssl=use_ssl)
         params = self._construct_payload(kwargs)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
+        payload = {"timeout": self.timeout, "headers": params.pop("headers", None)}
         if params:
-            payload['params'] = params
-        if self.auth:                                       # pragma: no cover
-            payload['auth'] = self.auth
-        api_call = requests.get(url, **payload)
+            payload["params"] = params
+        if self.auth:  # pragma: no cover
+            payload["auth"] = self.auth
+        # timeout is specified in the payload
+        api_call = requests.get(url, **payload)  # noqa: S113
         return api_call
 
     def _post(self, url=None, use_ssl=None, params=None, files=None, **kwargs):
@@ -153,132 +132,121 @@ class BaseAPI(object):
         if not params:
             params = {}
         params = self._construct_payload(params)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
+        payload = {"timeout": self.timeout, "headers": params.pop("headers", None)}
         if params:
-            payload['params'] = params
+            payload["params"] = params
         if files:
-            payload['files'] = files
-        if self.auth:                                       # pragma: no cover
-            payload['auth'] = self.auth
+            payload["files"] = files
+        if self.auth:  # pragma: no cover
+            payload["auth"] = self.auth
         if self.use_json:
-            data = kwargs.pop('json', None)
+            data = kwargs.pop("json", None)
             if data:
-                payload['json'] = data
+                payload["json"] = data
             else:
                 # just put the remaining kwargs into the json field
-                payload['json'] = kwargs
+                payload["json"] = kwargs
         else:
-            data = kwargs.pop('data', None)
+            data = kwargs.pop("data", None)
             if data:
-                payload['data'] = data
+                payload["data"] = data
             else:
                 # just put the remaining kwargs into the data field
-                payload['data'] = kwargs
+                payload["data"] = kwargs
 
         # if there are any remaining kwargs, then put them into the params
-        if 'params' not in payload:
-            payload['params'] = {}
-        payload['params'].update(**kwargs)
+        if "params" not in payload:
+            payload["params"] = {}
+        payload["params"].update(**kwargs)
 
         # now do the actual call to post!
-        api_call = requests.post(url, **payload)
+        # timeout is specified in the payload
+        api_call = requests.post(url, **payload)  # noqa: S113
         return api_call
 
-    def _put(self, url=None, use_ssl=None, params=None, files=None,
-             **kwargs):
+    def _put(self, url=None, use_ssl=None, params=None, files=None, **kwargs):
         """Internal method to make api calls using PUT."""
         url = self._construct_url(url, use_ssl=use_ssl)
         if not params:
             params = {}
         params = self._construct_payload(params)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
+        payload = {"timeout": self.timeout, "headers": params.pop("headers", None)}
         if params:
-            payload['params'] = params
-        if files:                                           # pragma: no cover
-            payload['files'] = files
-        if self.auth:                                       # pragma: no cover
-            payload['auth'] = self.auth
+            payload["params"] = params
+        if files:  # pragma: no cover
+            payload["files"] = files
+        if self.auth:  # pragma: no cover
+            payload["auth"] = self.auth
         if self.use_json:
-            data = kwargs.pop('json', None)
+            data = kwargs.pop("json", None)
             if data:
-                payload['json'] = data
+                payload["json"] = data
             else:
                 # just put the remaining kwargs into the json field
-                payload['json'] = kwargs
+                payload["json"] = kwargs
         else:
-            data = kwargs.pop('data', None)
+            data = kwargs.pop("data", None)
             if data:
-                payload['data'] = data
+                payload["data"] = data
             else:
                 # just put the remaining kwargs into the data field
-                payload['data'] = kwargs
+                payload["data"] = kwargs
 
         # if there are any remaining kwargs, then put them into the params
-        if 'params' not in payload:
-            payload['params'] = {}
-        payload['params'].update(**kwargs)
-
-        api_call = requests.put(url, **payload)
+        if "params" not in payload:
+            payload["params"] = {}
+        payload["params"].update(**kwargs)
+        # timeout is specified in the payload
+        api_call = requests.put(url, **payload)  # noqa: S113
         return api_call
 
-    def _patch(self, url=None, use_ssl=None, params=None, files=None,
-               **kwargs):
+    def _patch(self, url=None, use_ssl=None, params=None, files=None, **kwargs):
         """Internal method to make api calls using PATCH."""
         url = self._construct_url(url, use_ssl=use_ssl)
         if not params:
             params = {}
         params = self._construct_payload(params)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
+        payload = {"timeout": self.timeout, "headers": params.pop("headers", None)}
         if params:
-            payload['params'] = params
+            payload["params"] = params
         if files:
-            payload['files'] = files
-        if self.auth:                                        # pragma: no cover
-            payload['auth'] = self.auth
+            payload["files"] = files
+        if self.auth:  # pragma: no cover
+            payload["auth"] = self.auth
         if self.use_json:
-            data = kwargs.pop('json', None)
+            data = kwargs.pop("json", None)
             if data:
-                payload['json'] = data
+                payload["json"] = data
             else:
                 # just put the remaining kwargs into the json field
-                payload['json'] = kwargs
+                payload["json"] = kwargs
         else:
-            data = kwargs.pop('data', None)
+            data = kwargs.pop("data", None)
             if data:
-                payload['data'] = data
+                payload["data"] = data
             else:
                 # just put the remaining kwargs into the data field
-                payload['data'] = kwargs
+                payload["data"] = kwargs
 
         # if there are any remaining kwargs, then put them into the params
-        if 'params' not in payload:
-            payload['params'] = {}
-        payload['params'].update(**kwargs)
-        api_call = requests.patch(url, **payload)
+        if "params" not in payload:
+            payload["params"] = {}
+        payload["params"].update(**kwargs)
+        # timeout is specified in the payload
+        api_call = requests.patch(url, **payload)  # noqa: S113
         return api_call
 
     def _delete(self, url=None, use_ssl=None, **kwargs):
         """Internal method to make api calls using DELETE."""
         url = self._construct_url(url, use_ssl=use_ssl)
         params = self._construct_payload(kwargs)
-        payload = {
-            'timeout': self.timeout,
-            'headers': params.pop('headers', None)
-        }
+        payload = {"timeout": self.timeout, "headers": params.pop("headers", None)}
         if params:
-            payload['params'] = params
-        if self.auth:                                        # pragma: no cover
-            payload['auth'] = self.auth
-        api_call = requests.delete(url, **payload)
+            payload["params"] = params
+        if self.auth:  # pragma: no cover
+            payload["auth"] = self.auth
+        # timeout is specified in the payload
+        api_call = requests.delete(url, **payload)  # noqa: S113
         return api_call
 
 
@@ -286,31 +254,29 @@ class JSONAPI(BaseAPI):
     """
     Base class for Json API Calls. See BaseAPI for documentation.
     """
+
     # pylint: disable=too-few-public-methods, too-many-arguments
 
-    def __init__(self, url=None, use_ssl=True, timeout=None,
-                 use_auth=False, auth=None, **kwargs):
-        super(JSONAPI, self).__init__(
-            url=url, use_ssl=use_ssl, timeout=timeout, use_json=True,
-            use_auth=use_auth, auth=auth, **kwargs
-        )
+    def __init__(self, url=None, use_ssl=True, timeout=None, use_auth=False, auth=None, **kwargs):
+        super().__init__(url=url, use_ssl=use_ssl, timeout=timeout, use_json=True, use_auth=use_auth, auth=auth, **kwargs)
 
 
-class UserAuthMixin(object):
+class UserAuthMixin:
     """
     Mixin to provide basic or digest api client authentication via username
     and password(or api_key)."""
+
     # pylint:disable=too-few-public-methods
 
     def _get_auth(self):
         """Get basic or digest auth by username/password"""
-        username = getattr(self, 'username', None)
-        password = getattr(self, 'password', None)
+        username = getattr(self, "username", None)
+        password = getattr(self, "password", None)
         # support using api_key as password in basic auth
         # as used by SEED (if supplied as api_key not password)
         if not password:
-            password = getattr(self, 'api_key', None)
-        if getattr(self, 'auth_method', None) == 'digest':
+            password = getattr(self, "api_key", None)
+        if getattr(self, "auth_method", None) == "digest":
             auth = requests.auth.HTTPDigestAuth(username, password)
         else:
             auth = requests.auth.HTTPBasicAuth(username, password)
@@ -318,18 +284,18 @@ class UserAuthMixin(object):
 
     def _construct_payload(self, params):
         """Construct parameters for an api call.
-.
-        :param params: A dictionary of key-value pairs to include
-            in the request.
-        :return: A dictionary of k-v pairs to send to the server
-            in the request.
+        .
+                :param params: A dictionary of key-value pairs to include
+                    in the request.
+                :return: A dictionary of k-v pairs to send to the server
+                    in the request.
         """
-        if getattr(self, 'use_auth', None) and not getattr(self, 'auth', None):
+        if getattr(self, "use_auth", None) and not getattr(self, "auth", None):
             self.auth = self._get_auth()
-        return super(UserAuthMixin, self)._construct_payload(params)
+        return super()._construct_payload(params)
 
 
-class OAuthMixin(object):
+class OAuthMixin:
     """
     Mixin to provide api client authentication via OAuth access tokens based
     on the JWTGrantClient found in jwt-oauth2lib.
@@ -337,20 +303,17 @@ class OAuthMixin(object):
     see https://github.com/GreenBuildingRegistry/jwt_oauth2
     """
 
-    _token_type = "Bearer"
+    _token_type = "Bearer"  # noqa: S105
     oauth_client = None
 
     def _get_access_token(self):
         """Generate OAuth access token"""
-        private_key_file = getattr(self, 'private_key_location', None)
-        client_id = getattr(self, 'client_id', None)
-        username = getattr(self, 'username', None)
-        with open(private_key_file, 'r') as pk_file:
+        private_key_file = getattr(self, "private_key_location", None)
+        client_id = getattr(self, "client_id", None)
+        username = getattr(self, "username", None)
+        with open(private_key_file) as pk_file:
             sig = pk_file.read()
-            oauth_client = self.oauth_client(
-                sig, username, client_id,
-                pvt_key_password=getattr(self, 'pvt_key_password', None)
-            )
+            oauth_client = self.oauth_client(sig, username, client_id, pvt_key_password=getattr(self, "pvt_key_password", None))
             return oauth_client.get_access_token()
 
     def _construct_payload(self, params):
@@ -361,9 +324,7 @@ class OAuthMixin(object):
         :return: A dictionary of k-v pairs to send to the server
             in the request.
         """
-        params = super(OAuthMixin, self)._construct_payload(params)
-        token = getattr(self, 'token', None) or self._get_access_token()
-        params['headers'] = {
-            'Authorization': '{} {}'.format(self._token_type, token)
-        }
+        params = super()._construct_payload(params)
+        token = getattr(self, "token", None) or self._get_access_token()
+        params["headers"] = {"Authorization": f"{self._token_type} {token}"}
         return params

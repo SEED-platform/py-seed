@@ -3,14 +3,13 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Third Party Modules
 import os
-import pytest
 import unittest
 from datetime import date
 from pathlib import Path
 
-# Local Imports
+import pytest
+
 from pyseed.seed_client import SeedClient
 
 # For CI the test org is 1, but for local testing it may be different
@@ -32,15 +31,11 @@ class SeedClientTest(unittest.TestCase):
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path("seed-config.json")
-        cls.seed_client = SeedClient(
-            cls.organization_id, connection_config_filepath=config_file
-        )
+        cls.seed_client = SeedClient(cls.organization_id, connection_config_filepath=config_file)
 
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
-        cls.seed_client.get_or_create_cycle(
-            "pyseed-api-test", date(2021, 6, 1), date(2022, 6, 1), set_cycle_id=True
-        )
+        cls.seed_client.get_or_create_cycle("pyseed-api-test", date(2021, 6, 1), date(2022, 6, 1), set_cycle_id=True)
 
         cls.seed_client.upload_and_match_datafile(
             "pyseed-properties-test",
@@ -60,7 +55,7 @@ class SeedClientTest(unittest.TestCase):
 
     def test_seed_client_info(self):
         info = self.seed_client.instance_information()
-        assert set(("version", "sha")).issubset(info.keys())
+        assert set(("version", "sha")).issubset(info.keys())  # noqa: C405
 
     def test_create_organization(self):
         # create a new organization. This test requires that the
@@ -69,20 +64,20 @@ class SeedClientTest(unittest.TestCase):
         assert org["organization"]["id"] is not None
 
         # try to create again and it should raise an error
-        with self.assertRaises(Exception) as excpt:
+        with pytest.raises(Exception) as excpt:  # noqa: PT011
             self.seed_client.create_organization("NEW ORG")
-        assert "already exists" in str(excpt.exception)
+        assert "already exists" in excpt.value.args[0]
 
     def test_seed_buildings(self):
         # set cycle before retrieving (just in case)
-        self.seed_client.get_cycle_by_name('pyseed-api-test', set_cycle_id=True)
+        self.seed_client.get_cycle_by_name("pyseed-api-test", set_cycle_id=True)
         buildings = self.seed_client.get_buildings()
         # ESPM test creates a building now too, assert building count is 10 or 11?
         assert len(buildings) == 10
 
     def test_get_pm_report_template_names(self):
-        pm_un = os.environ.get('SEED_PM_UN', False)
-        pm_pw = os.environ.get('SEED_PM_PW', False)
+        pm_un = os.environ.get("SEED_PM_UN", False)
+        pm_pw = os.environ.get("SEED_PM_PW", False)
         if not pm_un or not pm_pw:
             self.fail(f"Somehow PM test was initiated without {pm_un} or {pm_pw} in the environment")
         response = self.seed_client.get_pm_report_template_names(pm_un, pm_pw)
@@ -100,7 +95,7 @@ class SeedClientTest(unittest.TestCase):
 
     def test_search_buildings(self):
         # set cycle
-        self.seed_client.get_cycle_by_name('pyseed-api-test', set_cycle_id=True)
+        self.seed_client.get_cycle_by_name("pyseed-api-test", set_cycle_id=True)
         properties = self.seed_client.search_buildings(identifier_exact="B-1")
         assert len(properties) == 1
 
@@ -122,7 +117,7 @@ class SeedClientTest(unittest.TestCase):
         # create a new building (property, propertyState, propertyView)
         # Update the building
         completion_date = "02/02/2023"
-        year = '2023'
+        year = "2023"
         cycle = self.seed_client.get_or_create_cycle(
             "pyseed-api-integration-test",
             date(int(year), 1, 1),
@@ -155,13 +150,10 @@ class SeedClientTest(unittest.TestCase):
             "generation_date": None,
             "recent_sale_date": None,
             "release_date": None,
-            "extra_data": {
-                "pathway": "new",
-                "completion_date": completion_date
-            }
+            "extra_data": {"pathway": "new", "completion_date": completion_date},
         }
 
-        params = {'state': state, 'cycle_id': cycle["id"]}
+        params = {"state": state, "cycle_id": cycle["id"]}
 
         result = self.seed_client.create_building(params=params)
         assert result["status"] == "success"
@@ -169,12 +161,12 @@ class SeedClientTest(unittest.TestCase):
         view_id = result["view"]["id"]
 
         # update that property (by ID)
-        state['property_name'] = 'New Name Building'
+        state["property_name"] = "New Name Building"
 
-        properties = self.seed_client.search_buildings(identifier_exact=state['custom_id_1'])
+        properties = self.seed_client.search_buildings(identifier_exact=state["custom_id_1"])
         assert len(properties) == 1
 
-        params2 = {'state': state}
+        params2 = {"state": state}
         result2 = self.seed_client.update_building(view_id, params=params2)
         assert result2["status"] == "success"
 
@@ -186,9 +178,7 @@ class SeedClientTest(unittest.TestCase):
             assert len(properties) == 1
             prop_ids.append(properties[0]["id"])
 
-        result = self.seed_client.update_labels_of_buildings(
-            ["Violation"], [], prop_ids
-        )
+        result = self.seed_client.update_labels_of_buildings(["Violation"], [], prop_ids)
         assert result["status"] == "success"
         assert result["num_updated"] == 3
         # verify that the 3 buildings have the Violation label
@@ -196,9 +186,7 @@ class SeedClientTest(unittest.TestCase):
         assert all(item in properties[0]["is_applied"] for item in prop_ids)
 
         # now remove the violation label and add compliant
-        result = self.seed_client.update_labels_of_buildings(
-            ["Compliant"], ["Violation"], prop_ids
-        )
+        result = self.seed_client.update_labels_of_buildings(["Compliant"], ["Violation"], prop_ids)
         assert result["status"] == "success"
         assert result["num_updated"] == 3
         properties = self.seed_client.get_view_ids_with_label(label_names=["Violation"])
@@ -209,15 +197,11 @@ class SeedClientTest(unittest.TestCase):
         assert all(item in properties[0]["is_applied"] for item in prop_ids)
 
         # now remove all
-        result = self.seed_client.update_labels_of_buildings(
-            [], ["Violation", "Compliant"], prop_ids
-        )
+        result = self.seed_client.update_labels_of_buildings([], ["Violation", "Compliant"], prop_ids)
         assert result["status"] == "success"
         assert result["num_updated"] == 3
         # no labels on the properties
-        properties = self.seed_client.get_view_ids_with_label(
-            label_names=["Compliant", "Violation"]
-        )
+        properties = self.seed_client.get_view_ids_with_label(label_names=["Compliant", "Violation"])
         assert not all(item in properties[0]["is_applied"] for item in prop_ids)
         assert not all(item in properties[1]["is_applied"] for item in prop_ids)
 
@@ -234,9 +218,7 @@ class SeedClientTest(unittest.TestCase):
         # Need to get the dataset id, again. Maybe need to clean up eventually.
         dataset = self.seed_client.get_or_create_dataset("pyseed-uploader-test-data")
 
-        result = self.seed_client.upload_datafile(
-            dataset["id"], "tests/data/test-seed-data.xlsx", "Assessed Raw"
-        )
+        result = self.seed_client.upload_datafile(dataset["id"], "tests/data/test-seed-data.xlsx", "Assessed Raw")
         import_file_id = result["import_file_id"]
         assert result["success"] is True
         assert import_file_id is not None
@@ -254,15 +236,11 @@ class SeedClientTest(unittest.TestCase):
         assert result["progress"] == 100
 
         # create/retrieve the column mappings
-        result = self.seed_client.create_or_update_column_mapping_profile_from_file(
-            "new profile", "tests/data/test-seed-data-mappings.csv"
-        )
+        result = self.seed_client.create_or_update_column_mapping_profile_from_file("new profile", "tests/data/test-seed-data-mappings.csv")
         assert len(result["mappings"]) > 0
 
         # set the column mappings for the dataset
-        result = self.seed_client.set_import_file_column_mappings(
-            import_file_id, result["mappings"]
-        )
+        result = self.seed_client.set_import_file_column_mappings(import_file_id, result["mappings"])
 
         # now start the mapping
         result = self.seed_client.start_map_data(import_file_id)
@@ -347,7 +325,7 @@ class SeedClientTest(unittest.TestCase):
         meters = self.seed_client.get_meters(building[0]["id"])
         assert len(meters) == 4  # elec, elec cost, gas, gas cost
         meter_data = self.seed_client.get_meter_data(building[0]["id"])
-        assert len(meter_data['readings']) == 24
+        assert len(meter_data["readings"]) == 24
 
     def test_download_espm_property(self):
         # For testing, read in the ESPM username and password from
@@ -358,30 +336,26 @@ class SeedClientTest(unittest.TestCase):
             save_file.unlink()
 
         self.seed_client.retrieve_portfolio_manager_property(
-            username=os.environ.get('SEED_PM_UN'),
-            password=os.environ.get('SEED_PM_PW'),
+            username=os.environ.get("SEED_PM_UN"),
+            password=os.environ.get("SEED_PM_PW"),
             pm_property_id=22178850,
-            save_file_name=save_file
+            save_file_name=save_file,
         )
 
-        self.assertTrue(save_file.exists())
+        assert save_file.exists()
 
         # redownload and show an error
-        with self.assertRaises(Exception) as excpt:
+        with pytest.raises(Exception) as excpt:  # noqa: PT011
             self.seed_client.retrieve_portfolio_manager_property(
-                username=os.environ.get('SEED_PM_UN'),
-                password=os.environ.get('SEED_PM_PW'),
+                username=os.environ.get("SEED_PM_UN"),
+                password=os.environ.get("SEED_PM_PW"),
                 pm_property_id=22178850,
-                save_file_name=save_file
+                save_file_name=save_file,
             )
 
-        self.assertEqual(
-            str(excpt.exception),
-            f'Save filename already exists, save to a new file name: {str(save_file)}'
-        )
+        assert excpt.value.args[0] == f"Save filename already exists, save to a new file name: {save_file!s}"
 
     def test_upload_espm_property_to_seed(self):
-
         file = Path("tests/data/portfolio-manager-single-22482007.xlsx")
 
         # need a building
@@ -389,15 +363,20 @@ class SeedClientTest(unittest.TestCase):
         building = None
         if buildings:
             building = buildings[0]
-        self.assertTrue(building)
+        assert building
 
         # need a column mapping profile
         mapping_file = Path("tests/data/test-seed-data-mappings.csv")
-        mapping_profile = self.seed_client.create_or_update_column_mapping_profile_from_file('ESPM Test', mapping_file)
-        self.assertTrue('id' in mapping_profile)
+        mapping_profile = self.seed_client.create_or_update_column_mapping_profile_from_file("ESPM Test", mapping_file)
+        assert "id" in mapping_profile
 
-        response = self.seed_client.import_portfolio_manager_property(building['id'], self.seed_client.cycle_id, mapping_profile['id'], file)
-        self.assertTrue(response['status'] == 'success')
+        response = self.seed_client.import_portfolio_manager_property(
+            building["id"],
+            self.seed_client.cycle_id,
+            mapping_profile["id"],
+            file,
+        )
+        assert response["status"] == "success"
 
     # def test_retrieve_at_building_and_update(self):
     #     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
@@ -433,9 +412,7 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path("seed-config.json")
-        cls.seed_client = SeedClient(
-            cls.organization_id, connection_config_filepath=config_file
-        )
+        cls.seed_client = SeedClient(cls.organization_id, connection_config_filepath=config_file)
 
     @classmethod
     def teardown_class(cls):
@@ -464,7 +441,7 @@ class SeedClientMultiCycleTest(unittest.TestCase):
             "Single Step Column Mappings",
             "tests/data/test-seed-data-mappings.csv",
             import_meters_if_exist=False,
-            multiple_cycle_upload=True
+            multiple_cycle_upload=True,
         )
 
         assert result is not None
@@ -479,6 +456,6 @@ class SeedClientMultiCycleTest(unittest.TestCase):
 
         assert len(building_cycles) == 3
         # check that the site_euis are correct
-        assert building_cycles[0]['site_eui'] == 95
-        assert building_cycles[1]['site_eui'] == 181
-        assert building_cycles[2]['site_eui'] == 129
+        assert building_cycles[0]["site_eui"] == 95
+        assert building_cycles[1]["site_eui"] == 181
+        assert building_cycles[2]["site_eui"] == 129
