@@ -57,7 +57,7 @@ class SeedClientTest(unittest.TestCase):
 
     def test_seed_client_info(self):
         info = self.seed_client.instance_information()
-        assert set("version", "sha").issubset(info.keys())
+        assert set(("version", "sha")).issubset(info.keys())  # noqa: C405
 
     def test_create_organization(self):
         # create a new organization. This test requires that the
@@ -68,7 +68,7 @@ class SeedClientTest(unittest.TestCase):
         # try to create again and it should raise an error
         with pytest.raises(Exception) as excpt:  # noqa: PT011
             self.seed_client.create_organization("NEW ORG")
-        assert "already exists" in str(excpt.exception)
+        assert "already exists" in str(excpt.value.error)
 
     def test_seed_buildings(self):
         # set cycle before retrieving (just in case)
@@ -352,7 +352,7 @@ class SeedClientTest(unittest.TestCase):
                 save_file_name=save_file,
             )
 
-        self.assertEqual(str(excpt.exception), f"Save filename already exists, save to a new file name: {save_file!s}")
+        self.assertEqual(str(excpt.value.error), f"Save filename already exists, save to a new file name: {save_file!s}")
 
     def test_upload_espm_property_to_seed(self):
         file = Path("tests/data/portfolio-manager-single-22482007.xlsx")
