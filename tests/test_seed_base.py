@@ -3,7 +3,6 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Third Party Modules
 import unittest
 import uuid
 from datetime import date
@@ -11,11 +10,10 @@ from pathlib import Path
 
 import pytest
 
-# Local Imports
 from pyseed.seed_client import SeedClient
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 class SeedBaseTest(unittest.TestCase):
     @classmethod
     def setup_class(cls):

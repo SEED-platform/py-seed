@@ -3,7 +3,6 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Third Party Modules
 import csv
 import json
 from math import pi, sin

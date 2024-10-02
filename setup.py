@@ -1,4 +1,3 @@
-# Imports from Third Party Modules
 from pathlib import Path
 
 from setuptools import setup

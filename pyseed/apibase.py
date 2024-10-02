@@ -1,19 +1,13 @@
-#!/usr/bin/env python
 """
 copyright (c) 2016 Earth Advantage. All rights reserved.
 ..codeauthor::Paul Munday <paul@paulmunday.net>
 
 Functionality for calls to external APIs"""
 
-# Imports from Third Party Modules
 import re
 
-# Imports from External Modules
 import requests
 
-# Local Imports
-# Public Functions and Classes
-# Helper functions for use by BaseAPI subclasses
 from pyseed.exceptions import APIClientError
 
 
@@ -24,10 +18,7 @@ def add_pk(url, pk, required=True, slash=False):
     if pk:
         if isinstance(pk, str) and not pk.isdigit() or (not isinstance(pk, (int, str)) or int(pk) < 0):
             raise TypeError("id/pk must be a positive integer")
-        if not url.endswith("/"):
-            url = f"{url}/{pk}"
-        else:
-            url = f"{url}{pk}"
+        url = f"{url}/{pk}" if not url.endswith("/") else f"{url}{pk}"
     # Only add the trailing slash if it's not already there
     if slash and not url.endswith("/"):
         url = f"{url}/"
@@ -113,10 +104,7 @@ class BaseAPI:
             # strip http(s):// off url
             regex = re.compile("^https?://")
             urlstring = regex.sub("", urlstring)
-            if use_ssl:
-                start = "https://"
-            else:
-                start = "http://"
+            start = "https://" if use_ssl else "http://"
             url = f"{start}{urlstring}"
         return url
 

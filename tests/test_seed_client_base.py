@@ -3,7 +3,6 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Third Party Modules
 import json
 import unittest
 from unittest import mock
@@ -11,7 +10,6 @@ from unittest import mock
 import pytest
 import requests
 
-# Local Imports
 from pyseed.exceptions import SEEDError
 from pyseed.seed_client_base import (
     ReadMixin,
@@ -32,7 +30,7 @@ CONFIG_DICT = {"port": 1337, "urls_key": "urls", "base_url": "example.org"}
 SERVICES_DICT = {
     "seed": {
         "urls": URLS,
-    }
+    },
 }
 
 
@@ -45,10 +43,7 @@ class MockConfig:
         self.conf = conf
 
     def get(self, var, section=None, default=None):
-        if section:
-            cdict = self.conf.get(section, {})
-        else:
-            cdict = self.conf
+        cdict = self.conf.get(section, {}) if section else self.conf
         return cdict.get(var, default)
 
 
@@ -125,7 +120,12 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         self.base_url = "example.org"
         print(self.urls_map)
         self.client = MySeedClient(
-            1, username="test@example.org", access_token="dfghj", base_url=self.base_url, port=self.port, url_map=self.urls_map
+            1,
+            username="test@example.org",
+            access_token="dfghj",
+            base_url=self.base_url,
+            port=self.port,
+            url_map=self.urls_map,
         )
 
     def test_check_response_inheritance(self, mock_requests):
@@ -144,36 +144,36 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         with pytest.raises(SEEDError) as conm:
             self.client.get(1)
 
-        self.assertEqual(conm.value.error, "No llama!")
-        self.assertEqual(conm.value.service, "SEED")
-        self.assertEqual(conm.value.url, url)
-        self.assertEqual(conm.value.caller, "MySeedClient.get")
-        self.assertEqual(conm.value.verb.upper(), "GET")
-        self.assertEqual(conm.value.status_code, 200)
+        assert conm.value.error == "No llama!"
+        assert conm.value.service == "SEED"
+        assert conm.value.url == url
+        assert conm.value.caller == "MySeedClient.get"
+        assert conm.value.verb.upper() == "GET"
+        assert conm.value.status_code == 200
 
         # newer/correct using status codes (no message)
         mock_requests.get.return_value = get_mock_response(status_code=404, data="No llama!", error=True, content=False)
         with pytest.raises(SEEDError) as conm:
             self.client.get(1)
 
-        self.assertEqual(conm.value.error, "SEED returned status code: 404")
-        self.assertEqual(conm.value.service, "SEED")
-        self.assertEqual(conm.value.url, url)
-        self.assertEqual(conm.value.caller, "MySeedClient.get")
-        self.assertEqual(conm.value.verb.upper(), "GET")
-        self.assertEqual(conm.value.status_code, 404)
+        assert conm.value.error == "SEED returned status code: 404"
+        assert conm.value.service == "SEED"
+        assert conm.value.url == url
+        assert conm.value.caller == "MySeedClient.get"
+        assert conm.value.verb.upper() == "GET"
+        assert conm.value.status_code == 404
 
         # newer/correct using status codes (with message)
         mock_requests.get.return_value = get_mock_response(status_code=404, data="No llama!", error=True, content=True)
         with pytest.raises(SEEDError) as conm:
             self.client.get(1)
 
-        self.assertEqual(conm.value.error, "No llama!")
-        self.assertEqual(conm.value.service, "SEED")
-        self.assertEqual(conm.value.url, url)
-        self.assertEqual(conm.value.caller, "MySeedClient.get")
-        self.assertEqual(conm.value.verb.upper(), "GET")
-        self.assertEqual(conm.value.status_code, 404)
+        assert conm.value.error == "No llama!"
+        assert conm.value.service == "SEED"
+        assert conm.value.url == url
+        assert conm.value.caller == "MySeedClient.get"
+        assert conm.value.verb.upper() == "GET"
+        assert conm.value.status_code == 404
 
 
 class SEEDClientMethodTests(unittest.TestCase):
@@ -182,27 +182,32 @@ class SEEDClientMethodTests(unittest.TestCase):
         self.urls_map = URLS
         self.base_url = "example.org"
         self.client = MySeedClient(
-            1, username="test@example.org", access_token="dfghj", base_url=self.base_url, port=self.port, url_map=self.urls_map
+            1,
+            username="test@example.org",
+            access_token="dfghj",
+            base_url=self.base_url,
+            port=self.port,
+            url_map=self.urls_map,
         )
 
     def test_init(self):
         """Test init sets params correctly"""
         urls = {key: f"{self.base_url}:{self.port}/{val}" for key, val in URLS.items()}
-        self.assertTrue(self.client.use_ssl)
-        self.assertTrue(self.client.use_json)
-        self.assertEqual(1, self.client.org_id)
-        self.assertEqual(f"{self.base_url}:{self.port}/", self.client.base_url)
-        self.assertEqual("test1", self.client.endpoint)
-        self.assertEqual(None, self.client.data_name)
-        self.assertEqual(urls, self.client.urls)
-        self.assertEqual(URLS.keys(), self.client.endpoints)
-        self.assertEqual("test1", self.client.endpoint)
+        assert self.client.use_ssl
+        assert self.client.use_json
+        assert self.client.org_id == 1
+        assert f"{self.base_url}:{self.port}/" == self.client.base_url
+        assert self.client.endpoint == "test1"
+        assert None is self.client.data_name
+        assert urls == self.client.urls
+        assert URLS.keys() == self.client.endpoints
+        assert self.client.endpoint == "test1"
 
     def test_get_result(self):
         """Test _get_result method."""
         response = get_mock_response(data="test")
         result = self.client._get_result(response)
-        self.assertEqual("test", result)
+        assert result == "test"
 
 
 @mock.patch("pyseed.apibase.requests")
@@ -235,28 +240,28 @@ class MixinTests(unittest.TestCase):
         url = "https://example.org:1337/api/v3/test/1/"
         mock_requests.delete.return_value = get_mock_response(status_code=requests.codes.no_content)
         result = self.client.delete(1, endpoint="test1")
-        self.assertEqual(None, result)
+        assert None is result
         mock_requests.delete.assert_called_with(url, **self.call_dict)
 
     def test_get(self, mock_requests):
         url = "https://example.org:1337/api/v3/test/1/"
         mock_requests.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint="test1")
-        self.assertEqual("Llama!", result)
+        assert result == "Llama!"
         mock_requests.get.assert_called_with(url, **self.call_dict)
 
     def test_list(self, mock_requests):
         url = "https://example.org:1337/api/v3/test/"
         mock_requests.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint="test1")
-        self.assertEqual(["Llama!"], result)
+        assert result == ["Llama!"]
         mock_requests.get.assert_called_with(url, **self.call_dict)
 
     def test_patch(self, mock_requests):
         url = "https://example.org:1337/api/v3/test/1/"
         mock_requests.patch.return_value = get_mock_response(data="Llama!")
         result = self.client.patch(1, endpoint="test1", foo="bar", json={"more": "data"})
-        self.assertEqual("Llama!", result)
+        assert result == "Llama!"
 
         expected = {
             "headers": {"Authorization": "Bearer dfghjk"},
@@ -273,7 +278,7 @@ class MixinTests(unittest.TestCase):
         url = "https://example.org:1337/api/v3/test/1/"
         mock_requests.put.return_value = get_mock_response(data="Llama!")
         result = self.client.put(1, endpoint="test1", foo="bar", json={"more": "data"})
-        self.assertEqual("Llama!", result)
+        assert result == "Llama!"
 
         expected = {
             "headers": {"Authorization": "Bearer dfghjk"},
@@ -290,7 +295,7 @@ class MixinTests(unittest.TestCase):
         url = "https://example.org:1337/api/v3/test/"
         mock_requests.post.return_value = get_mock_response(data="Llama!")
         result = self.client.post(endpoint="test1", json={"foo": "bar", "not_org": 1})
-        self.assertEqual("Llama!", result)
+        assert result == "Llama!"
         expected = {
             "headers": {"Authorization": "Bearer dfghjk"},
             "params": {
@@ -311,7 +316,12 @@ class SEEDReadWriteClientTests(unittest.TestCase):
         self.urls_map = URLS
         self.base_url = "example.org"
         self.client = SEEDReadWriteClient(
-            1, username="test@example.org", api_key="dfghjk", base_url=self.base_url, port=self.port, url_map=self.urls_map
+            1,
+            username="test@example.org",
+            api_key="dfghjk",
+            base_url=self.base_url,
+            port=self.port,
+            url_map=self.urls_map,
         )
         self.call_dict = {
             "headers": {"Authorization": "Basic dfghjk"},
@@ -325,10 +335,10 @@ class SEEDReadWriteClientTests(unittest.TestCase):
         # url = 'https://example.org:1337/api/v3/test/1/'
         mock_requests.get.return_value = get_mock_response(data="Llama!")
         result = self.client.get(1, endpoint="test1")
-        self.assertEqual("Llama!", result)
+        assert result == "Llama!"
 
     def test_list(self, mock_requests):
         # url = 'https://example.org:1337/api/v3/test/'
         mock_requests.get.return_value = get_mock_response(data=["Llama!"])
         result = self.client.list(endpoint="test1")
-        self.assertEqual(["Llama!"], result)
+        assert result == ["Llama!"]

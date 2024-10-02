@@ -5,6 +5,7 @@
   "dictionaries": [],
   "words": [
     "apibase",
+    "BSYNCR",
     "buildingsync",
     "codeauthor",
     "datafile",
@@ -19,8 +20,11 @@
     "jakejarvis",
     "JSONAPI",
     "jwalton",
+    "kflemin",
     "Munday",
     "ndeloof",
+    "nllong",
+    "NREL",
     "officedocument",
     "openxmlformats",
     "precommit",
@@ -29,11 +33,13 @@
     "pytest",
     "sdist",
     "SEEDO",
+    "seedplatform",
     "seedrecords",
     "spreadsheetml",
     "subclassing",
     "taxlot",
-    "taxlots"
+    "taxlots",
+    "Turas"
   ],
   "ignoreWords": [],
   "import": []

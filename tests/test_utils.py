@@ -3,11 +3,9 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Third Party Modules
 import unittest
 from pathlib import Path
 
-# Local Imports
 from pyseed.utils import read_map_file
 
 

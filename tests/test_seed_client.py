@@ -3,7 +3,6 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Third Party Modules
 import os
 import unittest
 from datetime import date
@@ -11,14 +10,13 @@ from pathlib import Path
 
 import pytest
 
-# Local Imports
 from pyseed.seed_client import SeedClient
 
 # For CI the test org is 1, but for local testing it may be different
 ORGANIZATION_ID = 1
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 class SeedClientTest(unittest.TestCase):
     @classmethod
     def setup_class(cls):
@@ -338,10 +336,13 @@ class SeedClientTest(unittest.TestCase):
             save_file.unlink()
 
         self.seed_client.retrieve_portfolio_manager_property(
-            username=os.environ.get("SEED_PM_UN"), password=os.environ.get("SEED_PM_PW"), pm_property_id=22178850, save_file_name=save_file
+            username=os.environ.get("SEED_PM_UN"),
+            password=os.environ.get("SEED_PM_PW"),
+            pm_property_id=22178850,
+            save_file_name=save_file,
         )
 
-        self.assertTrue(save_file.exists())
+        assert save_file.exists()
 
         # redownload and show an error
         with pytest.raises(Exception) as excpt:  # noqa: PT011
@@ -352,7 +353,7 @@ class SeedClientTest(unittest.TestCase):
                 save_file_name=save_file,
             )
 
-        self.assertEqual(excpt.value.args[0], f"Save filename already exists, save to a new file name: {save_file!s}")
+        assert excpt.value.args[0] == f"Save filename already exists, save to a new file name: {save_file!s}"
 
     def test_upload_espm_property_to_seed(self):
         file = Path("tests/data/portfolio-manager-single-22482007.xlsx")
@@ -362,17 +363,20 @@ class SeedClientTest(unittest.TestCase):
         building = None
         if buildings:
             building = buildings[0]
-        self.assertTrue(building)
+        assert building
 
         # need a column mapping profile
         mapping_file = Path("tests/data/test-seed-data-mappings.csv")
         mapping_profile = self.seed_client.create_or_update_column_mapping_profile_from_file("ESPM Test", mapping_file)
-        self.assertTrue("id" in mapping_profile)
+        assert "id" in mapping_profile
 
         response = self.seed_client.import_portfolio_manager_property(
-            building["id"], self.seed_client.cycle_id, mapping_profile["id"], file
+            building["id"],
+            self.seed_client.cycle_id,
+            mapping_profile["id"],
+            file,
         )
-        self.assertTrue(response["status"] == "success")
+        assert response["status"] == "success"
 
     # def test_retrieve_at_building_and_update(self):
     #     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
@@ -391,7 +395,7 @@ class SeedClientTest(unittest.TestCase):
     #     self.assertTrue(response['status'] == 'success')
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 class SeedClientMultiCycleTest(unittest.TestCase):
     @classmethod
     def setup_class(cls):

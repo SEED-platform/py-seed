@@ -20,12 +20,10 @@ caching.
 
 """
 
-# Imports from Third Party Modules
 import inspect
 
 import requests
 
-# Local Imports
 from pyseed.apibase import JSONAPI, OAuthMixin, UserAuthMixin, add_pk
 from pyseed.exceptions import SEEDError
 
@@ -81,7 +79,7 @@ URLS = {
         "properties_meters": "/api/v3/properties/PK/meters/",
         # GET & POST with replaceable keys
         "properties_meters_reading": "/api/v3/properties/PK/meters/METER_PK/readings/",
-    }
+    },
 }
 
 
@@ -305,17 +303,11 @@ class SEEDBaseClient(JSONAPI):
             # take the last part of the url unless it's a digit
             # in which case take the previous part
             durl = url.lstrip(self.base_url).rstrip("/").rsplit("/", 1)
-            if durl[1].isdigit():
-                data_name = durl[0].rsplit("/", 2)[1]
-            else:
-                data_name = durl[1]
+            data_name = durl[0].rsplit("/", 2)[1] if durl[1].isdigit() else durl[1]
         # actual results should be under data_name or the fallbacks
         # handle a 204
         result = None
-        if response.status_code == 204:
-            result = {"status": "success"}
-        else:
-            result = response.json()
+        result = {"status": "success"} if response.status_code == 204 else response.json()
         if result is None:
             error_msg = "No results returned"
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)

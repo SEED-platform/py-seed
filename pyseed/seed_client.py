@@ -3,8 +3,6 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-# Imports from Standard Library
-# Imports from Third Party Modules
 import json
 import logging
 import os
@@ -17,7 +15,6 @@ from typing import Any, Optional, Union
 
 from openpyxl import Workbook
 
-# Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
 from pyseed.utils import read_map_file
 
@@ -440,9 +437,9 @@ class SeedClient(SeedClientWrapper):
         label = self.get_labels(filter_by_name=[label_name])
         if len(label) != 1:
             raise Exception(f"Could not find label to delete with name {label_name}")
-        id = label[0]["id"]
+        label_id = label[0]["id"]
 
-        return self.client.delete(id, endpoint="labels")
+        return self.client.delete(label_id, endpoint="labels")
 
     def get_view_ids_with_label(self, label_names: Union[str, list] = []) -> list:
         """Get the view IDs of the properties with a given label name(s). Can be a single
@@ -820,7 +817,7 @@ class SeedClient(SeedClientWrapper):
                 endpoint="progress",
                 url_args={"PROGRESS_KEY": progress_key},
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             logger.error("Other unknown exception caught")
             progress_result = None
 
@@ -997,7 +994,12 @@ class SeedClient(SeedClientWrapper):
         return result
 
     def create_extra_data_column(
-        self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str
+        self,
+        column_name: str,
+        display_name: str,
+        inventory_type: str,
+        column_description: str,
+        data_type: str,
     ) -> dict:
         """Create an extra data column. If column exists, skip
 
@@ -1168,7 +1170,9 @@ class SeedClient(SeedClientWrapper):
         """
         # get the meter data for the property
         readings = self.client.post(
-            endpoint="properties_meters_reading", url_args={"PK": property_view_id, "METER_PK": meter_id}, json=data
+            endpoint="properties_meters_reading",
+            url_args={"PK": property_view_id, "METER_PK": meter_id},
+            json=data,
         )
         return readings
 
@@ -1382,8 +1386,8 @@ class SeedClient(SeedClientWrapper):
 
         # Get the header row from the API response.
         header_row = []
-        for property in properties:
-            for key in property:
+        for prop in properties:
+            for key in prop:
                 if key not in header_row:
                     header_row.append(key)
 
@@ -1392,10 +1396,10 @@ class SeedClient(SeedClientWrapper):
             sheet.append(header_row)
 
         # Loop over the list of dictionaries and write the data to the sheet object.
-        for property in properties:
+        for prop in properties:
             row = []
             for key in header_row:
-                row.append(property[key])
+                row.append(prop[key])
             if sheet:
                 sheet.append(row)
 
@@ -1539,7 +1543,10 @@ class SeedClient(SeedClientWrapper):
 
         # api/v3/audit_template/pk/get_building_xml
         response = self.client.get(
-            None, required_pk=False, endpoint="audit_template_building_xml", url_args={"PK": audit_template_building_id}
+            None,
+            required_pk=False,
+            endpoint="audit_template_building_xml",
+            url_args={"PK": audit_template_building_id},
         )
 
         if response["status"] == "success":
@@ -1600,7 +1607,11 @@ class SeedClient(SeedClientWrapper):
                     filename = "at_submission_report_" + str(audit_template_submission_id) + ".pdf"
                 files = [("file", (filename, pdf_file)), ("file_type", (None, 1))]
                 response2 = self.client.put(
-                    None, required_pk=False, endpoint="properties_upload_inventory_document", url_args={"PK": seed_id}, files=files
+                    None,
+                    required_pk=False,
+                    endpoint="properties_upload_inventory_document",
+                    url_args={"PK": seed_id},
+                    files=files,
                 )
                 response2["pdf_report"] = pdf_file
             else:
@@ -1639,7 +1650,9 @@ class SeedClient(SeedClientWrapper):
             raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
 
         response = self.client.post(
-            "portfolio_manager_property_download", json={"username": username, "password": password}, url_args={"PK": pm_property_id}
+            "portfolio_manager_property_download",
+            json={"username": username, "password": password},
+            url_args={"PK": pm_property_id},
         )
         result = {"status": "error"}
         # save the file to the location that was passed
