@@ -17,9 +17,9 @@ from pyseed.apibase import JSONAPI, BaseAPI, add_pk
 from pyseed.exceptions import APIClientError
 from pyseed.seed_client_base import _get_urls, _set_default
 
-NO_URL_ERROR = "APIClientError: No url set"
-SSL_ERROR = "APIClientError: use_ssl is true but url does not starts with https"
-SSL_ERROR2 = "APIClientError: use_ssl is false but url starts with https"
+NO_URL_ERROR = "No url set"
+SSL_ERROR = "use_ssl is true but url does not starts with https"
+SSL_ERROR2 = "use_ssl is false but url starts with https"
 
 # Constants
 SERVICES_DICT = {"urls": {"test1": "test1", "test2": "/test2"}}
@@ -68,16 +68,12 @@ class APITests(unittest.TestCase):
         # ensure error is raised if http is supplied and use_ssl is true
         with pytest.raises(APIClientError) as conm:
             JSONAPI("http://example.org")
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
         # ensure error is raised if https is supplied and use_ssl is false
         with pytest.raises(APIClientError) as conm:
             JSONAPI("https://example.org", use_ssl=False)
-        exception = conm.exception
-        expected = SSL_ERROR2
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR2, conm.value.error)
 
         # test defaults to https
         api = JSONAPI("example.org")
@@ -148,8 +144,7 @@ class APITests(unittest.TestCase):
         api = TestAPI()
         with pytest.raises(APIClientError) as conm:
             api._get()
-        exception = conm.exception
-        self.assertEqual("APIClientError: id is a compulsory field", str(exception))
+        self.assertEqual("id is a compulsory field", conm.value.error)
         api._get(id=1)
         self.assertTrue(mock_requests.get.called)
 
@@ -169,16 +164,12 @@ class APITests(unittest.TestCase):
         # ensure error is raised if no url  is supplied
         with pytest.raises(APIClientError) as conm:
             api._construct_url(None)
-        exception = conm.exception
-        expected = NO_URL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(NO_URL_ERROR, conm.value.error)
 
         # ensure error is raised if https is supplied and use_ssl is false
         with pytest.raises(APIClientError) as conm:
             api._construct_url("https://www.example.org", use_ssl=False)
-        exception = conm.exception
-        expected = SSL_ERROR2
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR2, conm.value.error)
 
     def test_construct_url_ssl_explicit(self, mock_requests):
         """Test _construct_url method."""
@@ -187,16 +178,12 @@ class APITests(unittest.TestCase):
         # ensure error is raised if http is supplied and use_ssl is true
         with pytest.raises(APIClientError) as conm:
             api._construct_url("http://example.org", use_ssl=True)
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
         # ensure error is raised if http is supplied and use_ssl is default
         with pytest.raises(APIClientError) as conm:
             api._construct_url("http://example.org")
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
     def test_construct_url_ssl_implicit(self, mock_requests):
         """Test _construct_url method."""
@@ -205,16 +192,12 @@ class APITests(unittest.TestCase):
         # ensure error is raised if http is supplied and use_ssl is true
         with pytest.raises(APIClientError) as conm:
             api._construct_url("http://example.org", use_ssl=True)
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
         # ensure error is raised if http is supplied and use_ssl is default
         with pytest.raises(APIClientError) as conm:
             api._construct_url("http://example.org")
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
 
 @mock.patch("pyseed.apibase.requests")
@@ -239,23 +222,17 @@ class APITestsNoURL(unittest.TestCase):
         api = BaseAPI("example.org", use_ssl=False)
         with pytest.raises(APIClientError) as conm:
             api._get(url="https://www.example.org", use_ssl=False)
-        exception = conm.exception
-        expected = SSL_ERROR2
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR2, conm.value.error)
 
         # ensure error is raised if http is supplied and use_ssl is true
         with pytest.raises(APIClientError) as conm:
             self.api._get(url="http://example.org")
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
         # ensure error is raised if no url  is supplied
         with pytest.raises(APIClientError) as conm:
             self.api._get()
-        exception = conm.exception
-        expected = NO_URL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(NO_URL_ERROR, conm.value.error)
 
         # test defaults to http
         self.api._get(url=self.url)
@@ -282,24 +259,18 @@ class APITestsNoURL(unittest.TestCase):
         # ensure error is raised if no url  is supplied
         with pytest.raises(APIClientError) as conm:
             self.api._post(params=params, files=files, foo="bar", test="test")
-        exception = conm.exception
-        expected = NO_URL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(NO_URL_ERROR, conm.value.error)
 
         # ensure error is raised if https is supplied and use_ssl is false
         api = BaseAPI("example.org", use_ssl=False)
         with pytest.raises(APIClientError) as conm:
             api._post(url="https://example.org", use_ssl=False, params=params, files=files, foo="bar", test="test")
-        exception = conm.exception
-        expected = SSL_ERROR2
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR2, conm.value.error)
 
         # ensure error is raised if http is supplied and use_ssl is true
         with pytest.raises(APIClientError) as conm:
             self.api._post(url="http://example.org", use_ssl=True, params=params, files=files, foo="bar", test="test")
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
     def test_patch(self, mock_requests):
         """Test _get_patch."""
@@ -317,24 +288,18 @@ class APITestsNoURL(unittest.TestCase):
         # ensure error is raised if no url  is supplied
         with pytest.raises(APIClientError) as conm:
             self.api._patch(params=params, files=files, foo="bar", test="test")
-        exception = conm.exception
-        expected = NO_URL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(NO_URL_ERROR, conm.value.error)
 
         # ensure error is raised if https is supplied and use_ssl is false
         api = BaseAPI("example.org", use_ssl=False)
         with pytest.raises(APIClientError) as conm:
             api._patch(url="https://example.org", use_ssl=False, params=params, files=files, foo="bar", test="test")
-        exception = conm.exception
-        expected = SSL_ERROR2
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR2, conm.value.error)
 
         # ensure error is raised if http is supplied and use_ssl is true
         with pytest.raises(APIClientError) as conm:
             self.api._patch(url="http://example.org", use_ssl=True, params=params, files=files, foo="bar", test="test")
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
     def test_delete(self, mock_requests):
         """Test _delete method."""
@@ -345,23 +310,17 @@ class APITestsNoURL(unittest.TestCase):
         api = BaseAPI("example.org", use_ssl=False)
         with pytest.raises(APIClientError) as conm:
             api._delete(url="https://www.example.org")
-        exception = conm.exception
-        expected = SSL_ERROR2
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR2, conm.value.error)
 
         # ensure error is raised if http is supplied and use_ssl is true
         with pytest.raises(APIClientError) as conm:
             self.api._delete(url="http://example.org")
-        exception = conm.exception
-        expected = SSL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(SSL_ERROR, conm.value.error)
 
         # ensure error is raised if no url  is supplied
         with pytest.raises(APIClientError) as conm:
             self.api._delete()
-        exception = conm.exception
-        expected = NO_URL_ERROR
-        self.assertEqual(expected, str(exception))
+        self.assertEqual(NO_URL_ERROR, conm.value.error)
 
         # test defaults to http
         self.api._delete(url=self.url)
@@ -379,19 +338,19 @@ class APIFunctionTest(unittest.TestCase):
         # Error checks
         with pytest.raises(APIClientError) as conm:
             add_pk("url", None)
-        self.assertEqual("APIClientError: id/pk must be supplied", str(conm.exception))
+        self.assertEqual("id/pk must be supplied", conm.value.error)
 
         with pytest.raises(TypeError) as conm:
             add_pk("url", "a")
-        self.assertEqual("id/pk must be a positive integer", str(conm.exception))
+        self.assertEqual("id/pk must be a positive integer", conm.value.args[0])
 
         with pytest.raises(TypeError) as conm:
             add_pk("url", 1.2)
-        self.assertEqual("id/pk must be a positive integer", str(conm.exception))
+        self.assertEqual("id/pk must be a positive integer", conm.value.args[0])
 
         with pytest.raises(TypeError) as conm:
             add_pk("url", -1)
-        self.assertEqual("id/pk must be a positive integer", str(conm.exception))
+        self.assertEqual("id/pk must be a positive integer", conm.value.args[0])
 
         # adds ints
         result = add_pk("url", 1)
@@ -423,7 +382,7 @@ class APIFunctionTest(unittest.TestCase):
         # raises error if attribute not set and val is none
         with pytest.raises(AttributeError) as conm:
             _set_default(obj, "nokey", None)
-        self.assertEqual("nokey is not set", str(conm.exception))
+        self.assertEqual("nokey is not set", conm.value.args[0])
 
         result = _set_default(obj, "key", None)
         self.assertNotEqual(result, None)

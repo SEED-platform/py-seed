@@ -144,36 +144,36 @@ class SEEDClientErrorHandlingTests(unittest.TestCase):
         with pytest.raises(SEEDError) as conm:
             self.client.get(1)
 
-        self.assertEqual(conm.exception.error, "No llama!")
-        self.assertEqual(conm.exception.service, "SEED")
-        self.assertEqual(conm.exception.url, url)
-        self.assertEqual(conm.exception.caller, "MySeedClient.get")
-        self.assertEqual(conm.exception.verb.upper(), "GET")
-        self.assertEqual(conm.exception.status_code, 200)
+        self.assertEqual(conm.value.error, "No llama!")
+        self.assertEqual(conm.value.service, "SEED")
+        self.assertEqual(conm.value.url, url)
+        self.assertEqual(conm.value.caller, "MySeedClient.get")
+        self.assertEqual(conm.value.verb.upper(), "GET")
+        self.assertEqual(conm.value.status_code, 200)
 
         # newer/correct using status codes (no message)
         mock_requests.get.return_value = get_mock_response(status_code=404, data="No llama!", error=True, content=False)
         with pytest.raises(SEEDError) as conm:
             self.client.get(1)
 
-        self.assertEqual(conm.exception.error, "SEED returned status code: 404")
-        self.assertEqual(conm.exception.service, "SEED")
-        self.assertEqual(conm.exception.url, url)
-        self.assertEqual(conm.exception.caller, "MySeedClient.get")
-        self.assertEqual(conm.exception.verb.upper(), "GET")
-        self.assertEqual(conm.exception.status_code, 404)
+        self.assertEqual(conm.value.error, "SEED returned status code: 404")
+        self.assertEqual(conm.value.service, "SEED")
+        self.assertEqual(conm.value.url, url)
+        self.assertEqual(conm.value.caller, "MySeedClient.get")
+        self.assertEqual(conm.value.verb.upper(), "GET")
+        self.assertEqual(conm.value.status_code, 404)
 
         # newer/correct using status codes (with message)
         mock_requests.get.return_value = get_mock_response(status_code=404, data="No llama!", error=True, content=True)
         with pytest.raises(SEEDError) as conm:
             self.client.get(1)
 
-        self.assertEqual(conm.exception.error, "No llama!")
-        self.assertEqual(conm.exception.service, "SEED")
-        self.assertEqual(conm.exception.url, url)
-        self.assertEqual(conm.exception.caller, "MySeedClient.get")
-        self.assertEqual(conm.exception.verb.upper(), "GET")
-        self.assertEqual(conm.exception.status_code, 404)
+        self.assertEqual(conm.value.error, "No llama!")
+        self.assertEqual(conm.value.service, "SEED")
+        self.assertEqual(conm.value.url, url)
+        self.assertEqual(conm.value.caller, "MySeedClient.get")
+        self.assertEqual(conm.value.verb.upper(), "GET")
+        self.assertEqual(conm.value.status_code, 404)
 
 
 class SEEDClientMethodTests(unittest.TestCase):

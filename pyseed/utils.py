@@ -110,28 +110,27 @@ def read_map_file(mapfile_path):
     if not mapfile_path.exists():
         raise ValueError(f"Mapping file {mapfile_path} does not exist")
 
-    map_reader = None
     with open(mapfile_path) as f:
         map_reader = csv.reader(f)
-    map_reader.__next__()  # Skip the header
+        map_reader.__next__()  # Skip the header
 
-    # Open the mapping file and fill list
-    maplist = []
-    for rowitem in map_reader:
-        data = {
-            "from_field": rowitem[0],
-            "from_units": rowitem[1],
-            "to_table_name": rowitem[2],
-            "to_field": rowitem[3],
-        }
-        try:
-            if rowitem[4].lower().strip() == "true":
-                data["is_omitted"] = True
-            else:
-                False
-        except IndexError:
-            data["is_omitted"] = False
+        # Open the mapping file and fill list
+        maplist = []
+        for rowitem in map_reader:
+            data = {
+                "from_field": rowitem[0],
+                "from_units": rowitem[1],
+                "to_table_name": rowitem[2],
+                "to_field": rowitem[3],
+            }
+            try:
+                if rowitem[4].lower().strip() == "true":
+                    data["is_omitted"] = True
+                else:
+                    False
+            except IndexError:
+                data["is_omitted"] = False
 
-        maplist.append(data)
+            maplist.append(data)
 
     return maplist
