@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
 """
 copyright (c) 2016 Earth Advantage. All rights reserved.
 ..codeauthor::Paul Munday <paul@paulmunday.net>
@@ -24,6 +22,7 @@ caching.
 
 # Imports from Third Party Modules
 import inspect
+
 import requests
 
 # Local Imports
@@ -32,56 +31,56 @@ from pyseed.exceptions import SEEDError
 
 # Constants (Should end with a slash)
 URLS = {
-    'v3': {
-        'column_mapping_profiles': '/api/v3/column_mapping_profiles/',
-        'column_mapping_profiles_filter': '/api/v3/column_mapping_profiles/filter/',
-        'columns': '/api/v3/columns/',
-        'cycles': '/api/v3/cycles/',
-        'datasets': '/api/v3/datasets/',
-        'gbr_properties': '/api/v3/gbr_properties/',
-        'green_assessment': '/api/v3/green_assessments/',
-        'green_assessment_property': '/api/v3/green_assessment_properties/',
-        'green_assessment_url': '/api/v3/green_assessment_urls/',
-        'import_files': '/api/v3/import_files/',
-        'import_files_reuse_inventory_file_for_meters': '/api/v3/import_files/reuse_inventory_file_for_meters/',
-        'labels': '/api/v3/labels/',
-        'labels_property': '/api/v3/labels_property/',
-        'labels_taxlot': '/api/v3/labels_taxlot/',
-        'organizations': '/api/v3/organizations/',
-        'portfolio_manager_report': '/api/v3/portfolio_manager/report/',
-        'portfolio_manager_report_templates': '/api/v3/portfolio_manager/template_list/',
-        'properties': '/api/v3/properties/',
-        'properties_labels': '/api/v3/properties/labels/',
-        'properties_search': '/api/v3/properties/search/',
-        'property_views': '/api/v3/property_views/',
-        'taxlots': '/api/v3/taxlots/',
-        'upload': '/api/v3/upload/',
-        'users': '/api/v3/users/',
+    "v3": {
+        "column_mapping_profiles": "/api/v3/column_mapping_profiles/",
+        "column_mapping_profiles_filter": "/api/v3/column_mapping_profiles/filter/",
+        "columns": "/api/v3/columns/",
+        "cycles": "/api/v3/cycles/",
+        "datasets": "/api/v3/datasets/",
+        "gbr_properties": "/api/v3/gbr_properties/",
+        "green_assessment": "/api/v3/green_assessments/",
+        "green_assessment_property": "/api/v3/green_assessment_properties/",
+        "green_assessment_url": "/api/v3/green_assessment_urls/",
+        "import_files": "/api/v3/import_files/",
+        "import_files_reuse_inventory_file_for_meters": "/api/v3/import_files/reuse_inventory_file_for_meters/",
+        "labels": "/api/v3/labels/",
+        "labels_property": "/api/v3/labels_property/",
+        "labels_taxlot": "/api/v3/labels_taxlot/",
+        "organizations": "/api/v3/organizations/",
+        "portfolio_manager_report": "/api/v3/portfolio_manager/report/",
+        "portfolio_manager_report_templates": "/api/v3/portfolio_manager/template_list/",
+        "properties": "/api/v3/properties/",
+        "properties_labels": "/api/v3/properties/labels/",
+        "properties_search": "/api/v3/properties/search/",
+        "property_views": "/api/v3/property_views/",
+        "taxlots": "/api/v3/taxlots/",
+        "upload": "/api/v3/upload/",
+        "users": "/api/v3/users/",
         # No versioning endpoints
-        'version': '/api/version/',
+        "version": "/api/version/",
         # POSTs with replaceable keys
-        'import_files_check_meters_tab_exists_pk': '/api/v3/import_files/PK/check_meters_tab_exists/',
-        'import_files_start_map_data_pk': '/api/v3/import_files/PK/map/',
-        'import_files_start_matching_pk': '/api/v3/import_files/PK/start_system_matching_and_geocoding/',
-        'import_files_start_save_data_pk': '/api/v3/import_files/PK/start_save_data/',
-        'org_column_mapping_import_file': 'api/v3/organizations/ORG_ID/column_mappings/',
-        'portfolio_manager_property_download': '/api/v3/portfolio_manager/PK/download/',
+        "import_files_check_meters_tab_exists_pk": "/api/v3/import_files/PK/check_meters_tab_exists/",
+        "import_files_start_map_data_pk": "/api/v3/import_files/PK/map/",
+        "import_files_start_matching_pk": "/api/v3/import_files/PK/start_system_matching_and_geocoding/",
+        "import_files_start_save_data_pk": "/api/v3/import_files/PK/start_save_data/",
+        "org_column_mapping_import_file": "api/v3/organizations/ORG_ID/column_mappings/",
+        "portfolio_manager_property_download": "/api/v3/portfolio_manager/PK/download/",
         # PUTs with replaceable keys:
-        'properties_update_with_buildingsync': 'api/v3/properties/PK/update_with_building_sync/',
-        'properties_upload_inventory_document': 'api/v3/properties/PK/upload_inventory_document',
-        'property_update_with_espm': 'api/v3/properties/PK/update_with_espm/',
+        "properties_update_with_buildingsync": "api/v3/properties/PK/update_with_building_sync/",
+        "properties_upload_inventory_document": "api/v3/properties/PK/upload_inventory_document",
+        "property_update_with_espm": "api/v3/properties/PK/update_with_espm/",
         # GETs with replaceable keys
-        'analyses_views': '/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/',
-        'audit_template_building_xml': '/api/v3/audit_template/PK/get_building_xml',
-        'audit_template_submission': '/api/v3/audit_template/PK/get_submission',
-        'import_files_matching_results': '/api/v3/import_files/PK/matching_and_geocoding_results/',
-        'properties_cross_cycle_data': '/api/v3/properties/PK/links/',
-        'progress': '/api/v3/progress/PROGRESS_KEY/',
-        'properties_analyses': '/api/v3/properties/PK/analyses/',
-        'properties_meter_usage': '/api/v3/properties/PK/meter_usage/',
-        'properties_meters': '/api/v3/properties/PK/meters/',
+        "analyses_views": "/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/",
+        "audit_template_building_xml": "/api/v3/audit_template/PK/get_building_xml",
+        "audit_template_submission": "/api/v3/audit_template/PK/get_submission",
+        "import_files_matching_results": "/api/v3/import_files/PK/matching_and_geocoding_results/",
+        "properties_cross_cycle_data": "/api/v3/properties/PK/links/",
+        "progress": "/api/v3/progress/PROGRESS_KEY/",
+        "properties_analyses": "/api/v3/properties/PK/analyses/",
+        "properties_meter_usage": "/api/v3/properties/PK/meter_usage/",
+        "properties_meters": "/api/v3/properties/PK/meters/",
         # GET & POST with replaceable keys
-        'properties_meters_reading': '/api/v3/properties/PK/meters/METER_PK/readings/',
+        "properties_meters_reading": "/api/v3/properties/PK/meters/METER_PK/readings/",
     }
 }
 
@@ -89,12 +88,10 @@ URLS = {
 # Private Classes and Functions
 def _get_urls(base_url, url_map=None, version=None):
     """Populate URL"""
-    version = version if version else 'v3'
+    version = version if version else "v3"
     if not url_map:
         url_map = URLS[version]
-    return {
-        key: '{}/{}'.format(base_url.rstrip('/'), val.lstrip('/')) for key, val in url_map.items()
-    }
+    return {key: "{}/{}".format(base_url.rstrip("/"), val.lstrip("/")) for key, val in url_map.items()}
 
 
 def _set_default(obj, key, val, required=True):
@@ -107,7 +104,7 @@ def _set_default(obj, key, val, required=True):
     if not val:
         val = getattr(obj, key, None)
     if not val and required:
-        msg = '{} is not set'.format(key)
+        msg = f"{key} is not set"
         raise AttributeError(msg)
     return val
 
@@ -169,29 +166,38 @@ class SEEDBaseClient(JSONAPI):
     # pylint:disable=too-few-public-methods,too-many-arguments
     # pylint:disable=too-many-instance-attributes
 
-    def __init__(self, org_id, username=None, password=None, access_token=None,
-                 endpoint=None, data_name=None, use_ssl=None, base_url=None,
-                 port=None, url_map=None, version=None, **kwargs):
+    def __init__(
+        self,
+        org_id,
+        username=None,
+        password=None,
+        access_token=None,
+        endpoint=None,
+        data_name=None,
+        use_ssl=None,
+        base_url=None,
+        port=None,
+        url_map=None,
+        version=None,
+        **kwargs,
+    ):
         use_ssl = use_ssl if use_ssl is not None else True
-        super(SEEDBaseClient, self).__init__(
-            username=username, password=password, use_ssl=use_ssl,
-            use_auth=True, access_token=access_token, **kwargs
-        )
+        super().__init__(username=username, password=password, use_ssl=use_ssl, use_auth=True, access_token=access_token, **kwargs)
         self.org_id = org_id
         self.token = access_token
         # prevent overriding if set in subclass as class attr
-        if not getattr(self, 'endpoint', None):
+        if not getattr(self, "endpoint", None):
             self.endpoint = endpoint
-        if not getattr(self, 'data_name', None):
+        if not getattr(self, "data_name", None):
             self.data_name = data_name
-        if not getattr(self, 'base_url', None):
-            self.base_url = base_url if base_url else 'localhost'
-        if not getattr(self, 'port', None):
+        if not getattr(self, "base_url", None):
+            self.base_url = base_url if base_url else "localhost"
+        if not getattr(self, "port", None):
             self.port = port if port else None
         if self.port:
-            self.base_url = '{}:{}'.format(self.base_url, self.port)
-        if not self.base_url.endswith('/'):
-            self.base_url = self.base_url + '/'
+            self.base_url = f"{self.base_url}:{self.port}"
+        if not self.base_url.endswith("/"):
+            self.base_url = self.base_url + "/"
         self.username = username
         self.urls = _get_urls(self.base_url, url_map=url_map, version=version)
         self.endpoints = self.urls.keys()
@@ -204,54 +210,56 @@ class SEEDBaseClient(JSONAPI):
         be reported correctly.
         """
         error = False
-        error_msg = 'Unknown error from SEED API'
+        error_msg = "Unknown error from SEED API"
 
         # grab the response content type to determine json, spreadsheet, or text
-        response_content_types = response.headers.get('Content-Type', [])
+        response_content_types = response.headers.get("Content-Type", [])
 
         # OK, Created, Accepted, No-Content
         if response.status_code not in [200, 201, 202, 204]:
             error = True
-            error_msg = 'SEED returned status code: {}'.format(response.status_code)
+            error_msg = f"SEED returned status code: {response.status_code}"
         # SEED adds a status key to the response to indicate success/error
         # This is superfluous as status codes should be used to indicate an
         # error, but they are not always set correctly.
         elif response.status_code == 204:
             # there will not be response content with a 204
             error = False
-        elif 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
+        elif "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in response_content_types:
             # spreadsheet response
             error = False
-        elif 'application/pdf' in response_content_types:
+        elif "application/pdf" in response_content_types:
             # PDF report response
             error = False
-        elif 'application/json' not in response_content_types:
+        elif "application/json" not in response_content_types:
             # get as text
             if not response.content:
                 error = True
         elif isinstance(response.json(), dict):
-            status_field = response.json().get('status', None)
-            has_progress_key = 'progress_key' in response.json().keys()
+            status_field = response.json().get("status", None)
+            has_progress_key = "progress_key" in response.json()
             if status_field:
                 if has_progress_key:
                     # For the delete cycles, the data returned have a status and a progress_key,
                     # but no progress_data. In lieu of updating SEED, this check is added
                     # specifically for this case
-                    error = status_field not in ['not-started', 'success', 'parsing']
-                elif status_field == 'error':
+                    error = status_field not in ["not-started", "success", "parsing"]
+                elif status_field == "error":
                     error = True
-                elif status_field == 'success':
+                elif status_field == "success":
                     # continue
                     error = False
-            elif 'success' in response.json():
-                success_flag = response.json().get('success', None)
+            elif "success" in response.json():
+                success_flag = response.json().get("success", None)
                 # For file uploads the response key is 'success'
                 error = not success_flag
-            elif 'progress_data' in response.json():
+            elif "progress_data" in response.json():
                 # this is a system matching response, which is okay. return the success flag of this
-                status_flag = response.json()['progress_data'].get('status', None)
-                error = status_flag not in ['not-started', 'success', 'parsing']
-            elif not any(key in ['results', 'readings', 'data', 'status', 'id', 'organizations', 'sha', 'users'] for key in response.json().keys()):
+                status_flag = response.json()["progress_data"].get("status", None)
+                error = status_flag not in ["not-started", "success", "parsing"]
+            elif not any(
+                key in ["results", "readings", "data", "status", "id", "organizations", "sha", "users"] for key in response.json()
+            ):
                 # In some cases there is not a 'status' field, so check if there are
                 # any other keys in the response that depict a success:
                 # readings - this comes from meters
@@ -269,15 +277,13 @@ class SEEDBaseClient(JSONAPI):
             if response.content:
                 try:
                     if getattr(response.json(), "get", None):
-                        error_msg = response.json().get(
-                            'message', f"Unknown SEED Error {response.status_code}: {response.json()}"
-                        )
+                        error_msg = response.json().get("message", f"Unknown SEED Error {response.status_code}: {response.json()}")
                     else:
                         error_msg = f"Unknown SEED Error {response.status_code}: {response.json()}"
                 except ValueError:
-                    error_msg = 'Unknown SEED Error: No response returned'
+                    error_msg = "Unknown SEED Error: No response returned"
             if args:
-                kwargs['args'] = args
+                kwargs["args"] = args
             self._raise_error(response, error_msg, stack_pos=1, **kwargs)
 
     def _get_result(self, response, data_name=None, **kwargs):
@@ -287,38 +293,36 @@ class SEEDBaseClient(JSONAPI):
         you want to get the entire response back."""
 
         # grab the response content type to determine json, spreadsheet, or text
-        response_content_types = response.headers.get('Content-Type', [])
+        response_content_types = response.headers.get("Content-Type", [])
 
         # pass through for spreadsheet (?)
-        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in response_content_types:
+        if "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in response_content_types:
             return response.content
-        if 'application/json' not in response_content_types:
-            return {'status': 'success', 'content': response.content}
+        if "application/json" not in response_content_types:
+            return {"status": "success", "content": response.content}
         if not data_name:
             url = response.request.url
             # take the last part of the url unless it's a digit
             # in which case take the previous part
-            durl = url.lstrip(self.base_url).rstrip('/').rsplit('/', 1)
+            durl = url.lstrip(self.base_url).rstrip("/").rsplit("/", 1)
             if durl[1].isdigit():
-                data_name = durl[0].rsplit('/', 2)[1]
+                data_name = durl[0].rsplit("/", 2)[1]
             else:
                 data_name = durl[1]
         # actual results should be under data_name or the fallbacks
         # handle a 204
         result = None
         if response.status_code == 204:
-            result = {'status': 'success'}
+            result = {"status": "success"}
         else:
             result = response.json()
         if result is None:
-            error_msg = 'No results returned'
+            error_msg = "No results returned"
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
 
         constrained_result = None
-        if data_name == 'all':
-            result = result
-        else:
-            for dname in [data_name, 'data', 'detail']:
+        if data_name != "all":
+            for dname in [data_name, "data", "detail"]:
                 try:
                     # allow a list to be valid (this is the case with labels)
                     if isinstance(result, dict):
@@ -330,8 +334,9 @@ class SEEDBaseClient(JSONAPI):
                     pass
 
         if result is None:
-            error_msg = 'Could not find result using data_name {}.'.format(data_name)
+            error_msg = f"Could not find result using data_name {data_name}."
             self._raise_error(response, error_msg, stack_pos=2, **kwargs)
+
         return result
 
     def _raise_error(self, response, error_msg, stack_pos=0, *args, **kwargs):
@@ -361,19 +366,14 @@ class SEEDBaseClient(JSONAPI):
         url = response.request.url
         verb = response.request.method
         # e.g., MyClass.method
-        caller = caller = '{}.{}'.format(
-            self.__class__.__name__, inspect.stack()[stack_pos + 1][3]
-        )
+        caller = f"{self.__class__.__name__}.{inspect.stack()[stack_pos + 1][3]}"
         if args:
-            kwargs['args'] = args
-        raise SEEDError(
-            error_msg, url=url, caller=caller, verb=verb,
-            status_code=status_code, **kwargs
-        )
+            kwargs["args"] = args
+        raise SEEDError(error_msg, url=url, caller=caller, verb=verb, status_code=status_code, **kwargs)
 
     def _set_params(self, params):
         """Add org_id"""
-        params['organization_id'] = self.org_id
+        params["organization_id"] = self.org_id
         return params
 
 
@@ -381,7 +381,7 @@ class SEEDBaseClient(JSONAPI):
 # These should be used with SEEDClient as they rely on its methods
 
 
-class CreateMixin(object):
+class CreateMixin:
     """Add _post methods"""
 
     # pylint:disable=too-few-public-methods
@@ -398,26 +398,26 @@ class CreateMixin(object):
         """
         # for a post, if the user has sent some url args, then pop them for later
         # parsing.
-        url_args = kwargs.pop('url_args', None)
+        url_args = kwargs.pop("url_args", None)
         kwargs = self._set_params(kwargs)
-        endpoint = _set_default(self, 'endpoint', endpoint)
-        data_name = _set_default(self, 'data_name', data_name, required=False)
+        endpoint = _set_default(self, "endpoint", endpoint)
+        data_name = _set_default(self, "data_name", data_name, required=False)
         # check if the endpoint is to be looked up or is a fully qualified url
-        if '/' in endpoint:
+        if "/" in endpoint:
             url = endpoint
         elif endpoint in self.urls:
             url = self.urls[endpoint]
         else:
-            raise Exception(f'Unknown endpoint: {endpoint}')
-        if not url.endswith('/'):
-            url = url + '/'
+            raise Exception(f"Unknown endpoint: {endpoint}")
+        if not url.endswith("/"):
+            url = url + "/"
         url = _replace_url_args(url, url_args)
-        response = super(CreateMixin, self)._post(url=url, **kwargs)
+        response = super()._post(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
 
-class ReadMixin(object):
+class ReadMixin:
     """Add get &  list method"""
 
     # pylint:disable=too-few-public-methods
@@ -433,16 +433,16 @@ class ReadMixin(object):
         :returns: dict (from response.json()[data_name])
 
         """
-        url_args = kwargs.pop('url_args', None)
-        org_id_qp = kwargs.pop('include_org_id_query_param', False)
+        url_args = kwargs.pop("url_args", None)
+        org_id_qp = kwargs.pop("include_org_id_query_param", False)
         kwargs = self._set_params(kwargs)
-        endpoint = _set_default(self, 'endpoint', endpoint)
-        data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        endpoint = _set_default(self, "endpoint", endpoint)
+        data_name = _set_default(self, "data_name", data_name, required=False)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
         if org_id_qp:
             url += f"?organization_id={self.org_id}"
-        response = super(ReadMixin, self)._get(url=url, **kwargs)
+        response = super()._get(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -455,20 +455,20 @@ class ReadMixin(object):
 
         :returns: dict (from response.json()[data_name])
         """
-        url_args = kwargs.pop('url_args', None)
+        url_args = kwargs.pop("url_args", None)
         kwargs = self._set_params(kwargs)
-        endpoint = _set_default(self, 'endpoint', endpoint)
-        data_name = _set_default(self, 'data_name', data_name, required=False)
+        endpoint = _set_default(self, "endpoint", endpoint)
+        data_name = _set_default(self, "data_name", data_name, required=False)
         url = self.urls[endpoint]
-        if not url.endswith('/'):
-            url = url + '/'
+        if not url.endswith("/"):
+            url = url + "/"
         url = _replace_url_args(url, url_args)
-        response = super(ReadMixin, self)._get(url=url, **kwargs)
+        response = super()._get(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
 
-class UpdateMixin(object):
+class UpdateMixin:
     """Add _put & _patch methods"""
 
     # pylint:disable=too-few-public-methods,redefined-builtin
@@ -483,14 +483,14 @@ class UpdateMixin(object):
 
         :returns: dict (from response.json()[data_name])
         """
-        url_args = kwargs.pop('url_args', None)
+        url_args = kwargs.pop("url_args", None)
         kwargs = self._set_params(kwargs)
-        endpoint = _set_default(self, 'endpoint', endpoint)
-        data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        endpoint = _set_default(self, "endpoint", endpoint)
+        data_name = _set_default(self, "data_name", data_name, required=False)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
 
-        response = super(UpdateMixin, self)._put(url=url, **kwargs)
+        response = super()._put(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
@@ -504,18 +504,18 @@ class UpdateMixin(object):
 
         :returns: dict (from response.json()[data_name])
         """
-        url_args = kwargs.pop('url_args', None)
+        url_args = kwargs.pop("url_args", None)
         kwargs = self._set_params(kwargs)
-        endpoint = _set_default(self, 'endpoint', endpoint)
-        data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        endpoint = _set_default(self, "endpoint", endpoint)
+        data_name = _set_default(self, "data_name", data_name, required=False)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
-        response = super(UpdateMixin, self)._patch(url=url, **kwargs)
+        response = super()._patch(url=url, **kwargs)
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
 
-class DeleteMixin(object):
+class DeleteMixin:
     """Add _delete methods"""
 
     # pylint:disable=too-few-public-methods,redefined-builtin
@@ -531,13 +531,13 @@ class DeleteMixin(object):
         :returns: None
         """
         # pylint:disable=no-member
-        url_args = kwargs.pop('url_args', None)
+        url_args = kwargs.pop("url_args", None)
         kwargs = self._set_params(kwargs)
-        endpoint = _set_default(self, 'endpoint', endpoint)
-        data_name = _set_default(self, 'data_name', data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop('required_pk', True), slash=True)
+        endpoint = _set_default(self, "endpoint", endpoint)
+        data_name = _set_default(self, "data_name", data_name, required=False)
+        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
-        response = super(DeleteMixin, self)._delete(url=url, **kwargs)
+        response = super()._delete(url=url, **kwargs)
         # delete should return 204 and no content, unless it is a background task
         if response.status_code != requests.codes.no_content:
             self._check_response(response, **kwargs)
@@ -546,23 +546,19 @@ class DeleteMixin(object):
 
 class SEEDReadOnlyClient(ReadMixin, UserAuthMixin, SEEDBaseClient):
     """Read Only Client"""
-    pass
 
 
-class SEEDReadWriteClient(CreateMixin, ReadMixin, UpdateMixin, DeleteMixin,
-                          UserAuthMixin, SEEDBaseClient):
+class SEEDReadWriteClient(CreateMixin, ReadMixin, UpdateMixin, DeleteMixin, UserAuthMixin, SEEDBaseClient):
     """Client with full CRUD Methods"""
+
     # pylint:disable=too-many-ancestors
-    pass
 
 
 class SEEDOAuthReadOnlyClient(ReadMixin, OAuthMixin, SEEDBaseClient):
     """Read Ony Client"""
-    pass
 
 
-class SEEDOAuthReadWriteClient(CreateMixin, ReadMixin, UpdateMixin,
-                               DeleteMixin, OAuthMixin, SEEDBaseClient):
+class SEEDOAuthReadWriteClient(CreateMixin, ReadMixin, UpdateMixin, DeleteMixin, OAuthMixin, SEEDBaseClient):
     """Client with full CRUD Methods"""
+
     # pylint:disable=too-many-ancestors
-    pass

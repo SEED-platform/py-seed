@@ -4,8 +4,6 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
 # Imports from Standard Library
-from typing import Any, Optional, Union
-
 # Imports from Third Party Modules
 import json
 import logging
@@ -14,8 +12,10 @@ import time
 from collections import Counter
 from csv import DictReader
 from datetime import date
-from openpyxl import Workbook
 from pathlib import Path
+from typing import Any, Optional, Union
+
+from openpyxl import Workbook
 
 # Local Imports
 from pyseed.seed_client_base import SEEDReadWriteClient
@@ -24,7 +24,7 @@ from pyseed.utils import read_map_file
 logger = logging.getLogger(__name__)
 
 
-class SeedClientWrapper(object):
+class SeedClientWrapper:
     """This is a wrapper around the SEEDReadWriteClient. If you need access
     to the READOnly client, or the OAuth client, then you will need to create another class"""
 
@@ -53,9 +53,7 @@ class SeedClientWrapper(object):
             Exception: SeedClientWrapper
         """
         if not connection_params and not connection_config_filepath:
-            raise Exception(
-                "Must provide either connection_params or connection_config_filepath"
-            )
+            raise Exception("Must provide either connection_params or connection_config_filepath")
 
         # favor the connection params over the config file
         self.payload = {}
@@ -63,9 +61,7 @@ class SeedClientWrapper(object):
             # the connection params are simply squashed on SEEDReadWriteClient init
             self.payload = connection_params
         elif connection_config_filepath:
-            self.payload = SeedClientWrapper.read_connection_config_file(
-                connection_config_filepath
-            )
+            self.payload = SeedClientWrapper.read_connection_config_file(connection_config_filepath)
             # read in from config file
 
         self.client = SEEDReadWriteClient(organization_id, **self.payload)
@@ -92,9 +88,11 @@ class SeedClientWrapper(object):
             filepath (str): path to the connection config file
         """
         if not filepath.exists():
-            raise Exception(f"Cannot find connection config file: {str(filepath)}")
+            raise Exception(f"Cannot find connection config file: {filepath!s}")
 
-        connection_params = json.load(open(filepath))
+        connection_params = None
+        with open(filepath) as f:
+            connection_params = json.load(f)
         return connection_params
 
 
@@ -111,8 +109,8 @@ class SeedClient(SeedClientWrapper):
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
         # set org if you can
-        if self.payload and self.payload.get('seed_org_name', None):
-            self.get_org_by_name(self.payload['seed_org_name'], set_org_id=True)
+        if self.payload and self.payload.get("seed_org_name", None):
+            self.get_org_by_name(self.payload["seed_org_name"], set_org_id=True)
 
     def get_org_id(self) -> int:
         """Return the org ID that is set"""
@@ -148,7 +146,7 @@ class SeedClient(SeedClientWrapper):
         # http://localhost:8000/api/version/
         # add in URL to the SEED instance
         # add in username (but not the password/api key)
-        info = self.client.get(None, required_pk=False, endpoint="version", data_name='all')
+        info = self.client.get(None, required_pk=False, endpoint="version", data_name="all")
         info["host"] = self.client.base_url
         info["username"] = self.client.username
         return info
@@ -200,7 +198,7 @@ class SeedClient(SeedClientWrapper):
         Returns:
             int: user ID
         """
-        for user in self.get_users()['users']:
+        for user in self.get_users()["users"]:
             # compare string case insensitive
             if user["email"].lower() == username.lower():
                 return user["user_id"]
@@ -257,7 +255,7 @@ class SeedClient(SeedClientWrapper):
 
         # step through each page of the results
         buildings: list[dict] = []
-        for i in range(1, total_qry['num_pages'] + 1):
+        for i in range(1, total_qry["num_pages"] + 1):
             buildings = buildings + self.client.list(
                 endpoint="properties",
                 data_name="results",
@@ -286,9 +284,7 @@ class SeedClient(SeedClientWrapper):
                 ...
             }
         """
-        return self.client.get(
-            property_view_id, endpoint="property_views", data_name="property_views"
-        )
+        return self.client.get(property_view_id, endpoint="property_views", data_name="property_views")
 
     def get_property(self, property_view_id: int) -> dict:
         """Return a single property by the property view id.
@@ -309,9 +305,7 @@ class SeedClient(SeedClientWrapper):
             }
         """
         # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
-        return self.client.get(
-            property_view_id, endpoint="properties", data_name="properties"
-        )
+        return self.client.get(property_view_id, endpoint="properties", data_name="properties")
 
     def search_buildings(
         self,
@@ -330,9 +324,7 @@ class SeedClient(SeedClientWrapper):
         if identifier_exact is not None:
             payload["identifier_exact"] = identifier_exact
 
-        properties = self.client.get(
-            None, required_pk=False, endpoint="properties_search", **payload
-        )
+        properties = self.client.get(None, required_pk=False, endpoint="properties_search", **payload)
         return properties
 
     def get_labels(self, filter_by_name: Optional[list] = None) -> list:
@@ -363,9 +355,7 @@ class SeedClient(SeedClientWrapper):
             labels = [label for label in labels if label["name"] in filter_by_name]
         return labels
 
-    def get_or_create_label(
-        self, label_name: str, color: str = "blue", show_in_list: bool = False
-    ) -> dict:
+    def get_or_create_label(self, label_name: str, color: str = "blue", show_in_list: bool = False) -> dict:
         """_summary_
 
         Args:
@@ -436,9 +426,7 @@ class SeedClient(SeedClientWrapper):
         # remove the org id from the json data
         current_label.pop("organization_id")
 
-        return self.client.put(
-            current_label["id"], endpoint="labels", json=current_label
-        )
+        return self.client.put(current_label["id"], endpoint="labels", json=current_label)
 
     def delete_label(self, label_name: str) -> dict:
         """Deletes an existing label. This method will look up the ID of the label to delete.
@@ -540,9 +528,7 @@ class SeedClient(SeedClientWrapper):
             "add_label_ids": add_label_ids,
             "remove_label_ids": remove_label_ids,
         }
-        result = self.client.put(
-            None, required_pk=False, endpoint=endpoint, json=payload
-        )
+        result = self.client.put(None, required_pk=False, endpoint=endpoint, json=payload)
         return result
 
     def create_building(self, params: dict) -> list:
@@ -554,35 +540,31 @@ class SeedClient(SeedClientWrapper):
         Returns the created property_view id
         """
         # first try matching on custom_id_1
-        matching_id = params.get('state', {}).get('custom_id_1', None)
+        matching_id = params.get("state", {}).get("custom_id_1", None)
 
         if not matching_id:
             # then try on pm_property_id
-            matching_id = params.get('state', {}).get('pm_property_id', None)
+            matching_id = params.get("state", {}).get("pm_property_id", None)
 
             if not matching_id:
-                raise Exception(
-                    "This property does not have a pm_property_id or a custom_id_1 for matching...cannot create."
-                )
+                raise Exception("This property does not have a pm_property_id or a custom_id_1 for matching...cannot create.")
 
-        cycle_id = params.get('cycle_id', None)
+        cycle_id = params.get("cycle_id")
         # include appropriate cycle in search (if not using the default cycle set on the class)
         buildings = self.search_buildings(identifier_exact=matching_id, cycle_id=cycle_id)
 
         if len(buildings) > 0:
-            raise Exception(
-                "A property matching the provided matching ID (pm_property_id or custom_id_1) already exists."
-            )
+            raise Exception("A property matching the provided matching ID (pm_property_id or custom_id_1) already exists.")
 
         results = self.client.post(endpoint="properties", json=params)
         return results
 
-    def update_building(self, id, params: dict) -> list:
+    def update_building(self, property_view_id, params: dict) -> list:
         """
         Updates a building's property_view
-        Expects id and params to contain a state dictionary
+        Expects property_view_id and params to contain a state dictionary
         """
-        results = self.client.put(id, endpoint="properties", json=params)
+        results = self.client.put(property_view_id, endpoint="properties", json=params)
         return results
 
     def get_cycles(self) -> list:
@@ -643,9 +625,7 @@ class SeedClient(SeedClientWrapper):
         existing_cycles = self.get_cycles()
         for cycle in existing_cycles:
             if cycle["name"] == cycle_name:
-                raise Exception(
-                    f"A cycle with this name already exists: '{cycle_name}'"
-                )
+                raise Exception(f"A cycle with this name already exists: '{cycle_name}'")
 
         cycles = self.client.post(endpoint="cycles", json=post_data)
         return cycles["cycles"]
@@ -775,14 +755,10 @@ class SeedClient(SeedClientWrapper):
         dataset = self.client.post(endpoint="datasets", json=post_data)
         selected = {}
         if dataset["status"] == "success":
-            selected = self.client.get(
-                dataset["id"], endpoint="datasets", data_name="dataset"
-            )
+            selected = self.client.get(dataset["id"], endpoint="datasets", data_name="dataset")
         return selected
 
-    def upload_datafile(
-        self, dataset_id: int, data_file: str, upload_datatype: str
-    ) -> dict:
+    def upload_datafile(self, dataset_id: int, data_file: str, upload_datatype: str) -> dict:
         """Upload a datafile file
 
         Args:
@@ -804,7 +780,7 @@ class SeedClient(SeedClientWrapper):
         }
 
         files_params = [
-            ("file", (Path(data_file).name, open(Path(data_file).resolve(), "rb"))),
+            ("file", (Path(data_file).name, open(Path(data_file).resolve(), "rb"))),  # noqa: SIM115
         ]
 
         return self.client.post(
@@ -877,17 +853,11 @@ class SeedClient(SeedClientWrapper):
 
         # return only the unmarked indices
         if indices_to_remove:
-            result = [
-                item
-                for index, item in enumerate(result)
-                if index not in indices_to_remove
-            ]
+            result = [item for index, item in enumerate(result) if index not in indices_to_remove]
 
         return result
 
-    def get_column_mapping_profile(
-        self, column_mapping_profile_name: str
-    ) -> Optional[dict]:
+    def get_column_mapping_profile(self, column_mapping_profile_name: str) -> Optional[dict]:
         """get a specific column mapping profile. Currently, filter does not take an
         argument by name, so return them all and find the one that matches the
         column_mapping_profile_name.
@@ -906,9 +876,7 @@ class SeedClient(SeedClientWrapper):
         # if nothing, then return none
         return None
 
-    def create_or_update_column_mapping_profile(
-        self, mapping_profile_name: str, mappings: list
-    ) -> dict:
+    def create_or_update_column_mapping_profile(self, mapping_profile_name: str, mappings: list) -> dict:
         """Create or update an existing mapping profile from a list of mappings
 
         This only works for 'Normal' column mapping profiles, that is, it does not work for
@@ -963,15 +931,11 @@ class SeedClient(SeedClientWrapper):
             payload = {
                 "mappings": mappings,
             }
-            result = self.client.put(
-                profile["id"], endpoint="column_mapping_profiles", json=payload
-            )
+            result = self.client.put(profile["id"], endpoint="column_mapping_profiles", json=payload)
 
         return result
 
-    def create_or_update_column_mapping_profile_from_file(
-        self, mapping_profile_name: str, mapping_file: str
-    ) -> dict:
+    def create_or_update_column_mapping_profile_from_file(self, mapping_profile_name: str, mapping_file: str) -> dict:
         """creates or updates a mapping profile. The format of the mapping file is a CSV with the following format:
 
             Raw Columns,    units, SEED Table,    SEED Columns, Omit\n
@@ -1001,13 +965,9 @@ class SeedClient(SeedClientWrapper):
         if not Path(mapping_file).exists():
             raise Exception(f"Could not find mapping file: {mapping_file}")
 
-        return self.create_or_update_column_mapping_profile(
-            mapping_profile_name, read_map_file(mapping_file)
-        )
+        return self.create_or_update_column_mapping_profile(mapping_profile_name, read_map_file(mapping_file))
 
-    def set_import_file_column_mappings(
-        self, import_file_id: int, mappings: list
-    ) -> dict:
+    def set_import_file_column_mappings(self, import_file_id: int, mappings: list) -> dict:
         """Sets the column mappings onto the import file record.
 
         Args:
@@ -1036,7 +996,9 @@ class SeedClient(SeedClientWrapper):
         result = self.client.list(endpoint="columns")
         return result
 
-    def create_extra_data_column(self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str) -> dict:
+    def create_extra_data_column(
+        self, column_name: str, display_name: str, inventory_type: str, column_description: str, data_type: str
+    ) -> dict:
         """Create an extra data column. If column exists, skip
 
         Args:
@@ -1058,11 +1020,11 @@ class SeedClient(SeedClientWrapper):
         """
         # get extra data columns (only)
         result = self.client.list(endpoint="columns")
-        columns = result['columns']
-        extra_data_cols = [item for item in columns if item['is_extra_data']]
+        columns = result["columns"]
+        extra_data_cols = [item for item in columns if item["is_extra_data"]]
 
         # see if extra data column already exists (for now don't update it, just skip it)
-        res = list(filter(lambda extra_data_cols: extra_data_cols['column_name'] == column_name, extra_data_cols))
+        res = list(filter(lambda extra_data_cols: extra_data_cols["column_name"] == column_name, extra_data_cols))
         if res:
             # column already exists
             result = {"status": "noop", "message": "column already exists"}
@@ -1074,7 +1036,7 @@ class SeedClient(SeedClientWrapper):
                 "table_name": "PropertyState" if inventory_type == "Property" else "TaxlotState",
                 "column_description": column_description,
                 "data_type": data_type,
-                "organization_id": self.get_org_id()
+                "organization_id": self.get_org_id(),
             }
             result = self.client.post(endpoint="columns", json=payload)
 
@@ -1100,7 +1062,7 @@ class SeedClient(SeedClientWrapper):
                   }]
         """
         # open file in read mode
-        with open(columns_csv_filepath, 'r') as f:
+        with open(columns_csv_filepath) as f:
             dict_reader = DictReader(f)
             columns = list(dict_reader)
 
@@ -1131,8 +1093,7 @@ class SeedClient(SeedClientWrapper):
                 ...
             ]
         """
-        meters = self.client.get(None, required_pk=False, endpoint='properties_meters',
-                                 url_args={"PK": property_id})
+        meters = self.client.get(None, required_pk=False, endpoint="properties_meters", url_args={"PK": property_id})
         return meters
 
     def get_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Union[dict, None]:
@@ -1150,10 +1111,9 @@ class SeedClient(SeedClientWrapper):
         # return all the meters for the property and see if the meter exists, if so, return it
         meters = self.get_meters(property_view_id)
         for meter in meters:
-            if meter['type'] == meter_type and meter['source'] == source and meter['source_id'] == source_id:
+            if meter["type"] == meter_type and meter["source"] == source and meter["source_id"] == source_id:
                 return meter
-        else:
-            return None
+        return None
 
     def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Optional[dict[Any, Any]]:
         """get or create a meter for a property view.
@@ -1174,14 +1134,12 @@ class SeedClient(SeedClientWrapper):
         else:
             # create the meter
             payload = {
-                'type': meter_type,
-                'source': source,
-                'source_id': source_id,
+                "type": meter_type,
+                "source": source,
+                "source_id": source_id,
             }
 
-            meter = self.client.post(
-                endpoint='properties_meters', url_args={"PK": property_view_id}, json=payload
-            )
+            meter = self.client.post(endpoint="properties_meters", url_args={"PK": property_view_id}, json=payload)
 
             return meter
 
@@ -1195,9 +1153,7 @@ class SeedClient(SeedClientWrapper):
         Returns:
             dict: status of the deletion
         """
-        return self.client.delete(
-            meter_id, endpoint='properties_meters', url_args={"PK": property_view_id}
-        )
+        return self.client.delete(meter_id, endpoint="properties_meters", url_args={"PK": property_view_id})
 
     def upsert_meter_readings_bulk(self, property_view_id: int, meter_id: int, data: list) -> dict:
         """Upsert meter readings for a property's meter with the bulk method.
@@ -1212,11 +1168,11 @@ class SeedClient(SeedClientWrapper):
         """
         # get the meter data for the property
         readings = self.client.post(
-            endpoint='properties_meters_reading', url_args={"PK": property_view_id, "METER_PK": meter_id}, json=data
+            endpoint="properties_meters_reading", url_args={"PK": property_view_id, "METER_PK": meter_id}, json=data
         )
         return readings
 
-    def get_meter_data(self, property_id, interval: str = 'Exact', excluded_meter_ids: list = []):
+    def get_meter_data(self, property_id, interval: str = "Exact", excluded_meter_ids: list = []):
         """Return the meter data from the property.
 
         Args:
@@ -1228,7 +1184,7 @@ class SeedClient(SeedClientWrapper):
             "interval": interval,
             "excluded_meter_ids": excluded_meter_ids,
         }
-        meter_data = self.client.post(endpoint='properties_meter_usage', url_args={"PK": property_id}, json=payload)
+        meter_data = self.client.post(endpoint="properties_meter_usage", url_args={"PK": property_id}, json=payload)
         return meter_data
 
     def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> dict:
@@ -1252,8 +1208,7 @@ class SeedClient(SeedClientWrapper):
         return self.client.post(
             "import_files_start_save_data_pk",
             url_args={"PK": import_file_id},
-            json={"cycle_id": self.cycle_id,
-                  "multiple_cycle_upload": multiple_cycle_upload},
+            json={"cycle_id": self.cycle_id, "multiple_cycle_upload": multiple_cycle_upload},
         )
 
     def start_map_data(self, import_file_id: int) -> dict:
@@ -1313,9 +1268,7 @@ class SeedClient(SeedClientWrapper):
                     }
                 }
         """
-        return self.client.post(
-            "import_files_start_matching_pk", url_args={"PK": import_file_id}
-        )
+        return self.client.post("import_files_start_matching_pk", url_args={"PK": import_file_id})
 
     def get_matching_results(self, import_file_id: int) -> dict:
         """matching results summary
@@ -1415,9 +1368,7 @@ class SeedClient(SeedClientWrapper):
         """
         response = self.client.post(
             endpoint="portfolio_manager_report",
-            json={"username": pm_username,
-                  "password": pm_password,
-                  "template": pm_template},
+            json={"username": pm_username, "password": pm_password, "template": pm_template},
         )
 
         # Get the "properties" key from the dictionary.
@@ -1449,7 +1400,7 @@ class SeedClient(SeedClientWrapper):
                 sheet.append(row)
 
         # Report Template name
-        report_template_name = pm_template['name']
+        report_template_name = pm_template["name"]
 
         # Filename
         file_name = f"{pm_username}_{report_template_name}.xlsx"
@@ -1491,9 +1442,7 @@ class SeedClient(SeedClientWrapper):
             }
         """
         payload = {"import_file_id": import_file_id}
-        response = self.client.post(
-            endpoint="import_files_reuse_inventory_file_for_meters", json=payload
-        )
+        response = self.client.post(endpoint="import_files_reuse_inventory_file_for_meters", json=payload)
         return response
 
     def upload_and_match_datafile(
@@ -1539,14 +1488,10 @@ class SeedClient(SeedClientWrapper):
         result = self.track_progress_result(progress_key)
 
         # create/retrieve the column mappings
-        result = self.create_or_update_column_mapping_profile_from_file(
-            column_mapping_profile_name, column_mappings_file
-        )
+        result = self.create_or_update_column_mapping_profile_from_file(column_mapping_profile_name, column_mappings_file)
 
         # set the column mappings for the dataset
-        result = self.set_import_file_column_mappings(
-            import_file_id, result["mappings"]
-        )
+        result = self.set_import_file_column_mappings(import_file_id, result["mappings"])
 
         # now start the mapping
         result = self.start_map_data(import_file_id)
@@ -1568,9 +1513,7 @@ class SeedClient(SeedClientWrapper):
 
         # check if we need to import meters and if they exist
         if import_meters_if_exist and self.check_meters_tab_exist(import_file_id):
-            reuse_file = self.import_files_reuse_inventory_file_for_meters(
-                import_file_id
-            )
+            reuse_file = self.import_files_reuse_inventory_file_for_meters(import_file_id)
 
             meter_import_file_id = reuse_file["import_file_id"]
 
@@ -1596,20 +1539,14 @@ class SeedClient(SeedClientWrapper):
 
         # api/v3/audit_template/pk/get_building_xml
         response = self.client.get(
-            None,
-            required_pk=False,
-            endpoint="audit_template_building_xml",
-            url_args={"PK": audit_template_building_id}
+            None, required_pk=False, endpoint="audit_template_building_xml", url_args={"PK": audit_template_building_id}
         )
 
-        if response['status'] == 'success':
+        if response["status"] == "success":
             # now post to api/v3/properties/PK/update_with_buildingsync
-            xml_file = response['content']
-            filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
-            files = [
-                ('file', (filename, xml_file)),
-                ('file_type', (None, 1))
-            ]
+            xml_file = response["content"]
+            filename = "at_" + str(int(time.time() * 1000)) + ".xml"
+            files = [("file", (filename, xml_file)), ("file_type", (None, 1))]
 
             response = self.client.put(
                 None,
@@ -1617,7 +1554,7 @@ class SeedClient(SeedClientWrapper):
                 endpoint="properties_update_with_buildingsync",
                 url_args={"PK": seed_id},
                 files=files,
-                cycle_id=cycle_id
+                cycle_id=cycle_id,
             )
 
         return response
@@ -1627,7 +1564,7 @@ class SeedClient(SeedClientWrapper):
         audit_template_submission_id: int,
         cycle_id: int,
         seed_id: int,
-        report_format: str = 'pdf',
+        report_format: str = "pdf",
         filename: Optional[str] = None,
     ) -> dict:
         """Connect to audit template and retrieve audit report by submission ID
@@ -1652,40 +1589,28 @@ class SeedClient(SeedClientWrapper):
             required_pk=False,
             endpoint="audit_template_submission",
             url_args={"PK": audit_template_submission_id},
-            report_format=report_format
+            report_format=report_format,
         )
 
-        if response['status'] == 'success':
-            if report_format.lower() == 'pdf':
-
+        if response["status"] == "success":
+            if report_format.lower() == "pdf":
                 # for PDF, store pdf report as inventory document
-                pdf_file = response['content']
+                pdf_file = response["content"]
                 if not filename:
-                    filename = 'at_submission_report_' + str(audit_template_submission_id) + '.pdf'
-                files = [
-                    ('file', (filename, pdf_file)),
-                    ('file_type', (None, 1))
-                ]
+                    filename = "at_submission_report_" + str(audit_template_submission_id) + ".pdf"
+                files = [("file", (filename, pdf_file)), ("file_type", (None, 1))]
                 response2 = self.client.put(
-                    None,
-                    required_pk=False,
-                    endpoint="properties_upload_inventory_document",
-                    url_args={"PK": seed_id},
-                    files=files
+                    None, required_pk=False, endpoint="properties_upload_inventory_document", url_args={"PK": seed_id}, files=files
                 )
-                response2['pdf_report'] = pdf_file
+                response2["pdf_report"] = pdf_file
             else:
-
                 # assume XML. for XML, update property with BuildingSync
                 # now post to api/v3/properties/PK/update_with_buildingsync
-                xml_file = response['content']
+                xml_file = response["content"]
                 if not filename:
-                    filename = 'at_' + str(int(time.time() * 1000)) + '.xml'
+                    filename = "at_" + str(int(time.time() * 1000)) + ".xml"
 
-                files = [
-                    ('file', (filename, xml_file)),
-                    ('file_type', (None, 1))
-                ]
+                files = [("file", (filename, xml_file)), ("file_type", (None, 1))]
 
                 response2 = self.client.put(
                     None,
@@ -1693,7 +1618,7 @@ class SeedClient(SeedClientWrapper):
                     endpoint="properties_update_with_buildingsync",
                     url_args={"PK": seed_id},
                     files=files,
-                    cycle_id=cycle_id
+                    cycle_id=cycle_id,
                 )
 
         return response2
@@ -1714,17 +1639,15 @@ class SeedClient(SeedClientWrapper):
             raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
 
         response = self.client.post(
-            "portfolio_manager_property_download",
-            json={"username": username, "password": password},
-            url_args={"PK": pm_property_id}
+            "portfolio_manager_property_download", json={"username": username, "password": password}, url_args={"PK": pm_property_id}
         )
-        result = {'status': 'error'}
+        result = {"status": "error"}
         # save the file to the location that was passed
         # note that the data are returned directly (the ESPM URL directly downloads the file)
         if isinstance(response, bytes):
-            with open(save_file_name, 'wb') as f:
+            with open(save_file_name, "wb") as f:
                 f.write(response)
-                result['status'] = 'success'
+                result["status"] = "success"
         return result
 
     def import_portfolio_manager_property(self, seed_id: int, cycle_id: int, mapping_profile_id: int, file_path: str) -> dict:
@@ -1738,7 +1661,7 @@ class SeedClient(SeedClientWrapper):
         in the 'Meter Entries' tab"""
 
         files_params = [
-            ("file", (Path(file_path).name, open(Path(file_path).resolve(), "rb"))),
+            ("file", (Path(file_path).name, open(Path(file_path).resolve(), "rb"))),  # noqa: SIM115
         ]
 
         response = self.client.put(
@@ -1748,7 +1671,7 @@ class SeedClient(SeedClientWrapper):
             url_args={"PK": seed_id},
             files=files_params,
             cycle_id=cycle_id,
-            mapping_profile_id=mapping_profile_id
+            mapping_profile_id=mapping_profile_id,
         )
 
         return response
