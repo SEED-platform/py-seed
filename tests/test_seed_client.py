@@ -68,7 +68,7 @@ class SeedClientTest(unittest.TestCase):
         # try to create again and it should raise an error
         with pytest.raises(Exception) as excpt:  # noqa: PT011
             self.seed_client.create_organization("NEW ORG")
-        assert "already exists" in str(excpt.value.error)
+        assert "already exists" in excpt.value.args[0]
 
     def test_seed_buildings(self):
         # set cycle before retrieving (just in case)
@@ -352,7 +352,7 @@ class SeedClientTest(unittest.TestCase):
                 save_file_name=save_file,
             )
 
-        self.assertEqual(str(excpt.value.error), f"Save filename already exists, save to a new file name: {save_file!s}")
+        self.assertEqual(excpt.value.args[0], f"Save filename already exists, save to a new file name: {save_file!s}")
 
     def test_upload_espm_property_to_seed(self):
         file = Path("tests/data/portfolio-manager-single-22482007.xlsx")
