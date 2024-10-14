@@ -1035,7 +1035,7 @@ class SeedClient(SeedClientWrapper):
             payload = {
                 "column_name": column_name,
                 "display_name": display_name,
-                "table_name": "PropertyState" if inventory_type == "Property" else "TaxlotState",
+                "table_name": "PropertyState" if inventory_type == "Property" else "TaxLotState",
                 "column_description": column_description,
                 "data_type": data_type,
                 "organization_id": self.get_org_id(),
