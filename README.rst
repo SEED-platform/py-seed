@@ -29,7 +29,7 @@ Compatibility Matrix
 
    * - py-SEED Version
      - SEED Version
-   * - 0.5.0
+   * - 0.5.0 - current
      - 3.1.0
    * - 0.4.3
      - 2.21.0 - 3.0.0
@@ -142,11 +142,12 @@ Releasing
 
 This project is configured with GitHub Actions to automatically release to PyPi when a new tag is created. To release a new version:
 
-* Create a branch with the prepared release change log
-* Merge branch to develop
+* Create a branch with the prepared release change log.
+* Update README's Compatibility matrix, CHANGELOG, and the version in pypoetry.toml.
+* Merge branch to develop.
 * To release, from the command line merge latest develop into latest main: :code:`git merge --ff-only origin develop`. This will point the HEAD of main to latest develop. Then push the main branch to GitHub with :code:`git push`, which may require a developer with elevated privileges to push to main.
 * Back in GitHub create a new tag in GitHub against main and copy the change log notes into the tag description.
-* GitHub Actions will automatically prepare the release the new version to PyPi
-* Go to GitHub actions to approve the release
+* GitHub Actions will automatically prepare the release the new version to PyPi.
+* Go to GitHub actions to approve the release.
 
 The GitHub Action required updates to the GitHub repo to only release on tags (https://github.com/SEED-platform/py-seed/settings/environments) after approval and on PyPi to add an authorized publisher (https://pypi.org/manage/project/py-SEED/settings/publishing/).
