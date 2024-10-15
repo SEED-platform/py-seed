@@ -144,7 +144,7 @@ This project is configured with GitHub Actions to automatically release to PyPi 
 
 * Create a branch with the prepared release change log
 * Merge branch to develop
-* To release, from the command line run merge develop into main `git merge --ff-only origin main`. This will point the HEAD of main to latest develop. Then push the main branch to GitHub, which may require a developer with elevated privileges to push to main.
+* To release, from the command line merge latest develop into latest main: :code:`git merge --ff-only origin develop`. This will point the HEAD of main to latest develop. Then push the main branch to GitHub with :code:`git push`, which may require a developer with elevated privileges to push to main.
 * Back in GitHub create a new tag in GitHub against main and copy the change log notes into the tag description.
 * GitHub Actions will automatically prepare the release the new version to PyPi
 * Go to GitHub actions to approve the release
