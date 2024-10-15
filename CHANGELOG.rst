@@ -1,10 +1,27 @@
 Changelog
 =========
 
+0.5.1
+-----
+
+What's Changed
+**************
+
+* Update change log with missing entry by @nllong in https://github.com/SEED-platform/py-seed/pull/52
+* Fix "TaxlotState" -> "TaxLotState" by @AndrewDevetry in https://github.com/SEED-platform/py-seed/pull/53
+
+New Contributors
+****************
+
+* @AndrewDevetry made their first contribution in https://github.com/SEED-platform/py-seed/pull/53
+
+**Full Changelog**: https://github.com/SEED-platform/py-seed/compare/v0.5.0...v0.5.1
+
 0.5.0
 -----
 
-## What's Changed
+What's Changed
+**************
 
 * Add PyPi release action by @nllong in https://github.com/SEED-platform/py-seed/pull/42
 * Update precommit versions by @nllong in https://github.com/SEED-platform/py-seed/pull/44
@@ -14,11 +31,11 @@ Changelog
 
 **Full Changelog**: https://github.com/SEED-platform/py-seed/compare/v0.4.3...v0.5.0
 
-
 0.4.3
 -----
 
-## What's Changed
+What's Changed
+**************
 
 * Fix delete cycle progress key and race condition by @nllong in https://github.com/SEED-platform/py-seed/pull/24
 * Remove Deprecated APIs, Fix Typos by @axelstudios in https://github.com/SEED-platform/py-seed/pull/23
@@ -38,6 +55,7 @@ Changelog
 
 0.4.2
 -----
+
 What's Changed
 **************
 
