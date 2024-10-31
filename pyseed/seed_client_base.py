@@ -192,7 +192,7 @@ class SEEDBaseClient(JSONAPI):
             self.base_url = base_url if base_url else "localhost"
         if not getattr(self, "port", None):
             self.port = port if port else None
-        if self.port:
+        if self.port and not self.base_url.startswith("http"):
             self.base_url = f"{self.base_url}:{self.port}"
         if not self.base_url.endswith("/"):
             self.base_url = self.base_url + "/"
