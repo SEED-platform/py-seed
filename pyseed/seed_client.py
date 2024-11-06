@@ -1430,6 +1430,52 @@ class SeedClient(SeedClientWrapper):
         # Return the report templates
         return datafile_path
 
+    def download_pm_custom_download(self, pm_username: str, pm_password: str, pm_ids: dict) -> str:
+        """Download a PM custom download.
+
+        Args:
+            pm_username (str): username for Energystar Portfolio Manager
+            pm_password (str): password for Energystar Portfolio Manager
+            pm_ids (dict): list of property ids to include in custom download
+
+        Sample return shown below.
+        Returns the path to the custom download workbook file
+        """
+        response = self.client.post(
+            endpoint="portfolio_manager_custom_download",
+            json={"username": pm_username, "password": pm_password, "pm_ids": pm_ids},
+        )
+
+        # Get the "content" key from the dictionary.
+        content = response["content"]
+
+        # Download file from "content" key
+        workbook = openpyxl.load_workbook(io.BytesIO(content))
+
+        # Filename
+        file_name = f"{pm_username}_custom_download.xlsx"
+
+        # Folder name
+        folder_name = "meter_data"
+
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+
+        # Set the file path.
+        file_path = os.path.join(folder_name, file_name)
+
+        # Save the workbook object.
+        workbook.save(file_path)
+
+        # Current directory
+        curdir = os.getcwd()
+
+        # Define the datafile path
+        datafile_path = os.path.join(curdir, file_path)
+
+        # Return the report templates
+        return datafile_path
+
     def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
         """Reuse an import file to create all the meter entries. This method is used
         for ESPM related data files. The result will be another import_file ID for the

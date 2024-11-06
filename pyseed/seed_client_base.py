@@ -45,6 +45,7 @@ URLS = {
         "labels_property": "/api/v3/labels_property/",
         "labels_taxlot": "/api/v3/labels_taxlot/",
         "organizations": "/api/v3/organizations/",
+        "portfolio_manager_custom_download": "/api/v3/portfolio_manager/custom_download/",
         "portfolio_manager_report": "/api/v3/portfolio_manager/report/",
         "portfolio_manager_report_templates": "/api/v3/portfolio_manager/template_list/",
         "properties": "/api/v3/properties/",
