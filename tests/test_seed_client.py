@@ -3,12 +3,16 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
+import io
 import os
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest import mock
 
+import openpyxl
 import pytest
+from openpyxl import Workbook, load_workbook
 
 from pyseed.seed_client import SeedClient
 
@@ -378,21 +382,69 @@ class SeedClientTest(unittest.TestCase):
         )
         assert response["status"] == "success"
 
-    # def test_retrieve_at_building_and_update(self):
-    #     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
+    def test_download_pm_custom_download(self):
+        """Test downloading PM custom data."""
+        # For testing, read in the ESPM username and password from
+        # environment variables.
 
-    #     # need a building
-    #     buildings = self.seed_client.get_buildings()
-    #     building = None
-    #     if buildings:
-    #         building = buildings[0]
-    #     self.assertTrue(building)
+        self.seed_client.download_pm_custom_download(
+            username=os.environ.get("SEED_PM_UN"),
+            password=os.environ.get("SEED_PM_PW"),
+            property_ids=["5049100", "2C4840467"],
+        )
 
-    #     # need an Audit Template Building ID (use envvar for this)
-    #     at_building_id=os.environ.get('SEED_AT_BUILDING_ID'),
+        # Create a real Excel workbook in memory for testing
+        wb = Workbook()
+        ws = wb.active
+        ws['A1'] = 'Test Data'
+        
+        # Save workbook to bytes
+        excel_bytes = io.BytesIO()
+        wb.save(excel_bytes)
+        excel_bytes.seek(0)
+        mock_content = excel_bytes.read()
+        
+        # Mock the client's post method
+        self.seed_client.client.post = mock.Mock(return_value=mock_content)
+        
+        try:
+            # Call the function
+            result = self.seed_client.download_pm_custom_download(
+                username=os.environ.get("SEED_PM_UN"),
+                password=os.environ.get("SEED_PM_PW"),
+                property_ids=["5049100", "2C4840467"],
+            )
+            
+            # Verify the API call
+            self.seed_client.client.post.assert_called_once_with(
+                endpoint="portfolio_manager_custom_download",
+                json={
+                    "username": os.environ.get("SEED_PM_UN"),
+                    "password": os.environ.get("SEED_PM_PW"),
+                    "property_ids": ["5049100", "2C4840467"],
+                },
+            )
+            
+            # Verify the result is a path string
+            self.assertIsInstance(result, str)
+            
+            # Verify the file exists
+            self.assertTrue(os.path.exists(result))
+            
+            # Verify the file is a valid Excel file with our test data
+            wb = load_workbook(result)
+            ws = wb.active
+            self.assertEqual(ws['A1'].value, 'Test Data')
+            
+        finally:
+            # Cleanup - remove the test file if it exists
+            if os.path.exists(result):
+                os.remove(result)
 
-    #     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
-    #     self.assertTrue(response['status'] == 'success')
+            # Remove meter_data directory if empty
+            meter_data_dir = os.path.join(os.getcwd(), "meter_data")
+            if os.path.exists(meter_data_dir) and not os.listdir(meter_data_dir):
+                os.rmdir(meter_data_dir)
 
 
 @pytest.mark.integration
@@ -459,3 +511,19 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         assert building_cycles[0]["site_eui"] == 95
         assert building_cycles[1]["site_eui"] == 181
         assert building_cycles[2]["site_eui"] == 129
+
+# def test_retrieve_at_building_and_update(self):
+#     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
+
+#     # need a building
+#     buildings = self.seed_client.get_buildings()
+#     building = None
+#     if buildings:
+#         building = buildings[0]
+#     self.assertTrue(building)
+
+#     # need an Audit Template Building ID (use envvar for this)
+#     at_building_id=os.environ.get('SEED_AT_BUILDING_ID'),
+
+#     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
+#     self.assertTrue(response['status'] == 'success')

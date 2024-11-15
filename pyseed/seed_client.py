@@ -3,17 +3,17 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
+import io
 import json
 import logging
 import os
 import time
 from collections import Counter
-from csv import DictReader
 from datetime import date
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 from pyseed.seed_client_base import SEEDReadWriteClient
 from pyseed.utils import read_map_file
@@ -1430,51 +1430,45 @@ class SeedClient(SeedClientWrapper):
         # Return the report templates
         return datafile_path
 
-    def download_pm_custom_download(self, pm_username: str, pm_password: str, pm_ids: dict) -> str:
+    def download_pm_custom_download(
+        self,
+        username: str,
+        password: str,
+        property_ids: list,
+    ) -> str:
         """Download a PM custom download.
 
         Args:
-            pm_username (str): username for Energystar Portfolio Manager
-            pm_password (str): password for Energystar Portfolio Manager
-            pm_ids (dict): list of property ids to include in custom download
+            username (str): username for Energystar Portfolio Manager
+            password (str): password for Energystar Portfolio Manager
+            property_ids (list): list of property ids to include in custom download
 
-        Sample return shown below.
-        Returns the path to the custom download workbook file
+        Returns:
+            str: path to the custom download workbook file
         """
+        import openpyxl
         response = self.client.post(
             endpoint="portfolio_manager_custom_download",
-            json={"username": pm_username, "password": pm_password, "pm_ids": pm_ids},
+            json={"username": username, "password": password, "property_ids": property_ids},
         )
 
-        # Get the "content" key from the dictionary.
-        content = response["content"]
-
-        # Download file from "content" key
-        workbook = openpyxl.load_workbook(io.BytesIO(content))
+        # The response is the Excel file content directly as bytes
+        workbook = openpyxl.load_workbook(io.BytesIO(response))
 
         # Filename
-        file_name = f"{pm_username}_custom_download.xlsx"
+        file_name = f"{username}_custom_download.xlsx"
 
         # Folder name
         folder_name = "meter_data"
-
         if not os.path.exists(folder_name):
             os.mkdir(folder_name)
-
-        # Set the file path.
         file_path = os.path.join(folder_name, file_name)
 
-        # Save the workbook object.
+        # Save the workbook object
         workbook.save(file_path)
 
-        # Current directory
-        curdir = os.getcwd()
-
-        # Define the datafile path
-        datafile_path = os.path.join(curdir, file_path)
-
-        # Return the report templates
-        return datafile_path
+        # Return the absolute path
+        return str(file_path if isinstance(file_path, Path) else os.path.abspath(file_path))
 
     def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
         """Reuse an import file to create all the meter entries. This method is used
