@@ -105,6 +105,8 @@ class SeedClient(SeedClientWrapper):
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
+        self.folder_name = "reports"
+
         # set org if you can
         if self.payload and self.payload.get("seed_org_name", None):
             self.get_org_by_name(self.payload["seed_org_name"], set_org_id=True)
@@ -1409,14 +1411,11 @@ class SeedClient(SeedClientWrapper):
         # Filename
         file_name = f"{pm_username}_{report_template_name}.xlsx"
 
-        # Folder name
-        folder_name = "reports"
-
-        if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
+        if not os.path.exists(self.folder_name):
+            os.mkdir(self.folder_name)
 
         # Set the file path.
-        file_path = os.path.join(folder_name, file_name)
+        file_path = os.path.join(self.folder_name, file_name)
 
         # Save the workbook object.
         workbook.save(file_path)
@@ -1457,14 +1456,11 @@ class SeedClient(SeedClientWrapper):
         # Filename
         file_name = f"{username}_custom_download.xlsx"
 
-        # Folder name
-        folder_name = "reports"
-
-        if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
+        if not os.path.exists(self.folder_name):
+            os.mkdir(self.folder_name)
 
         # Set the file path.
-        file_path = os.path.join(folder_name, file_name)
+        file_path = os.path.join(self.folder_name, file_name)
 
         # Save the workbook object
         workbook.save(file_path)

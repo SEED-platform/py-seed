@@ -356,6 +356,34 @@ class SeedClientTest(unittest.TestCase):
 
         assert excpt.value.args[0] == f"Save filename already exists, save to a new file name: {save_file!s}"
 
+    def test_download_pm_report(self):
+        # SetUp
+        self.seed_client.folder_name = self.output_dir
+        save_file = self.output_dir / "espm_test_22178850.xlsx"
+        if save_file.exists():
+            save_file.unlink()
+
+        # Action
+        datafile_path = self.seed_client.download_pm_report(
+            pm_username=os.environ.get("SEED_PM_UN"),
+            pm_password=os.environ.get("SEED_PM_PW"),
+            pm_template={
+                "display_name": "SEED City Test Report",
+                "name": "SEED City Test Report",
+                "id": 1103344,
+                "z_seed_child_row": False,
+                "type": 0,
+                "children": [],
+                "pending": 0,
+            },
+        ) 
+
+        # Assertion
+        assert Path(datafile_path).exists()
+
+        # Clean Up
+        Path(datafile_path).unlink(missing_ok=True)
+
     def test_upload_espm_property_to_seed(self):
         file = Path("tests/data/portfolio-manager-single-22482007.xlsx")
 
@@ -397,6 +425,7 @@ class SeedClientTest(unittest.TestCase):
 
     def test_download_pm_custom_download(self):
         # Action
+        self.seed_client.folder_name = self.output_dir
         datafile_path = self.seed_client.download_pm_custom_download(
             username=os.environ.get("SEED_PM_UN"),
             password=os.environ.get("SEED_PM_PW"),
