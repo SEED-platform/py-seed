@@ -17,7 +17,6 @@ from openpyxl import Workbook, load_workbook
 
 from pyseed.seed_client_base import SEEDReadWriteClient
 from pyseed.utils import read_map_file
-import openpyxl
 
 logger = logging.getLogger(__name__)
 
@@ -1453,7 +1452,7 @@ class SeedClient(SeedClientWrapper):
         )
 
         # The response is the Excel file content directly as bytes
-        workbook = openpyxl.load_workbook(io.BytesIO(response))
+        workbook = load_workbook(io.BytesIO(response))
 
         # Filename
         file_name = f"{username}_custom_download.xlsx"

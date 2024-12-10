@@ -3,16 +3,13 @@ SEED Platform (TM), Copyright (c) Alliance for Sustainable Energy, LLC, and othe
 See also https://github.com/seed-platform/py-seed/main/LICENSE
 """
 
-import io
 import os
 import unittest
 from datetime import date
 from pathlib import Path
-from unittest import mock
 
-import openpyxl
 import pytest
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 
 from pyseed.seed_client import SeedClient
 
@@ -382,6 +379,22 @@ class SeedClientTest(unittest.TestCase):
         )
         assert response["status"] == "success"
 
+    # def test_retrieve_at_building_and_update(self):
+    #     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
+
+    #     # need a building
+    #     buildings = self.seed_client.get_buildings()
+    #     building = None
+    #     if buildings:
+    #         building = buildings[0]
+    #     self.assertTrue(building)
+
+    #     # need an Audit Template Building ID (use envvar for this)
+    #     at_building_id=os.environ.get('SEED_AT_BUILDING_ID'),
+
+    #     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
+    #     self.assertTrue(response['status'] == 'success')
+
     def test_download_pm_custom_download(self):
         # Action
         datafile_path = self.seed_client.download_pm_custom_download(
@@ -463,19 +476,3 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         assert building_cycles[0]["site_eui"] == 95
         assert building_cycles[1]["site_eui"] == 181
         assert building_cycles[2]["site_eui"] == 129
-
-# def test_retrieve_at_building_and_update(self):
-#     # NOTE: commenting this out as we cannot set the AT credentials in SEED from py-seed
-
-#     # need a building
-#     buildings = self.seed_client.get_buildings()
-#     building = None
-#     if buildings:
-#         building = buildings[0]
-#     self.assertTrue(building)
-
-#     # need an Audit Template Building ID (use envvar for this)
-#     at_building_id=os.environ.get('SEED_AT_BUILDING_ID'),
-
-#     response = self.seed_client.retrieve_at_building_and_update(self, at_building_id, self.cycle_id, building['id'])
-#     self.assertTrue(response['status'] == 'success')
