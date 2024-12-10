@@ -383,68 +383,20 @@ class SeedClientTest(unittest.TestCase):
         assert response["status"] == "success"
 
     def test_download_pm_custom_download(self):
-        """Test downloading PM custom data."""
-        # For testing, read in the ESPM username and password from
-        # environment variables.
-
-        self.seed_client.download_pm_custom_download(
+        # Action
+        datafile_path = self.seed_client.download_pm_custom_download(
             username=os.environ.get("SEED_PM_UN"),
             password=os.environ.get("SEED_PM_PW"),
             property_ids=["5049100", "2C4840467"],
         )
 
-        # Create a real Excel workbook in memory for testing
-        wb = Workbook()
-        ws = wb.active
-        ws['A1'] = 'Test Data'
-        
-        # Save workbook to bytes
-        excel_bytes = io.BytesIO()
-        wb.save(excel_bytes)
-        excel_bytes.seek(0)
-        mock_content = excel_bytes.read()
-        
-        # Mock the client's post method
-        self.seed_client.client.post = mock.Mock(return_value=mock_content)
-        
-        try:
-            # Call the function
-            result = self.seed_client.download_pm_custom_download(
-                username=os.environ.get("SEED_PM_UN"),
-                password=os.environ.get("SEED_PM_PW"),
-                property_ids=["5049100", "2C4840467"],
-            )
-            
-            # Verify the API call
-            self.seed_client.client.post.assert_called_once_with(
-                endpoint="portfolio_manager_custom_download",
-                json={
-                    "username": os.environ.get("SEED_PM_UN"),
-                    "password": os.environ.get("SEED_PM_PW"),
-                    "property_ids": ["5049100", "2C4840467"],
-                },
-            )
-            
-            # Verify the result is a path string
-            self.assertIsInstance(result, str)
-            
-            # Verify the file exists
-            self.assertTrue(os.path.exists(result))
-            
-            # Verify the file is a valid Excel file with our test data
-            wb = load_workbook(result)
-            ws = wb.active
-            self.assertEqual(ws['A1'].value, 'Test Data')
-            
-        finally:
-            # Cleanup - remove the test file if it exists
-            if os.path.exists(result):
-                os.remove(result)
+        # Assert
+        assert Path(datafile_path).exists()
+        wb = load_workbook(filename = datafile_path)
+        assert wb.sheetnames == ['Meter Entries']
 
-            # Remove meter_data directory if empty
-            meter_data_dir = os.path.join(os.getcwd(), "meter_data")
-            if os.path.exists(meter_data_dir) and not os.listdir(meter_data_dir):
-                os.rmdir(meter_data_dir)
+        # Clean up
+        Path(datafile_path).unlink()
 
 
 @pytest.mark.integration

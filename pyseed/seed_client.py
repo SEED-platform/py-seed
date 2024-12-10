@@ -17,6 +17,7 @@ from openpyxl import Workbook, load_workbook
 
 from pyseed.seed_client_base import SEEDReadWriteClient
 from pyseed.utils import read_map_file
+import openpyxl
 
 logger = logging.getLogger(__name__)
 
@@ -1446,7 +1447,6 @@ class SeedClient(SeedClientWrapper):
         Returns:
             str: path to the custom download workbook file
         """
-        import openpyxl
         response = self.client.post(
             endpoint="portfolio_manager_custom_download",
             json={"username": username, "password": password, "property_ids": property_ids},
@@ -1459,16 +1459,25 @@ class SeedClient(SeedClientWrapper):
         file_name = f"{username}_custom_download.xlsx"
 
         # Folder name
-        folder_name = "meter_data"
+        folder_name = "reports"
+
         if not os.path.exists(folder_name):
             os.mkdir(folder_name)
+
+        # Set the file path.
         file_path = os.path.join(folder_name, file_name)
 
         # Save the workbook object
         workbook.save(file_path)
 
+        # Current directory
+        curdir = os.getcwd()
+
+        # Define the datafile path
+        datafile_path = os.path.join(curdir, file_path)
+
         # Return the absolute path
-        return str(file_path if isinstance(file_path, Path) else os.path.abspath(file_path))
+        return datafile_path
 
     def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
         """Reuse an import file to create all the meter entries. This method is used
