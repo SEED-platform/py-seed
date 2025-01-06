@@ -247,7 +247,7 @@ class SeedClient(SeedClientWrapper):
         org = self.client.post(endpoint="organizations", json=payload)
         return org
 
-    def get_buildings(self) -> list[dict]:
+    def get_buildings(self, filters: Optional[dict] = {}) -> list[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
         # step through each page of the results
@@ -259,6 +259,7 @@ class SeedClient(SeedClientWrapper):
                 per_page=100,
                 page=i,
                 cycle=self.cycle_id,
+                **filters,
             )
         # print(f"number of buildings retrieved: {len(buildings)}")
 
@@ -1117,7 +1118,7 @@ class SeedClient(SeedClientWrapper):
                 return meter
         return None
 
-    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Optional[dict[Any, Any]]:
+    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str, connection_type="Imported") -> Optional[dict[Any, Any]]:
         """get or create a meter for a property view.
 
         Args:
@@ -1139,6 +1140,7 @@ class SeedClient(SeedClientWrapper):
                 "type": meter_type,
                 "source": source,
                 "source_id": source_id,
+                "connection_type": connection_type
             }
 
             meter = self.client.post(endpoint="properties_meters", url_args={"PK": property_view_id}, json=payload)
