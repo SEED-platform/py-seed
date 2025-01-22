@@ -1435,6 +1435,8 @@ class SeedClient(SeedClientWrapper):
         username: str,
         password: str,
         property_ids: list,
+        start_date: str,
+        end_date: str,
     ) -> str:
         """Download a PM custom download.
 
@@ -1442,6 +1444,8 @@ class SeedClient(SeedClientWrapper):
             username (str): username for Energystar Portfolio Manager
             password (str): password for Energystar Portfolio Manager
             property_ids (list): list of property ids to include in custom download
+            start_date (str): start date for custom download
+            end_date (str): end date for custom download
 
         Returns:
             str: path to the custom download workbook file
@@ -1449,7 +1453,13 @@ class SeedClient(SeedClientWrapper):
         import openpyxl
         response = self.client.post(
             endpoint="portfolio_manager_custom_download",
-            json={"username": username, "password": password, "property_ids": property_ids},
+            json={
+                "username": username,
+                "password": password,
+                "property_ids": property_ids,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
         )
 
         # The response is the Excel file content directly as bytes

@@ -390,7 +390,9 @@ class SeedClientTest(unittest.TestCase):
         self.seed_client.download_pm_custom_download(
             username=os.environ.get("SEED_PM_UN"),
             password=os.environ.get("SEED_PM_PW"),
-            property_ids=["5049100", "2C4840467"],
+            property_ids=["16731961", "22178849"],
+            start_date="2019-01-01",
+            end_date="2019-12-31",
         )
 
         # Create a real Excel workbook in memory for testing
@@ -412,7 +414,9 @@ class SeedClientTest(unittest.TestCase):
             result = self.seed_client.download_pm_custom_download(
                 username=os.environ.get("SEED_PM_UN"),
                 password=os.environ.get("SEED_PM_PW"),
-                property_ids=["5049100", "2C4840467"],
+                property_ids=["16731961", "22178849"],
+                start_date="2019-01-01",
+                end_date="2019-12-31",
             )
             
             # Verify the API call
@@ -421,7 +425,9 @@ class SeedClientTest(unittest.TestCase):
                 json={
                     "username": os.environ.get("SEED_PM_UN"),
                     "password": os.environ.get("SEED_PM_PW"),
-                    "property_ids": ["5049100", "2C4840467"],
+                    "property_ids": ["16731961", "22178849"],
+                    "start_date": "2019-01-01",
+                    "end_date": "2019-12-31",
                 },
             )
             
