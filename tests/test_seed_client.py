@@ -429,13 +429,31 @@ class SeedClientTest(unittest.TestCase):
         datafile_path = self.seed_client.download_pm_custom_download(
             username=os.environ.get("SEED_PM_UN"),
             password=os.environ.get("SEED_PM_PW"),
-            property_ids=["5049100", "2C4840467"],
+            property_ids=["16731961"],
+            start_date="2019-01-01",
+            end_date="2019-12-31",
         )
 
         # Assert
         assert Path(datafile_path).exists()
-        wb = load_workbook(filename = datafile_path)
-        assert wb.sheetnames == ['Meter Entries']
+        
+        print(f"Debug: Checking file at {datafile_path}")
+        try:
+            wb = load_workbook(filename=datafile_path)
+            print(f"Debug: Successfully loaded workbook")
+            print(f"Debug: Available sheets: {wb.sheetnames}")
+            
+            # Add detailed sheet info
+            for sheet in wb.sheetnames:
+                ws = wb[sheet]
+                print(f"Debug: Sheet '{sheet}' dimensions: {ws.dimensions}")
+                print(f"Debug: First few cell values: {[ws.cell(row=1, column=i).value for i in range(1,5)]}")
+            assert wb.sheetnames == ['Properties', 'Meters', 'Meter Entries', 'Errors']
+        except Exception as e:
+            print(f"Debug: Error loading workbook: {str(e)}")
+            print(f"Debug: File size: {Path(datafile_path).stat().st_size} bytes")
+            raise
+
 
         # Clean up
         Path(datafile_path).unlink()

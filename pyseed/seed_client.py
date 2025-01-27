@@ -1434,6 +1434,8 @@ class SeedClient(SeedClientWrapper):
         username: str,
         password: str,
         property_ids: list,
+        start_date: str,
+        end_date: str,
     ) -> str:
         """Download a PM custom download.
 
@@ -1441,35 +1443,77 @@ class SeedClient(SeedClientWrapper):
             username (str): username for Energystar Portfolio Manager
             password (str): password for Energystar Portfolio Manager
             property_ids (list): list of property ids to include in custom download
+            start_date (str): start date of meter readings
+            end_date (str): end date of meter readings
 
         Returns:
             str: path to the custom download workbook file
         """
+
+        print("We are starting the POST request to download the PM custom download")
         response = self.client.post(
             endpoint="portfolio_manager_custom_download",
-            json={"username": username, "password": password, "property_ids": property_ids},
+            json={"username": username,
+            "password": password,
+            "property_ids": property_ids,
+            "start_date": start_date,
+            "end_date": end_date
+            },
         )
 
         # The response is the Excel file content directly as bytes
-        workbook = load_workbook(io.BytesIO(response))
+        try:
+            print("DEBUG: Attempting to load workbook from response bytes.")
+            print(f"DEBUG: Response length: {len(response) if response else 'None'}")  # Check if response is empty
+            print(f"DEBUG: Response type: {type(response)}")
+            print(f"DEBUG: Response: {response}")
+            workbook = load_workbook(io.BytesIO(response))
+            print("DEBUG: Workbook loaded successfully.")
+        except Exception as e:
+            print(f"ERROR: Error loading workbook: {e}")
+            # If there is an error, you may want to inspect the 'response' variable.
+            # You could write it to a temporary file and see if it opens in Excel:
+            # with open("temp_response.xlsx", "wb") as f:
+            #     f.write(response)
+            raise
 
         # Filename
         file_name = f"{username}_custom_download.xlsx"
+        print(f"DEBUG: File name set to: {file_name}")
 
         if not os.path.exists(self.folder_name):
-            os.mkdir(self.folder_name)
+            print(f"DEBUG: Folder '{self.folder_name}' does not exist. Creating it.")
+            try:
+                os.mkdir(self.folder_name)
+                print(f"DEBUG: Folder '{self.folder_name}' created successfully.")
+            except OSError as e:
+                print(f"ERROR: Error creating folder '{self.folder_name}': {e}")
+                raise
+        else:
+            print(f"DEBUG: Folder '{self.folder_name}' already exists.")
 
         # Set the file path.
         file_path = os.path.join(self.folder_name, file_name)
+        print(f"DEBUG: File path set to: {file_path}")
 
         # Save the workbook object
-        workbook.save(file_path)
+        try:
+            workbook.save(file_path)
+            print(f"DEBUG: Workbook saved successfully to: {file_path}")
+        except Exception as e:
+            print(f"ERROR: Error saving workbook to '{file_path}': {e}")
+            # Option 1: Print the sheet names for further diagnosis
+            print(f"DEBUG: Sheet names in the workbook: {workbook.sheetnames}")
+            # Option 2 (Advanced): If you suspect an issue with specific content, iterate and try to save individual sheets (see explanation in previous response)
+            raise
 
         # Current directory
         curdir = os.getcwd()
+        print(f"DEBUG: Current working directory: {curdir}")
 
         # Define the datafile path
         datafile_path = os.path.join(curdir, file_path)
+        print(f"DEBUG: Datafile path set to: {datafile_path}")
 
         # Return the absolute path
         return datafile_path
