@@ -1436,6 +1436,7 @@ class SeedClient(SeedClientWrapper):
         property_ids: list,
         start_date: str,
         end_date: str,
+        folder_path: str = None  # New optional argument
     ) -> str:
         """Download a PM custom download.
 
@@ -1445,6 +1446,7 @@ class SeedClient(SeedClientWrapper):
             property_ids (list): list of property ids to include in custom download
             start_date (str): start date of meter readings
             end_date (str): end date of meter readings
+            folder_path (str, optional): folder path to save the custom download workbook file. Defaults to None.
 
         Returns:
             str: path to the custom download workbook file
@@ -1466,35 +1468,34 @@ class SeedClient(SeedClientWrapper):
             print("DEBUG: Attempting to load workbook from response bytes.")
             print(f"DEBUG: Response length: {len(response) if response else 'None'}")  # Check if response is empty
             print(f"DEBUG: Response type: {type(response)}")
-            print(f"DEBUG: Response: {response}")
             workbook = load_workbook(io.BytesIO(response))
             print("DEBUG: Workbook loaded successfully.")
         except Exception as e:
             print(f"ERROR: Error loading workbook: {e}")
-            # If there is an error, you may want to inspect the 'response' variable.
-            # You could write it to a temporary file and see if it opens in Excel:
-            # with open("temp_response.xlsx", "wb") as f:
-            #     f.write(response)
             raise
 
         # Filename
         file_name = f"{username}_custom_download.xlsx"
         print(f"DEBUG: File name set to: {file_name}")
 
-        if not os.path.exists(self.folder_name):
-            print(f"DEBUG: Folder '{self.folder_name}' does not exist. Creating it.")
-            try:
-                os.mkdir(self.folder_name)
-                print(f"DEBUG: Folder '{self.folder_name}' created successfully.")
-            except OSError as e:
-                print(f"ERROR: Error creating folder '{self.folder_name}': {e}")
-                raise
+        if folder_path:
+            file_path = os.path.join(folder_path, file_name)
+            print(f"DEBUG: Using provided save path: {file_path}")
         else:
-            print(f"DEBUG: Folder '{self.folder_name}' already exists.")
+            if not os.path.exists(self.folder_name):
+                print(f"DEBUG: Folder '{self.folder_name}' does not exist. Creating it.")
+                try:
+                    os.mkdir(self.folder_name)
+                    print(f"DEBUG: Folder '{self.folder_name}' created successfully.")
+                except OSError as e:
+                    print(f"ERROR: Error creating folder '{self.folder_name}': {e}")
+                    raise
+            else:
+                print(f"DEBUG: Folder '{self.folder_name}' already exists.")
 
-        # Set the file path.
-        file_path = os.path.join(self.folder_name, file_name)
-        print(f"DEBUG: File path set to: {file_path}")
+            # Set the file path.
+            file_path = os.path.join(self.folder_name, file_name)
+            print(f"DEBUG: File path set to: {file_path}")
 
         # Save the workbook object
         try:
@@ -1502,9 +1503,7 @@ class SeedClient(SeedClientWrapper):
             print(f"DEBUG: Workbook saved successfully to: {file_path}")
         except Exception as e:
             print(f"ERROR: Error saving workbook to '{file_path}': {e}")
-            # Option 1: Print the sheet names for further diagnosis
             print(f"DEBUG: Sheet names in the workbook: {workbook.sheetnames}")
-            # Option 2 (Advanced): If you suspect an issue with specific content, iterate and try to save individual sheets (see explanation in previous response)
             raise
 
         # Current directory
