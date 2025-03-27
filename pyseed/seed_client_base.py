@@ -30,6 +30,7 @@ from pyseed.exceptions import SEEDError
 # Constants (Should end with a slash)
 URLS = {
     "v3": {
+        "column_list_profiles": "/api/v3/column_list_profiles/",
         "column_mapping_profiles": "/api/v3/column_mapping_profiles/",
         "column_mapping_profiles_filter": "/api/v3/column_mapping_profiles/filter/",
         "columns": "/api/v3/columns/",
@@ -50,6 +51,7 @@ URLS = {
         "properties": "/api/v3/properties/",
         "properties_labels": "/api/v3/properties/labels/",
         "properties_search": "/api/v3/properties/search/",
+        "properties_filter_by_cycle": "/api/v3/properties/filter_by_cycle/",
         "property_views": "/api/v3/property_views/",
         "taxlots": "/api/v3/taxlots/",
         "upload": "/api/v3/upload/",
@@ -79,6 +81,8 @@ URLS = {
         "properties_meters": "/api/v3/properties/PK/meters/",
         # GET & POST with replaceable keys
         "properties_meters_reading": "/api/v3/properties/PK/meters/METER_PK/readings/",
+        # DELETES with replaceable keys
+        "delete_inventory": "api/v3/organizations/ORG_ID/inventory/",
     },
 }
 
@@ -241,7 +245,7 @@ class SEEDBaseClient(JSONAPI):
                     # For the delete cycles, the data returned have a status and a progress_key,
                     # but no progress_data. In lieu of updating SEED, this check is added
                     # specifically for this case
-                    error = status_field not in ["not-started", "success", "parsing"]
+                    error = status_field not in ["not-started", "success", "parsing", "running"]
                 elif status_field == "error":
                     error = True
                 elif status_field == "success":
@@ -255,18 +259,32 @@ class SEEDBaseClient(JSONAPI):
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()["progress_data"].get("status", None)
                 error = status_flag not in ["not-started", "success", "parsing"]
-            elif not any(
-                key in ["results", "readings", "data", "status", "id", "organizations", "sha", "users"] for key in response.json()
-            ):
-                # In some cases there is not a 'status' field, so check if there are
-                # any other keys in the response that depict a success:
-                # readings - this comes from meters
-                # data - lots of responses just return the data flag
-                # status - sometimes the status comes back as complete
-                # id - For some object creates, the response is simply the object back in JSON format with an ID field.
-                # organizations - this is the only key when returning the list of orgs
-                # sha - When parsing the version of SEED
-                error = True
+            # check if the first element is a list and the key is a castable ID
+            elif len(response.json()) > 0:
+                error_state = True
+                # get the first key -- based on ruff, this is the way to do it.
+                first_key = next(iter(response.json().keys()))
+                # if the first
+                if first_key in ["results", "readings", "data", "status", "id", "organizations", "sha", "users"]:
+                    # In some cases there is not a 'status' field, so check if there are
+                    # any other keys in the response that depict a success:
+                    # readings - this comes from meters
+                    # data - lots of responses just return the data flag
+                    # status - sometimes the status comes back as complete
+                    # id - For some object creates, the response is simply the object back in JSON format with an ID field.
+                    # organizations - this is the only key when returning the list of orgs
+                    # sha - When parsing the version of SEED
+                    error_state = False
+                else:
+                    # In the cross cycle readings, the data are returned as a dict of lists, where the key should be cycle ID
+                    try:
+                        int(first_key)
+                    except ValueError:
+                        error_state = True
+
+                    error_state = False
+
+                error = error_state
 
         elif not isinstance(response.json(), list):
             error = True
@@ -405,6 +423,7 @@ class CreateMixin:
             url = url + "/"
         url = _replace_url_args(url, url_args)
         response = super()._post(url=url, **kwargs)
+        print(response.json())
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
