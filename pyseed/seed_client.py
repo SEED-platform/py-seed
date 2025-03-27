@@ -323,6 +323,10 @@ class SeedClient(SeedClientWrapper):
         Returns:
             list: list of dictionaries of each property, grouped by primary key (matching criteria)
         """
+        # coerce IDs into integers
+        column_list_profile_id = int(column_list_profile_id)
+        cycle_ids = [int(cycle_id) for cycle_id in cycle_ids]
+
         payload = {"profile_id": column_list_profile_id, "cycle_ids": cycle_ids}
         return self.client.post(endpoint="properties_filter_by_cycle", json=payload)
 
