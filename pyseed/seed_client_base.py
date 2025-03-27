@@ -66,6 +66,7 @@ URLS = {
         "org_column_mapping_import_file": "api/v3/organizations/ORG_ID/column_mappings/",
         "portfolio_manager_property_download": "/api/v3/portfolio_manager/PK/download/",
         # PUTs with replaceable keys:
+        "column_list_profiles_pk_show_populated": "/api/v3/column_list_profiles/PK/show_populated/",
         "properties_update_with_buildingsync": "api/v3/properties/PK/update_with_building_sync/",
         "properties_upload_inventory_document": "api/v3/properties/PK/upload_inventory_document",
         "property_update_with_espm": "api/v3/properties/PK/update_with_espm/",

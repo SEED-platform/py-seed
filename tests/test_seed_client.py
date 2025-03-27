@@ -492,6 +492,7 @@ class SeedClientColumnListProfileTest(unittest.TestCase):
         # need to be updated to handle deleting data from multiple orgs if the tests are across
         # multiple orgs.
         cls.seed_client.delete_inventory()
+        # pass
 
     def test_create_column_list_profiles(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
@@ -549,6 +550,66 @@ class SeedClientColumnListProfileTest(unittest.TestCase):
         # call the method to create a column list profile based on populated fields
         result = self.seed_client.get_or_create_column_list_profile(column_list_profile_name, "Property", "List View Profile")
         assert result["name"] == column_list_profile_name
+
+    def test_trigger_only_populated_columns(self):
+        new_org = self.seed_client.create_organization("pyseed-column-list-tests", allow_exist=True)
+        self.seed_client.client.org_id = new_org["organization"]["id"]
+
+        # create a single building
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-api-integration-test",
+            date(2025, 1, 1),
+            date(2025, 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.seed_client.client.org_id,
+            "custom_id_1": "23456",
+            "address_line_1": "234 Ambling Road",
+            "city": "Beverly Hills",
+            "state": "CA",
+            "postal_code": "90210",
+            "property_name": "Test Building",
+            "property_type": None,
+            "gross_floor_area": None,
+            "conditioned_floor_area": None,
+            "occupied_floor_area": None,
+            "site_eui": None,
+            "site_eui_modeled": None,
+            "source_eui_weather_normalized": None,
+            "source_eui": None,
+            "source_eui_modeled": None,
+            "site_eui_weather_normalized": None,
+            "total_ghg_emissions": None,
+            "total_marginal_ghg_emissions": None,
+            "total_ghg_emissions_intensity": None,
+            "total_marginal_ghg_emissions_intensity": None,
+            "generation_date": None,
+            "recent_sale_date": None,
+            "release_date": None,
+        }
+
+        params = {"state": state, "cycle_id": cycle["id"]}
+
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+
+        # get all the column lists -- should be none
+        column_list_profile_name = "Test Profile"
+
+        # if the column list is empty, then create a new one that will be used
+        # with the only show populated
+        result = self.seed_client.get_or_create_column_list_profile(column_list_profile_name, "Property", "List View Profile")
+        assert result["name"] == column_list_profile_name
+
+        # call the method to create a column list profile based on populated fields
+        result = self.seed_client.trigger_show_only_populated(cycle["id"], column_list_profile_name, "Property", "List View Profile")
+        assert result["name"] == column_list_profile_name
+
+        # check that there are only 8 columns now, based on the data above (6 field [org not show] + created + updated)
+        assert len(result["columns"]) == 8
 
 
 @pytest.mark.integration

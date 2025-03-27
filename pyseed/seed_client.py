@@ -442,18 +442,56 @@ class SeedClient(SeedClientWrapper):
 
         return self.client.post(endpoint="column_list_profiles", json=payload)
 
-    # def trigger_show_only_populated(self, cycle_id: int, column_list_profile_name: str) -> dict:
-    #     """_summary_
+    def trigger_show_only_populated(
+        self,
+        cycle_id: int,
+        column_list_profile_name: str,
+        inventory_type: str = "Property",
+        profile_location: str = "List View Profile",
+    ) -> dict:
+        """Trigger the only show populated columns for the given cycle and column list profile name. If the column list profile name does not exist, then it will create a new one.
 
-    #     Args:
-    #         cycle_id (int): _description_
+        Args:
+            cycle_id (int): ID of the cycle to run the show only populated on
+            name (str): Name of the column list profile to create
+            inventory_type (str, optional): Property or Tax Lot. Defaults to "Property".
+            profile_location (str, optional): Detail View Profile or List View Profile. Defaults to "List View Profile".
 
-    #     Returns:
-    #         dict: _description_
-    #     """
-    #     # {"cycle_id": 13, "inventory_type": "Property"}
-    #     # column_list_profiles/1/show_populated/
-    #     return None
+        Returns:
+            dict: dict of the updated column list profile
+        """
+        # get the ID of the column_list_profile_name
+        column_list_profiles = self.get_column_list_profiles()
+        column_list_profile_id = None
+        for profile in column_list_profiles:
+            if profile["name"] == column_list_profile_name:
+                column_list_profile_id = profile["id"]
+                break
+
+        if not column_list_profile_id:
+            # create a default column list profile
+            column_list_profile = self.get_or_create_column_list_profile(column_list_profile_name, inventory_type, profile_location)
+            column_list_profile_id = column_list_profile["id"]
+
+        if not column_list_profile_id:
+            raise ValueError(f"Could not find column list profile with name {column_list_profile_name} to run show only populated")
+
+        # {"cycle_id": 13, "inventory_type": "Property"}
+        # column_list_profiles/PK/show_populated/
+        payload: dict[str, Any] = {
+            "cycle_id": cycle_id,
+            "inventory_type": inventory_type,
+        }
+        result = self.client.put(
+            None,
+            required_pk=False,
+            endpoint="column_list_profiles_pk_show_populated",
+            json=payload,
+            url_args={"PK": column_list_profile_id},
+        )
+        print(result)
+
+        return result
 
     def search_buildings(
         self,
