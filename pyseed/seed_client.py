@@ -412,7 +412,7 @@ class SeedClient(SeedClientWrapper):
                     return profile
 
         # if here, then we will need to create a new column list profile
-        payload = {}
+        payload: dict[str, Any] = {}
         payload["name"] = name
         payload["inventory_type"] = inventory_type
         payload["profile_location"] = profile_location
@@ -420,7 +420,7 @@ class SeedClient(SeedClientWrapper):
             # get the default columns
             seed_columns = self.get_columns()
             # grab only the columns that are on the PropertyState and named pm_property_id, address_line_1, and on the TaxLotState named jurisdiction_tax_lot_id
-            column_list = []
+            column_list: list[dict] = []
             for add_column in seed_columns["columns"]:
                 # This should be extended as needed. Not sure how to find the best default columns, other than just running the 'trigger_show_only_populated' method
                 if add_column["table_name"] == "PropertyState" and add_column["column_name"] in ["pm_property_id", "address_line_1"]:
