@@ -34,7 +34,7 @@ class SeedClientWrapper:
         """wrapper around SEEDReadWriteClient.
 
         Args:
-            organization_id (int): _description_
+            organization_id (int): SEED organization ID
             connection_params (dict, optional): parameters to connect to SEED. Defaults to None. If using, then must contain the following:
                 {
                     "name": "not used - can be any string",
@@ -334,8 +334,8 @@ class SeedClient(SeedClientWrapper):
         """Return the list of column list profiles that are available for the organization
 
         Args:
-            inventory_type (str, optional): _description_. Defaults to None.
-            profile_location (str, optional): _description_. Defaults to None.
+            inventory_type (str, optional): Property or Tax Lot. Defaults to "Property".
+            profile_location (str, optional): Detail View Profile or List View Profile. Defaults to "List View Profile".
 
         Returns:
             dict: {
@@ -626,7 +626,7 @@ class SeedClient(SeedClientWrapper):
             label_name (str): Name of the label to delete.
 
         Returns:
-            dict: _description_
+            dict: info on the deleted label
         """
         label = self.get_labels(filter_by_name=[label_name])
         if len(label) != 1:
@@ -1163,8 +1163,8 @@ class SeedClient(SeedClientWrapper):
         an already existing profile if it is there.
 
         Args:
-            mapping_profile_name (str): _description_
-            mapping_file (str): _description_
+            mapping_profile_name (str): Name of the mapping profile that will be created or updated.
+            mapping_file (str): Path to the mapping file will be used to create the mapping profile.
 
         Returns:
             dict: {
