@@ -424,7 +424,6 @@ class CreateMixin:
             url = url + "/"
         url = _replace_url_args(url, url_args)
         response = super()._post(url=url, **kwargs)
-        print(response.json())
         self._check_response(response, **kwargs)
         return self._get_result(response, data_name=data_name, **kwargs)
 
