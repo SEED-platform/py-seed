@@ -16,7 +16,7 @@ def add_pk(url, pk, required=True, slash=False):
     if required and not pk:
         raise APIClientError("id/pk must be supplied")
     if pk:
-        if isinstance(pk, str) and not pk.isdigit() or (not isinstance(pk, (int, str)) or int(pk) < 0):
+        if (isinstance(pk, str) and not pk.isdigit()) or (not isinstance(pk, (int, str)) or int(pk) < 0):
             raise TypeError("id/pk must be a positive integer")
         url = f"{url}/{pk}" if not url.endswith("/") else f"{url}{pk}"
     # Only add the trailing slash if it's not already there
