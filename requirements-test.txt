@@ -1,6 +1,6 @@
 -r requirements.txt
 mock==5.2.0
-mypy==1.15.0
+mypy==1.16.0
 pre-commit==4.2.0
 pytest==8.4.0
 pytest-cov==6.1.1
