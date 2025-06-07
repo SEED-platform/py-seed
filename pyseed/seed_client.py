@@ -1725,6 +1725,9 @@ class SeedClient(SeedClientWrapper):
         # save the mappings, call system matching/geocoding
         result = self.start_system_matching_and_geocoding(import_file_id)
         progress_data = result.get("progress_data", None)
+        if progress_data is None:
+            raise ValueError("progress_data is None, unable to retrieve progress_key")
+
         progress_key = progress_data.get("progress_key", None)
 
         # wait until upload is complete
