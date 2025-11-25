@@ -63,10 +63,14 @@ URLS = {
         "import_files_start_save_data_pk": "/api/v3/import_files/PK/start_save_data/",
         "org_column_mapping_import_file": "api/v3/organizations/ORG_ID/column_mappings/",
         "portfolio_manager_property_download": "/api/v3/portfolio_manager/PK/download/",
+        "portfolio_manager_meter_download": "/api/v3/portfolio_manager/meter_download/",
+        "update_org_access_level_names": "/api/v3/organizations/PK/access_levels/access_level_names/",
+        "start_org_access_level_instances_file_save": "/api/v3/organizations/PK/access_levels/start_save_data/",
         # PUTs with replaceable keys:
         "properties_update_with_buildingsync": "api/v3/properties/PK/update_with_building_sync/",
         "properties_upload_inventory_document": "api/v3/properties/PK/upload_inventory_document",
         "property_update_with_espm": "api/v3/properties/PK/update_with_espm/",
+        "upload_org_access_level_instances_file": "/api/v3/organizations/PK/access_levels/importer/",
         # GETs with replaceable keys
         "analyses_views": "/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/",
         "audit_template_building_xml": "/api/v3/audit_template/PK/get_building_xml",
