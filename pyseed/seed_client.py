@@ -1396,6 +1396,24 @@ class SeedClient(SeedClientWrapper):
         )
         return readings
 
+    def create_element(self, property_id: int, data: list) -> dict:
+        """Upsert element for a property with.
+
+        Args:
+            property_id (int): property id
+            data (list): dictionary of element data
+
+        Returns:
+            dict: element object
+        """
+        # get the element data for the property
+        element = self.client.post(
+            endpoint="properties_elements",
+            url_args={"PK": property_id},
+            json=data,
+        )
+        return element
+
     def get_meter_data(self, property_id, interval: str = "Exact", excluded_meter_ids: list = []):
         """Return the meter data from the property.
 

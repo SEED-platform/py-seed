@@ -80,6 +80,7 @@ URLS = {
         "properties_analyses": "/api/v3/properties/PK/analyses/",
         "properties_meter_usage": "/api/v3/properties/PK/meter_usage/",
         "properties_meters": "/api/v3/properties/PK/meters/",
+        "properties_elements": "/api/v3/properties/PK/elements/",
         # GET & POST with replaceable keys
         "properties_meters_reading": "/api/v3/properties/PK/meters/METER_PK/readings/",
         # DELETES with replaceable keys
