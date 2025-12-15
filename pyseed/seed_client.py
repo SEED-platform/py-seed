@@ -256,7 +256,7 @@ class SeedClient(SeedClientWrapper):
         org = self.client.post(endpoint="organizations", json=payload)
         return org
 
-    def get_buildings(self, filters: Optional[dict] = {}) -> list[dict]:
+    def get_buildings(self, filters: dict = {}) -> list[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
         # step through each page of the results
