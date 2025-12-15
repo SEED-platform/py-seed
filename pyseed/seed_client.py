@@ -1336,7 +1336,14 @@ class SeedClient(SeedClientWrapper):
                 return meter
         return None
 
-    def get_or_create_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str, connection_type="Imported") -> Optional[dict[Any, Any]]:
+    def get_or_create_meter(
+        self,
+        property_view_id: int,
+        meter_type: str,
+        source: str,
+        source_id: str,
+        connection_type="Imported",
+    ) -> Optional[dict[Any, Any]]:
         """get or create a meter for a property view.
 
         Args:
@@ -1358,7 +1365,7 @@ class SeedClient(SeedClientWrapper):
                 "type": meter_type,
                 "source": source,
                 "source_id": source_id,
-                "connection_type": connection_type
+                "connection_type": connection_type,
             }
 
             meter = self.client.post(endpoint="properties_meters", url_args={"PK": property_view_id}, json=payload)
