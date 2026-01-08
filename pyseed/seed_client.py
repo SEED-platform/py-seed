@@ -246,7 +246,7 @@ class SeedClient(SeedClientWrapper):
         org = self.client.post(endpoint="organizations", json=payload)
         return org
 
-    def get_buildings(self, filters: Optional[dict] = {}) -> list[dict]:
+    def get_buildings(self, filters: dict = {}) -> list[dict]:
         total_qry = self.client.list(endpoint="properties", data_name="pagination", per_page=100)
 
         # step through each page of the results
@@ -1367,7 +1367,7 @@ class SeedClient(SeedClientWrapper):
         # Return the report templates
         return response
 
-    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict, to_filepath) -> str:
+    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict, to_filepath) -> None:
         """Download a PM report.
 
         Args:
@@ -1375,8 +1375,6 @@ class SeedClient(SeedClientWrapper):
             pm_password (str): password for Energystar Portfolio Manager
             pm_template (dict): the full template object dict returned from get_pm_report_template_names
 
-        Sample return shown below.
-        Returns the path to the report template workbook file
         """
         response = self.client.post(
             endpoint="portfolio_manager_report",
