@@ -1647,7 +1647,7 @@ class SeedClient(SeedClientWrapper):
         for prop in properties:
             row = []
             for key in header_row:
-                row.append(prop[key])
+                row.append(prop.get(key))
             if sheet:
                 sheet.append(row)
 
