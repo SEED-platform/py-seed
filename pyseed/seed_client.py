@@ -1911,7 +1911,7 @@ class SeedClient(SeedClientWrapper):
         password: str,
         pm_property_ids: list[str],
         start_date: date,
-        endtime_date: date,
+        end_date: date,
         save_file_name: Path,
     ) -> dict:
         """Connect to portfolio manager and download an individual meters data in Excel format
@@ -1921,7 +1921,7 @@ class SeedClient(SeedClientWrapper):
             password (str): ESPM password
             pm_property_ids (list(str)): property whoms meters to download
             start_date (date): start_date from meter readings
-            endtime_date (date): end_date from meter readings
+            end_date (date): end_date from meter readings
             save_file_name (Path): Location to save the file, preferably an absolute path
 
         Returns:
@@ -1937,7 +1937,7 @@ class SeedClient(SeedClientWrapper):
                 "password": password,
                 "property_ids": pm_property_ids,
                 "start_date": start_date.strftime("%m/%d/%Y"),
-                "end_date": endtime_date.strftime("%m/%d/%Y"),
+                "end_date": end_date.strftime("%m/%d/%Y"),
             },
         )
         result = {"status": "error"}
