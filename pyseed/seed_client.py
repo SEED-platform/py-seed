@@ -2049,7 +2049,7 @@ class SeedClient(SeedClientWrapper):
                 endpoint="upload_org_access_level_instances_file",
                 files={
                     "file": (
-                        file,
+                        Path(file).name,
                         f,
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     ),
