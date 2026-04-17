@@ -633,7 +633,7 @@ class SeedClientMultiCycleTest(unittest.TestCase):
 
     def test_create_element(self):
         # Test the create_element method by creating an element for a property
-        
+
         # First, create a property to attach the element to
         completion_date = "02/02/2023"
         year = "2023"
@@ -677,8 +677,8 @@ class SeedClientMultiCycleTest(unittest.TestCase):
                 "name": "Rooftop Unit 123",
                 "refrigerant_type": "R-410A",
                 "capacity_tons": 15.0,
-                "efficiency_eer": 12.2
-            }
+                "efficiency_eer": 12.2,
+            },
         }
 
         # Test the create_element method
