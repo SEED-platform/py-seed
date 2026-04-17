@@ -1603,14 +1603,20 @@ class SeedClient(SeedClientWrapper):
         # Return the report templates
         return response
 
-    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict, to_filepath) -> None:
+    def download_pm_report(
+        self, pm_username: str, pm_password: str, pm_template: dict, to_filepath: Union[str, Path]
+    ) -> None:
         """Download a PM report.
 
         Args:
             pm_username (str): username for Energystar Portfolio Manager
             pm_password (str): password for Energystar Portfolio Manager
             pm_template (dict): the full template object dict returned from get_pm_report_template_names
+            to_filepath (Union[str, Path]): Destination file path where the generated XLSX report
+                will be saved.
 
+        Returns:
+            None: This method saves the report to ``to_filepath`` and does not return a value.
         """
         response = self.client.post(
             endpoint="portfolio_manager_report",
