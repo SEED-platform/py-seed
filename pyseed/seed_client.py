@@ -1604,7 +1604,11 @@ class SeedClient(SeedClientWrapper):
         return response
 
     def download_pm_report(
-        self, pm_username: str, pm_password: str, pm_template: dict, to_filepath: Union[str, Path]
+        self,
+        pm_username: str,
+        pm_password: str,
+        pm_template: dict,
+        to_filepath: Union[str, Path],
     ) -> None:
         """Download a PM report.
 
