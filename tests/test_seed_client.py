@@ -631,6 +631,63 @@ class SeedClientMultiCycleTest(unittest.TestCase):
     def teardown_class(cls):
         cls.seed_client.delete_inventory()
 
+    def test_create_element(self):
+        # Test the create_element method by creating an element for a property
+
+        # First, create a property to attach the element to
+        completion_date = "02/02/2023"
+        year = "2023"
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-element-test",
+            date(int(year), 1, 1),
+            date(int(year), 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.seed_client.client.org_id,
+            "custom_id_1": "element-test-building-123ABC",
+            "address_line_1": "456 Element Test St",
+            "city": "Element City",
+            "state": "CA",
+            "postal_code": "90211",
+            "property_name": "Element Test Building",
+            "extra_data": {"pathway": "new", "completion_date": completion_date},
+        }
+
+        params = {"state": state, "cycle_id": cycle["id"]}
+
+        # Create the building first
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+        property_view_id = result["view"]["id"]
+
+        # Get the property ID (not view ID) for the element creation
+        property_result = self.seed_client.get_property_view(property_view_id)
+        property_id = property_result["property_id"]
+
+        # Create test element data
+        # Element Data needs an id, a "code", and then extra data for the element itself
+        # Note: extra_data must be a flat JSON object, not a list
+        element_data = {
+            "id": "RTU-123",
+            "code": "D3050",
+            "extra_data": {
+                "name": "Rooftop Unit 123",
+                "refrigerant_type": "R-410A",
+                "capacity_tons": 15.0,
+                "efficiency_eer": 12.2,
+            },
+        }
+
+        # Test the create_element method
+        element_result = self.seed_client.create_element(property_id, element_data)
+
+        # Verify the element was created successfully
+        assert element_result is not None
+        # Additional assertions can be added based on the actual API response structure
+
     def test_upload_multiple_cycles_and_read_back(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
