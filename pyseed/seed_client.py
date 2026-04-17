@@ -1403,12 +1403,12 @@ class SeedClient(SeedClientWrapper):
         )
         return readings
 
-    def create_element(self, property_id: int, data: list) -> dict:
-        """Upsert element for a property with.
+    def create_element(self, property_id: int, data: dict[Any, Any]) -> dict:
+        """Upsert an element for a property.
 
         Args:
             property_id (int): property id
-            data (list): dictionary of element data
+            data (dict[Any, Any]): dictionary of element data
 
         Returns:
             dict: element object
