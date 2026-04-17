@@ -1677,10 +1677,9 @@ class SeedClient(SeedClientWrapper):
         self,
         dataset_name: str,
         datafile: str,
-        **kwargs,
+        datafile_type: str = "PM Meter Usage",
     ) -> dict:
         # upload file
-        datafile_type = kwargs.pop("datafile_type", "PM Meter Usage")
         dataset = self.get_or_create_dataset(dataset_name)
         result = self.upload_datafile(dataset["id"], datafile, datafile_type)
         import_file_id = result["import_file_id"]
