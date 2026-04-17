@@ -12,21 +12,23 @@ import pytest
 
 from pyseed.seed_client import SeedClient
 
+# This is a default org ID, which will be overridden in the tests.
+# It really isn't used anymore, but keeping here for now.
+ORGANIZATION_ID = 1
+
 
 @pytest.mark.integration
 class SeedBaseTest(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         """setup for all of the tests below"""
-        cls.organization_id = 1
-
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path("seed-config.json")
-        cls.seed_client = SeedClient(cls.organization_id, connection_config_filepath=config_file)
-
-        cls.organization_id = 1
+        cls.seed_client = SeedClient(ORGANIZATION_ID, connection_config_filepath=config_file)
+        new_org = cls.seed_client.create_organization("pyseed-base-tests", allow_exist=True)
+        cls.seed_client.client.org_id = new_org["organization"]["id"]
 
     @classmethod
     def teardown_class(cls):

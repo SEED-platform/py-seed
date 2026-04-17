@@ -12,7 +12,8 @@ import pytest
 
 from pyseed.seed_client import SeedClient
 
-# For CI the test org is 1, but for local testing it may be different
+# This is a default org ID, which will be overridden in the tests.
+# It really isn't used anymore, but keeping here for now.
 ORGANIZATION_ID = 1
 
 
@@ -25,13 +26,14 @@ class SeedClientTest(unittest.TestCase):
         if not cls.output_dir.exists():
             cls.output_dir.mkdir()
 
-        cls.organization_id = ORGANIZATION_ID
-
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path("seed-config.json")
-        cls.seed_client = SeedClient(cls.organization_id, connection_config_filepath=config_file)
+        cls.seed_client = SeedClient(ORGANIZATION_ID, connection_config_filepath=config_file)
+
+        new_org = cls.seed_client.create_organization("pyseed-tests", allow_exist=True)
+        cls.seed_client.client.org_id = new_org["organization"]["id"]
 
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
@@ -76,8 +78,8 @@ class SeedClientTest(unittest.TestCase):
         assert len(buildings) == 10
 
     def test_get_pm_report_template_names(self):
-        pm_un = os.environ.get("SEED_PM_UN", False)
-        pm_pw = os.environ.get("SEED_PM_PW", False)
+        pm_un = os.environ.get("SEED_PM_UN", None)
+        pm_pw = os.environ.get("SEED_PM_PW", None)
         if not pm_un or not pm_pw:
             self.fail(f"Somehow PM test was initiated without {pm_un} or {pm_pw} in the environment")
         response = self.seed_client.get_pm_report_template_names(pm_un, pm_pw)
@@ -126,7 +128,7 @@ class SeedClientTest(unittest.TestCase):
         )
 
         state = {
-            "organization_id": self.organization_id,
+            "organization_id": self.seed_client.client.org_id,
             "custom_id_1": "123456",
             "address_line_1": "123 Testing St",
             "city": "Beverly Hills",
@@ -396,6 +398,221 @@ class SeedClientTest(unittest.TestCase):
 
 
 @pytest.mark.integration
+class SeedClientDeleteTest(unittest.TestCase):
+    @classmethod
+    def setup_class(cls):
+        """setup for all of the tests below"""
+        cls.output_dir = Path("tests/output")
+        if not cls.output_dir.exists():
+            cls.output_dir.mkdir()
+
+        # The seed-config.json file needs to be added to the project root directory
+        # If running SEED locally for testing, then you can run the following from your SEED root directory:
+        #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
+        config_file = Path("seed-config.json")
+        cls.seed_client = SeedClient(ORGANIZATION_ID, connection_config_filepath=config_file)
+
+    def test_delete_inventory(self):
+        # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
+        # data end up in the correct cycle
+        new_org = self.seed_client.create_organization("pyseed-delete-tests", allow_exist=True)
+        self.seed_client.client.org_id = new_org["organization"]["id"]
+
+        # create a single building
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-api-integration-test",
+            date(2025, 1, 1),
+            date(2025, 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.seed_client.client.org_id,
+            "custom_id_1": "123456",
+            "address_line_1": "123 Testing St",
+            "city": "Beverly Hills",
+            "state": "CA",
+            "postal_code": "90210",
+            "property_name": "Test Building",
+            "property_type": None,
+            "gross_floor_area": None,
+            "conditioned_floor_area": None,
+            "occupied_floor_area": None,
+            "site_eui": None,
+            "site_eui_modeled": None,
+            "source_eui_weather_normalized": None,
+            "source_eui": None,
+            "source_eui_modeled": None,
+            "site_eui_weather_normalized": None,
+            "total_ghg_emissions": None,
+            "total_marginal_ghg_emissions": None,
+            "total_ghg_emissions_intensity": None,
+            "total_marginal_ghg_emissions_intensity": None,
+            "generation_date": None,
+            "recent_sale_date": None,
+            "release_date": None,
+        }
+
+        params = {"state": state, "cycle_id": cycle["id"]}
+
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+
+        # verify that there is a single building in the inventory
+        properties = self.seed_client.get_buildings()
+        assert len(properties) == 1
+
+        # test deleting all the inventory
+        self.seed_client.delete_inventory()
+
+        # verify that there are no buildings in the inventory
+        properties = self.seed_client.get_buildings()
+        assert len(properties) == 0
+
+
+@pytest.mark.integration
+class SeedClientColumnListProfileTest(unittest.TestCase):
+    @classmethod
+    def setup_class(cls):
+        """setup for all of the tests below"""
+        cls.output_dir = Path("tests/output")
+        if not cls.output_dir.exists():
+            cls.output_dir.mkdir()
+
+        # The seed-config.json file needs to be added to the project root directory
+        # If running SEED locally for testing, then you can run the following from your SEED root directory:
+        #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
+        config_file = Path("seed-config.json")
+        cls.seed_client = SeedClient(ORGANIZATION_ID, connection_config_filepath=config_file)
+
+    @classmethod
+    def teardown_class(cls):
+        # remove all the inventory (buildings and taxlots) from the set organization. This might
+        # need to be updated to handle deleting data from multiple orgs if the tests are across
+        # multiple orgs.
+        cls.seed_client.delete_inventory()
+        # pass
+
+    def test_create_column_list_profiles(self):
+        # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
+        # data end up in the correct cycle
+        new_org = self.seed_client.create_organization("pyseed-column-list-tests", allow_exist=True)
+        self.seed_client.client.org_id = new_org["organization"]["id"]
+
+        # create a single building
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-api-integration-test",
+            date(2025, 1, 1),
+            date(2025, 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.seed_client.client.org_id,
+            "custom_id_1": "123456",
+            "address_line_1": "123 Testing St",
+            "city": "Beverly Hills",
+            "state": "CA",
+            "postal_code": "90210",
+            "property_name": "Test Building",
+            "property_type": None,
+            "gross_floor_area": None,
+            "conditioned_floor_area": None,
+            "occupied_floor_area": None,
+            "site_eui": None,
+            "site_eui_modeled": None,
+            "source_eui_weather_normalized": None,
+            "source_eui": None,
+            "source_eui_modeled": None,
+            "site_eui_weather_normalized": None,
+            "total_ghg_emissions": None,
+            "total_marginal_ghg_emissions": None,
+            "total_ghg_emissions_intensity": None,
+            "total_marginal_ghg_emissions_intensity": None,
+            "generation_date": None,
+            "recent_sale_date": None,
+            "release_date": None,
+        }
+
+        params = {"state": state, "cycle_id": cycle["id"]}
+
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+
+        # get all the column lists -- should be none
+        column_list_profile_name = "Test Profile"
+        column_list_profiles = self.seed_client.get_column_list_profiles()
+        # this might return nothing, so just check if it is a list
+        assert isinstance(column_list_profiles, list)
+
+        # call the method to create a column list profile based on populated fields
+        result = self.seed_client.get_or_create_column_list_profile(column_list_profile_name, "Property", "List View Profile")
+        assert result["name"] == column_list_profile_name
+
+    def test_trigger_only_populated_columns(self):
+        new_org = self.seed_client.create_organization("pyseed-column-list-tests", allow_exist=True)
+        self.seed_client.client.org_id = new_org["organization"]["id"]
+
+        # create a single building
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-api-integration-test",
+            date(2025, 1, 1),
+            date(2025, 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.seed_client.client.org_id,
+            "custom_id_1": "23456",
+            "address_line_1": "234 Ambling Road",
+            "city": "Beverly Hills",
+            "state": "CA",
+            "postal_code": "90210",
+            "property_name": "Test Building",
+            "property_type": None,
+            "gross_floor_area": None,
+            "conditioned_floor_area": None,
+            "occupied_floor_area": None,
+            "site_eui": None,
+            "site_eui_modeled": None,
+            "source_eui_weather_normalized": None,
+            "source_eui": None,
+            "source_eui_modeled": None,
+            "site_eui_weather_normalized": None,
+            "total_ghg_emissions": None,
+            "total_marginal_ghg_emissions": None,
+            "total_ghg_emissions_intensity": None,
+            "total_marginal_ghg_emissions_intensity": None,
+            "generation_date": None,
+            "recent_sale_date": None,
+            "release_date": None,
+        }
+
+        params = {"state": state, "cycle_id": cycle["id"]}
+
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+
+        # get all the column lists -- should be none
+        column_list_profile_name = "Test Profile"
+
+        # if the column list is empty, then create a new one that will be used
+        # with the only show populated
+        result = self.seed_client.get_or_create_column_list_profile(column_list_profile_name, "Property", "List View Profile")
+        assert result["name"] == column_list_profile_name
+
+        # call the method to create a column list profile based on populated fields
+        result = self.seed_client.trigger_show_only_populated(cycle["id"], column_list_profile_name, "Property", "List View Profile")
+        assert result["name"] == column_list_profile_name
+
+        # check that there are only 8 columns now, based on the data above (6 field [org not show] + created + updated)
+        assert len(result["columns"]) == 8
+
+
+@pytest.mark.integration
 class SeedClientMultiCycleTest(unittest.TestCase):
     @classmethod
     def setup_class(cls):
@@ -404,25 +621,77 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         if not cls.output_dir.exists():
             cls.output_dir.mkdir()
 
-        # Use the default organization to create the client,
-        # but this will be overwritten in the test class below.
-        cls.organization_id = ORGANIZATION_ID
-
         # The seed-config.json file needs to be added to the project root directory
         # If running SEED locally for testing, then you can run the following from your SEED root directory:
         #    ./manage.py create_test_user_json --username user@seed-platform.org --file ../py-seed/seed-config.json --pyseed
         config_file = Path("seed-config.json")
-        cls.seed_client = SeedClient(cls.organization_id, connection_config_filepath=config_file)
+        cls.seed_client = SeedClient(ORGANIZATION_ID, connection_config_filepath=config_file)
 
     @classmethod
     def teardown_class(cls):
-        # remove all of the test buildings?
-        pass
+        cls.seed_client.delete_inventory()
+
+    def test_create_element(self):
+        # Test the create_element method by creating an element for a property
+
+        # First, create a property to attach the element to
+        completion_date = "02/02/2023"
+        year = "2023"
+        cycle = self.seed_client.get_or_create_cycle(
+            "pyseed-element-test",
+            date(int(year), 1, 1),
+            date(int(year), 12, 31),
+            set_cycle_id=True,
+        )
+
+        state = {
+            "organization_id": self.seed_client.client.org_id,
+            "custom_id_1": "element-test-building-123ABC",
+            "address_line_1": "456 Element Test St",
+            "city": "Element City",
+            "state": "CA",
+            "postal_code": "90211",
+            "property_name": "Element Test Building",
+            "extra_data": {"pathway": "new", "completion_date": completion_date},
+        }
+
+        params = {"state": state, "cycle_id": cycle["id"]}
+
+        # Create the building first
+        result = self.seed_client.create_building(params=params)
+        assert result["status"] == "success"
+        assert result["view"]["id"] is not None
+        property_view_id = result["view"]["id"]
+
+        # Get the property ID (not view ID) for the element creation
+        property_result = self.seed_client.get_property_view(property_view_id)
+        property_id = property_result["property_id"]
+
+        # Create test element data
+        # Element Data needs an id, a "code", and then extra data for the element itself
+        # Note: extra_data must be a flat JSON object, not a list
+        element_data = {
+            "id": "RTU-123",
+            "code": "D3050",
+            "extra_data": {
+                "name": "Rooftop Unit 123",
+                "refrigerant_type": "R-410A",
+                "capacity_tons": 15.0,
+                "efficiency_eer": 12.2,
+            },
+        }
+
+        # Test the create_element method
+        element_result = self.seed_client.create_element(property_id, element_data)
+
+        # Verify the element was created successfully
+        assert element_result is not None
+        # Additional assertions can be added based on the actual API response structure
 
     def test_upload_multiple_cycles_and_read_back(self):
         # Get/create the new cycle and upload the data. Make sure to set the cycle ID so that the
         # data end up in the correct cycle
-        new_org = self.seed_client.create_organization("pyseed-multi-cycle")
+        new_org = self.seed_client.create_organization("pyseed-multi-cycle", allow_exist=True)
         self.seed_client.client.org_id = new_org["organization"]["id"]
 
         for year_start, year_end in [(2020, 2021), (2021, 2022), (2022, 2023)]:
@@ -451,7 +720,7 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         assert len(building) == 1
         property_view_id = building[0]["id"]
 
-        # retrieve cross cycle
+        # retrieve cross cycle data for a single building
         building_cycles = self.seed_client.get_cross_cycle_data(property_view_id)
 
         assert len(building_cycles) == 3

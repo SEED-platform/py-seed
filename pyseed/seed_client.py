@@ -33,7 +33,7 @@ class SeedClientWrapper:
         """wrapper around SEEDReadWriteClient.
 
         Args:
-            organization_id (int): _description_
+            organization_id (int): SEED organization ID
             connection_params (dict, optional): parameters to connect to SEED. Defaults to None. If using, then must contain the following:
                 {
                     "name": "not used - can be any string",
@@ -201,11 +201,12 @@ class SeedClient(SeedClientWrapper):
 
         return None
 
-    def create_organization(self, org_name: str) -> dict:
+    def create_organization(self, org_name: str, allow_exist: bool = False) -> dict:
         """Create an organization with the given name
 
         Args:
             org_name (str): name of the organization to create
+            allow_exist (bool, optional): if True, then do not raise an exception if exists. Defaults to False.
 
         Returns:
             dict: {
@@ -235,7 +236,15 @@ class SeedClient(SeedClientWrapper):
         orgs = self.get_organizations()
         for org in orgs:
             if org["name"].lower() == org_name.lower():
-                raise Exception(f"Organization '{org_name}' already exists")
+                if allow_exist:
+                    # then match the response of the existing org
+                    return {
+                        "status": "success",
+                        "message": "Organization already exists",
+                        "organization": org,
+                    }
+                else:
+                    raise Exception(f"Organization '{org_name}' already exists")
 
         user_id = self.get_user_id(self.client.username)
 
@@ -304,12 +313,197 @@ class SeedClient(SeedClientWrapper):
         # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
         return self.client.get(property_view_id, endpoint="properties", data_name="properties")
 
+    def get_properties_by_cycles(self, column_list_profile_id: int, cycle_ids: list[int]) -> list:
+        """_summary_
+
+        Args:
+            column_list_profile_id (int): ID of the column list profile to use, which defines the columns to return
+            cycle_ids (list[int]): list of the cycle IDs to filter on
+
+        Returns:
+            list: list of dictionaries of each property, grouped by primary key (matching criteria)
+        """
+        # coerce IDs into integers
+        column_list_profile_id = int(column_list_profile_id)
+        cycle_ids = [int(cycle_id) for cycle_id in cycle_ids]
+
+        payload = {"profile_id": column_list_profile_id, "cycle_ids": cycle_ids}
+        return self.client.post(endpoint="properties_filter_by_cycle", json=payload)
+
+    def get_column_list_profiles(self, inventory_type: Optional[str] = None, profile_location: Optional[str] = None) -> dict:
+        """Return the list of column list profiles that are available for the organization
+
+        Args:
+            inventory_type (str, optional): Property or Tax Lot. Defaults to "Property".
+            profile_location (str, optional): Detail View Profile or List View Profile. Defaults to "List View Profile".
+
+        Returns:
+            dict: {
+                "status": "success",
+                "data": [
+                    {
+                    "id": 2,
+                    "name": "test",
+                    "profile_location": "List View Profile",
+                    "inventory_type": "Property",
+                    "columns": [
+                        {
+                        "id": 1367,
+                        "pinned": true,
+                        "order": 2,
+                        "column_name": "pm_property_id",
+                        "table_name": "PropertyState",
+                        }, ..
+                    ]
+                    },
+                    ...
+        """
+        payload = {}
+        if inventory_type:
+            payload["inventory_type"] = inventory_type
+        if profile_location:
+            payload["profile_location"] = profile_location
+
+        # do a check on the strings for inventory type and profile location, only if not none
+        if inventory_type and inventory_type not in ["Property", "Tax Lot"]:
+            raise ValueError("inventory_type must be either 'Property' or 'Tax Lot'")
+        if profile_location and profile_location not in ["List View Profile", "Detail View Profile"]:
+            raise ValueError("profile_location must be either 'List View Profile' or 'Detail View Profile")
+
+        # column_list_profiles/?brief=false&inventory_type=Property&organization_id=7&profile_location=List+View+Profile
+        return self.client.list(endpoint="column_list_profiles", **payload)
+
+    def get_or_create_column_list_profile(
+        self,
+        name: str,
+        inventory_type: str = "Property",
+        profile_location: str = "List View Profile",
+        columns: list = [],
+    ) -> dict:
+        """Create a column list profile with the given name and columns. This method will check if the name already exists, and if it does, will
+        return the existing column list profile. If creating a new one, then if the columns are empty, then a default set of columns will be used only.
+
+        Args:
+            name (str): Name of the column list profile to create
+            inventory_type (str, optional): Property or Tax Lot. Defaults to "Property".
+            profile_location (str, optional): Detail View Profile or List View Profile. Defaults to "List View Profile".
+            columns (dict, optional): dictionary of columns in the format below. Defaults to {}.
+
+
+        Returns: Either an existing or newly created column list profile
+            dict: {
+                'id': 2,
+                'name': 'test',
+                'profile_location': 'List View Profile',
+                'inventory_type': 'Property',
+                'columns': [
+                    {
+                    'id': 1367,
+                    'pinned': True,
+                    'order': 2,
+                    'column_name': 'pm_property_id',
+                    'table_name': 'PropertyState',
+                    }, ..
+                ]
+            }
+
+        """
+        # get the list of all column list profiles of inventory type and profile location
+        column_list_profiles = self.get_column_list_profiles(inventory_type=inventory_type, profile_location=profile_location)
+        if column_list_profiles != []:
+            for profile in column_list_profiles:
+                if profile["name"] == name:
+                    return profile
+
+        # if here, then we will need to create a new column list profile
+        payload: dict[str, Any] = {}
+        payload["name"] = name
+        payload["inventory_type"] = inventory_type
+        payload["profile_location"] = profile_location
+        if columns == []:
+            # get the default columns
+            seed_columns = self.get_columns()
+            # grab only the columns that are on the PropertyState and named pm_property_id, address_line_1, and on the TaxLotState named jurisdiction_tax_lot_id
+            column_list: list[dict] = []
+            for add_column in seed_columns["columns"]:
+                # This should be extended as needed. Not sure how to find the best default columns, other than just running the 'trigger_show_only_populated' method
+                if add_column["table_name"] == "PropertyState" and add_column["column_name"] in ["pm_property_id", "address_line_1"]:
+                    # only add "id", "column_name", "order", "pinned", "table_name"
+                    to_add_column = {k: add_column[k] for k in ["id", "table_name", "column_name"]}
+                    to_add_column["pinned"] = False
+                    to_add_column["order"] = len(column_list) + 1
+                    column_list.append(to_add_column)
+                elif add_column["table_name"] == "TaxLotState" and add_column["column_name"] == "jurisdiction_tax_lot_id":
+                    to_add_column = {k: add_column[k] for k in ["id", "table_name", "column_name"]}
+                    to_add_column["pinned"] = False
+                    to_add_column["order"] = len(column_list) + 1
+                    column_list.append(to_add_column)
+
+            payload["columns"] = column_list
+        else:
+            payload["columns"] = columns
+        payload["derived_columns"] = []
+
+        return self.client.post(endpoint="column_list_profiles", json=payload)
+
+    def trigger_show_only_populated(
+        self,
+        cycle_id: int,
+        column_list_profile_name: str,
+        inventory_type: str = "Property",
+        profile_location: str = "List View Profile",
+    ) -> dict:
+        """Trigger the only show populated columns for the given cycle and column list profile name. If the column list profile name does not exist, then it will create a new one.
+
+        Args:
+            cycle_id (int): ID of the cycle to run the show only populated on
+            name (str): Name of the column list profile to create
+            inventory_type (str, optional): Property or Tax Lot. Defaults to "Property".
+            profile_location (str, optional): Detail View Profile or List View Profile. Defaults to "List View Profile".
+
+        Returns:
+            dict: dict of the updated column list profile
+        """
+        # get the ID of the column_list_profile_name
+        column_list_profiles = self.get_column_list_profiles()
+        column_list_profile_id = None
+        for profile in column_list_profiles:
+            if profile["name"] == column_list_profile_name:
+                column_list_profile_id = profile["id"]
+                break
+
+        if not column_list_profile_id:
+            # create a default column list profile
+            column_list_profile = self.get_or_create_column_list_profile(column_list_profile_name, inventory_type, profile_location)
+            column_list_profile_id = column_list_profile["id"]
+
+        if not column_list_profile_id:
+            raise ValueError(f"Could not find column list profile with name {column_list_profile_name} to run show only populated")
+
+        # {"cycle_id": 13, "inventory_type": "Property"}
+        # column_list_profiles/PK/show_populated/
+        payload: dict[str, Any] = {
+            "cycle_id": cycle_id,
+            "inventory_type": inventory_type,
+        }
+        result = self.client.put(
+            None,
+            required_pk=False,
+            endpoint="column_list_profiles_pk_show_populated",
+            json=payload,
+            url_args={"PK": column_list_profile_id},
+        )
+        print(result)
+
+        return result
+
     def search_buildings(
         self,
         identifier_filter: Optional[str] = None,
         identifier_exact: Optional[str] = None,
         cycle_id: Optional[int] = None,
     ) -> dict:
+        # TODO: create an alias to also have this be search_properties
         if not cycle_id:
             cycle_id = self.cycle_id
         payload: dict[str, Any] = {
@@ -432,7 +626,7 @@ class SeedClient(SeedClientWrapper):
             label_name (str): Name of the label to delete.
 
         Returns:
-            dict: _description_
+            dict: info on the deleted label
         """
         label = self.get_labels(filter_by_name=[label_name])
         if len(label) != 1:
@@ -712,6 +906,30 @@ class SeedClient(SeedClientWrapper):
 
         raise ValueError(f"cycle '{cycle_name}' not found")
 
+    def delete_inventory(self) -> dict:
+        """USE WITH CAUTION. This will delete all the inventory items in an organization.
+        The organization ID is what is set in the instantiated class.
+        USE WITH CAUTION.
+
+        Returns:
+            dict: {
+                    'status': 'success',
+                    'message': 'Inventory deleted'
+                }
+        """
+        result = self.client.delete(
+            None,
+            endpoint="delete_inventory",
+            required_pk=False,
+            url_args={"ORG_ID": self.client.org_id},
+        )
+        progress_key = result.get("progress_key", None)
+
+        # wait until delete is complete
+        result = self.track_progress_result(progress_key)
+
+        return result
+
     def delete_cycle(self, cycle_id: str) -> dict:
         """Delete the cycle. This will only work if there are no properties or tax lots in the cycle
 
@@ -945,8 +1163,8 @@ class SeedClient(SeedClientWrapper):
         an already existing profile if it is there.
 
         Args:
-            mapping_profile_name (str): _description_
-            mapping_file (str): _description_
+            mapping_profile_name (str): Name of the mapping profile that will be created or updated.
+            mapping_file (str): Path to the mapping file will be used to create the mapping profile.
 
         Returns:
             dict: {
@@ -1183,6 +1401,24 @@ class SeedClient(SeedClientWrapper):
             json=data,
         )
         return readings
+
+    def create_element(self, property_id: int, data: dict[Any, Any]) -> dict:
+        """Upsert an element for a property.
+
+        Args:
+            property_id (int): property id
+            data (dict[Any, Any]): dictionary of element data
+
+        Returns:
+            dict: element object
+        """
+        # get the element data for the property
+        element = self.client.post(
+            endpoint="properties_elements",
+            url_args={"PK": property_id},
+            json=data,
+        )
+        return element
 
     def get_meter_data(self, property_id, interval: str = "Exact", excluded_meter_ids: list = []):
         """Return the meter data from the property.
@@ -1510,6 +1746,9 @@ class SeedClient(SeedClientWrapper):
         # save the mappings, call system matching/geocoding
         result = self.start_system_matching_and_geocoding(import_file_id)
         progress_data = result.get("progress_data", None)
+        if progress_data is None:
+            raise ValueError("progress_data is None, unable to retrieve progress_key")
+
         progress_key = progress_data.get("progress_key", None)
 
         # wait until upload is complete
