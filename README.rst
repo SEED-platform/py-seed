@@ -14,7 +14,7 @@ py-SEED is compatible with the latest version of the SEED Platform (>2.17.4) and
 More information can be found here:
 
 * https://seed-platform.org
-* https://energy.gov/eere/buildings/standard-energy-efficiency-data-platform
+* https://energy.gov/cmei/buildings/standard-energy-efficiency-data-platform
 * https://github.com/SEED-platform
 * https://buildingdata.energy.gov/#/seed
 * https://github.com/SEED-platform/pyseed-examples
