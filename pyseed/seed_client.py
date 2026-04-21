@@ -5,7 +5,6 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 
 import json
 import logging
-import os
 import time
 from collections import Counter
 from csv import DictReader
@@ -1604,16 +1603,24 @@ class SeedClient(SeedClientWrapper):
         # Return the report templates
         return response
 
-    def download_pm_report(self, pm_username: str, pm_password: str, pm_template: dict) -> str:
+    def download_pm_report(
+        self,
+        pm_username: str,
+        pm_password: str,
+        pm_template: dict,
+        to_filepath: Union[str, Path],
+    ) -> None:
         """Download a PM report.
 
         Args:
             pm_username (str): username for Energystar Portfolio Manager
             pm_password (str): password for Energystar Portfolio Manager
             pm_template (dict): the full template object dict returned from get_pm_report_template_names
+            to_filepath (Union[str, Path]): Destination file path where the generated XLSX report
+                will be saved.
 
-        Sample return shown below.
-        Returns the path to the report template workbook file
+        Returns:
+            None: This method saves the report to ``to_filepath`` and does not return a value.
         """
         response = self.client.post(
             endpoint="portfolio_manager_report",
@@ -1644,36 +1651,12 @@ class SeedClient(SeedClientWrapper):
         for prop in properties:
             row = []
             for key in header_row:
-                row.append(prop[key])
+                row.append(prop.get(key))
             if sheet:
                 sheet.append(row)
 
-        # Report Template name
-        report_template_name = pm_template["name"]
-
-        # Filename
-        file_name = f"{pm_username}_{report_template_name}.xlsx"
-
-        # Folder name
-        folder_name = "reports"
-
-        if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
-
-        # Set the file path.
-        file_path = os.path.join(folder_name, file_name)
-
         # Save the workbook object.
-        workbook.save(file_path)
-
-        # Current directory
-        curdir = os.getcwd()
-
-        # Define the datafile path
-        datafile_path = os.path.join(curdir, file_path)
-
-        # Return the report templates
-        return datafile_path
+        workbook.save(to_filepath)
 
     def import_files_reuse_inventory_file_for_meters(self, import_file_id: int) -> dict:
         """Reuse an import file to create all the meter entries. This method is used
@@ -1693,6 +1676,26 @@ class SeedClient(SeedClientWrapper):
         payload = {"import_file_id": import_file_id}
         response = self.client.post(endpoint="import_files_reuse_inventory_file_for_meters", json=payload)
         return response
+
+    def upload_meters_datafile(
+        self,
+        dataset_name: str,
+        datafile: str,
+        datafile_type: str = "PM Meter Usage",
+    ) -> dict:
+        # upload file
+        dataset = self.get_or_create_dataset(dataset_name)
+        result = self.upload_datafile(dataset["id"], datafile, datafile_type)
+        import_file_id = result["import_file_id"]
+
+        # start processing
+        save_result = self.start_save_data(import_file_id)
+        progress_key = save_result.get("progress_key", None)
+
+        # wait until upload is complete
+        result = self.track_progress_result(progress_key)
+
+        return result
 
     def upload_and_match_datafile(
         self,
@@ -1911,6 +1914,50 @@ class SeedClient(SeedClientWrapper):
                 result["status"] = "success"
         return result
 
+    def retrieve_portfolio_manager_meters(
+        self,
+        username: str,
+        password: str,
+        pm_property_ids: list[str],
+        start_date: date,
+        end_date: date,
+        save_file_name: Path,
+    ) -> dict:
+        """Connect to portfolio manager and download an individual meters data in Excel format
+
+        Args:
+            username (str): ESPM login username
+            password (str): ESPM password
+            pm_property_ids (list(str)): property whoms meters to download
+            start_date (date): start_date from meter readings
+            end_date (date): end_date from meter readings
+            save_file_name (Path): Location to save the file, preferably an absolute path
+
+        Returns:
+            dict: Did the file download?
+        """
+        if save_file_name.exists():
+            raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
+
+        response = self.client.post(
+            "portfolio_manager_meter_download",
+            json={
+                "username": username,
+                "password": password,
+                "property_ids": pm_property_ids,
+                "start_date": start_date.strftime("%m/%d/%Y"),
+                "end_date": end_date.strftime("%m/%d/%Y"),
+            },
+        )
+        result = {"status": "error"}
+        # save the file to the location that was passed
+        # note that the data are returned directly (the ESPM URL directly downloads the file)
+        if isinstance(response, bytes):
+            with open(save_file_name, "wb") as f:
+                f.write(response)
+                result["status"] = "success"
+        return result
+
     def import_portfolio_manager_property(self, seed_id: int, cycle_id: int, mapping_profile_id: int, file_path: str) -> dict:
         """Import the downloaded xlsx file into SEED on a specific propertyID
         Args:
@@ -1993,3 +2040,43 @@ class SeedClient(SeedClientWrapper):
             url_args={"PK": property_view_id},
             include_org_id_query_param=True,
         )
+
+    def update_organizations_access_level_names(self, access_level_names: list[str]) -> list:
+        return self.client.post(
+            endpoint="update_org_access_level_names",
+            json={"access_level_names": access_level_names},
+            url_args={"PK": self.client.org_id},
+        )
+
+    def update_organizations_access_level_instances(self, file: str):
+        # upload file
+        with open(file, "rb") as f:
+            response = self.client.put(
+                None,
+                required_pk=False,
+                url_args={"PK": self.client.org_id},
+                endpoint="upload_org_access_level_instances_file",
+                files={
+                    "file": (
+                        Path(file).name,
+                        f,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    ),
+                },
+            )
+
+        if not response["success"]:
+            raise ValueError("could not upload access level instances")
+
+        # start saving  the file
+        response = self.client.post(
+            endpoint="start_org_access_level_instances_file_save",
+            url_args={"PK": self.client.org_id},
+            json={"filename": response["tempfile"]},
+        )
+        progress_key = response.get("progress_key", None)
+
+        # wait until save is complete
+        result = self.track_progress_result(progress_key)
+
+        return result

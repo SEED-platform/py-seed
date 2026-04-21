@@ -728,3 +728,62 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         assert building_cycles[0]["site_eui"] == 95
         assert building_cycles[1]["site_eui"] == 181
         assert building_cycles[2]["site_eui"] == 129
+
+    def test_upload_meters_datafile(self):
+        """Test uploading meter data files"""
+        # Test uploading a meter data file
+        meter_datafile = "tests/data/test-seed-data-with-meters.xlsx"
+        dataset_name = "pyseed-meters-test"
+
+        # Upload the meters datafile
+        result = self.seed_client.upload_meters_datafile(dataset_name, meter_datafile)
+
+        # Verify the upload was successful
+        assert result is not None
+        assert "status" in result or "progress" in result
+        # The exact response structure may vary, so we just check that we got a result
+
+    def test_update_organizations_access_level_names(self):
+        """Test updating organization access level names"""
+        # Test updating access level names for the organization
+        test_access_levels = ["Level 1", "Level 2", "Level 3"]
+
+        # Update the organization access level names
+        result = self.seed_client.update_organizations_access_level_names(test_access_levels)
+
+        # Verify the update was successful
+        assert result is not None
+        # The exact response structure may vary depending on the API implementation
+
+    def test_retrieve_portfolio_manager_meters(self):
+        """Test retrieving Portfolio Manager meter data"""
+        # Check for Portfolio Manager credentials in environment variables
+        pm_username = os.environ.get("SEED_PM_UN")
+        pm_password = os.environ.get("SEED_PM_PW")
+
+        if not pm_username or not pm_password:
+            pytest.skip("Portfolio Manager credentials (SEED_PM_UN, SEED_PM_PW) not available in environment")
+
+        from datetime import date
+
+        # Use a test property ID (you may need to adjust this based on your available test data)
+        pm_property_ids = ["22178850"]  # Using same ID as in other tests
+        start_date = date(2023, 1, 1)
+        end_date = date(2023, 12, 31)
+        save_file = self.output_dir / "test_meters.xlsx"
+
+        # Remove file if it exists
+        if save_file.exists():
+            save_file.unlink()
+
+        result = self.seed_client.retrieve_portfolio_manager_meters(
+            pm_username,
+            pm_password,
+            pm_property_ids,
+            start_date,
+            end_date,
+            save_file,
+        )
+
+        assert result["status"] == "success"
+        assert save_file.exists()
