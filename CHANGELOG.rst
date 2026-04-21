@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.5.2
+-----
+
+What's Changed
+**************
+
+* Fix release notes by @nllong in https://github.com/SEED-platform/py-seed/pull/55
+* Add cross cycles inventory,  column profiles, delete inventory, and show only populated columns by @nllong in https://github.com/SEED-platform/py-seed/pull/58
+* Add element create by @haneslinger in https://github.com/SEED-platform/py-seed/pull/86
+
+**Full Changelog**: https://github.com/SEED-platform/py-seed/compare/v0.5.1...v0.5.2
+
 0.5.1
 -----
 
