@@ -30,6 +30,7 @@ from pyseed.exceptions import SEEDError
 # Constants (Should end with a slash)
 URLS = {
     "v3": {
+        "column_list_profiles": "/api/v3/column_list_profiles/",
         "column_mapping_profiles": "/api/v3/column_mapping_profiles/",
         "column_mapping_profiles_filter": "/api/v3/column_mapping_profiles/filter/",
         "columns": "/api/v3/columns/",
@@ -50,6 +51,7 @@ URLS = {
         "properties": "/api/v3/properties/",
         "properties_labels": "/api/v3/properties/labels/",
         "properties_search": "/api/v3/properties/search/",
+        "properties_filter_by_cycle": "/api/v3/properties/filter_by_cycle/",
         "property_views": "/api/v3/property_views/",
         "taxlots": "/api/v3/taxlots/",
         "upload": "/api/v3/upload/",
@@ -63,10 +65,15 @@ URLS = {
         "import_files_start_save_data_pk": "/api/v3/import_files/PK/start_save_data/",
         "org_column_mapping_import_file": "api/v3/organizations/ORG_ID/column_mappings/",
         "portfolio_manager_property_download": "/api/v3/portfolio_manager/PK/download/",
+        "portfolio_manager_meter_download": "/api/v3/portfolio_manager/meter_download/",
+        "update_org_access_level_names": "/api/v3/organizations/PK/access_levels/access_level_names/",
+        "start_org_access_level_instances_file_save": "/api/v3/organizations/PK/access_levels/start_save_data/",
         # PUTs with replaceable keys:
+        "column_list_profiles_pk_show_populated": "/api/v3/column_list_profiles/PK/show_populated/",
         "properties_update_with_buildingsync": "api/v3/properties/PK/update_with_building_sync/",
         "properties_upload_inventory_document": "api/v3/properties/PK/upload_inventory_document",
         "property_update_with_espm": "api/v3/properties/PK/update_with_espm/",
+        "upload_org_access_level_instances_file": "/api/v3/organizations/PK/access_levels/importer/",
         # GETs with replaceable keys
         "analyses_views": "/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/",
         "audit_template_building_xml": "/api/v3/audit_template/PK/get_building_xml",
@@ -77,8 +84,11 @@ URLS = {
         "properties_analyses": "/api/v3/properties/PK/analyses/",
         "properties_meter_usage": "/api/v3/properties/PK/meter_usage/",
         "properties_meters": "/api/v3/properties/PK/meters/",
+        "properties_elements": "/api/v3/properties/PK/elements/",
         # GET & POST with replaceable keys
         "properties_meters_reading": "/api/v3/properties/PK/meters/METER_PK/readings/",
+        # DELETES with replaceable keys
+        "delete_inventory": "api/v3/organizations/ORG_ID/inventory/",
     },
 }
 
@@ -241,7 +251,7 @@ class SEEDBaseClient(JSONAPI):
                     # For the delete cycles, the data returned have a status and a progress_key,
                     # but no progress_data. In lieu of updating SEED, this check is added
                     # specifically for this case
-                    error = status_field not in ["not-started", "success", "parsing"]
+                    error = status_field not in ["not-started", "success", "parsing", "running"]
                 elif status_field == "error":
                     error = True
                 elif status_field == "success":
@@ -255,18 +265,32 @@ class SEEDBaseClient(JSONAPI):
                 # this is a system matching response, which is okay. return the success flag of this
                 status_flag = response.json()["progress_data"].get("status", None)
                 error = status_flag not in ["not-started", "success", "parsing"]
-            elif not any(
-                key in ["results", "readings", "data", "status", "id", "organizations", "sha", "users"] for key in response.json()
-            ):
-                # In some cases there is not a 'status' field, so check if there are
-                # any other keys in the response that depict a success:
-                # readings - this comes from meters
-                # data - lots of responses just return the data flag
-                # status - sometimes the status comes back as complete
-                # id - For some object creates, the response is simply the object back in JSON format with an ID field.
-                # organizations - this is the only key when returning the list of orgs
-                # sha - When parsing the version of SEED
-                error = True
+            # check if the first element is a list and the key is a castable ID
+            elif len(response.json()) > 0:
+                error_state = True
+                # get the first key -- based on ruff, this is the way to do it.
+                first_key = next(iter(response.json().keys()))
+                # if the first
+                if first_key in ["results", "readings", "data", "status", "id", "organizations", "sha", "users"]:
+                    # In some cases there is not a 'status' field, so check if there are
+                    # any other keys in the response that depict a success:
+                    # readings - this comes from meters
+                    # data - lots of responses just return the data flag
+                    # status - sometimes the status comes back as complete
+                    # id - For some object creates, the response is simply the object back in JSON format with an ID field.
+                    # organizations - this is the only key when returning the list of orgs
+                    # sha - When parsing the version of SEED
+                    error_state = False
+                else:
+                    # In the cross cycle readings, the data are returned as a dict of lists, where the key should be cycle ID
+                    try:
+                        int(first_key)
+                    except ValueError:
+                        error_state = True
+
+                    error_state = False
+
+                error = error_state
 
         elif not isinstance(response.json(), list):
             error = True
