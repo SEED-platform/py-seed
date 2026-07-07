@@ -10,7 +10,7 @@ from collections import Counter
 from csv import DictReader
 from datetime import date
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 from openpyxl import Workbook
 
@@ -27,8 +27,8 @@ class SeedClientWrapper:
     def __init__(
         self,
         organization_id: int,
-        connection_params: Optional[dict] = None,
-        connection_config_filepath: Optional[Path] = None,
+        connection_params: dict | None = None,
+        connection_config_filepath: Path | None = None,
     ) -> None:
         """wrapper around SEEDReadWriteClient.
 
@@ -99,8 +99,8 @@ class SeedClient(SeedClientWrapper):
     def __init__(
         self,
         organization_id: int,
-        connection_params: Optional[dict] = None,
-        connection_config_filepath: Optional[Path] = None,
+        connection_params: dict | None = None,
+        connection_config_filepath: Path | None = None,
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
@@ -185,7 +185,7 @@ class SeedClient(SeedClientWrapper):
         )
         return orgs
 
-    def get_user_id(self, username: str) -> Union[None, int]:
+    def get_user_id(self, username: str) -> None | int:
         """Get the user ID for the given username
 
         Args:
@@ -330,7 +330,7 @@ class SeedClient(SeedClientWrapper):
         payload = {"profile_id": column_list_profile_id, "cycle_ids": cycle_ids}
         return self.client.post(endpoint="properties_filter_by_cycle", json=payload)
 
-    def get_column_list_profiles(self, inventory_type: Optional[str] = None, profile_location: Optional[str] = None) -> dict:
+    def get_column_list_profiles(self, inventory_type: str | None = None, profile_location: str | None = None) -> dict:
         """Return the list of column list profiles that are available for the organization
 
         Args:
@@ -499,9 +499,9 @@ class SeedClient(SeedClientWrapper):
 
     def search_buildings(
         self,
-        identifier_filter: Optional[str] = None,
-        identifier_exact: Optional[str] = None,
-        cycle_id: Optional[int] = None,
+        identifier_filter: str | None = None,
+        identifier_exact: str | None = None,
+        cycle_id: int | None = None,
     ) -> dict:
         # TODO: create an alias to also have this be search_properties
         if not cycle_id:
@@ -518,7 +518,7 @@ class SeedClient(SeedClientWrapper):
         properties = self.client.get(None, required_pk=False, endpoint="properties_search", **payload)
         return properties
 
-    def get_labels(self, filter_by_name: Optional[list] = None) -> list:
+    def get_labels(self, filter_by_name: list | None = None) -> list:
         """Get a list of all the labels in the organization. Filter by name if desired.
 
         Args:
@@ -574,9 +574,9 @@ class SeedClient(SeedClientWrapper):
     def update_label(
         self,
         label_name: str,
-        new_label_name: Optional[str] = None,
-        new_color: Optional[str] = None,
-        new_show_in_list: Optional[bool] = None,
+        new_label_name: str | None = None,
+        new_color: str | None = None,
+        new_show_in_list: bool | None = None,
     ) -> dict:
         """Update an existing label with the new_* fields. If the new_* fields are not provided, then the existing values are used.
 
@@ -635,7 +635,7 @@ class SeedClient(SeedClientWrapper):
 
         return self.client.delete(label_id, endpoint="labels")
 
-    def get_view_ids_with_label(self, label_names: Union[str, list] = []) -> list:
+    def get_view_ids_with_label(self, label_names: str | list = []) -> list:
         """Get the view IDs of the properties with a given label name(s). Can be a single
         label or a list of labels.
 
@@ -1072,7 +1072,7 @@ class SeedClient(SeedClientWrapper):
 
         return result
 
-    def get_column_mapping_profile(self, column_mapping_profile_name: str) -> Optional[dict]:
+    def get_column_mapping_profile(self, column_mapping_profile_name: str) -> dict | None:
         """get a specific column mapping profile. Currently, filter does not take an
         argument by name, so return them all and find the one that matches the
         column_mapping_profile_name.
@@ -1316,7 +1316,7 @@ class SeedClient(SeedClientWrapper):
         meters = self.client.get(None, required_pk=False, endpoint="properties_meters", url_args={"PK": property_id})
         return meters
 
-    def get_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> Union[dict, None]:
+    def get_meter(self, property_view_id: int, meter_type: str, source: str, source_id: str) -> dict | None:
         """get a meter for a property view.
 
         Args:
@@ -1342,7 +1342,7 @@ class SeedClient(SeedClientWrapper):
         source: str,
         source_id: str,
         connection_type="Imported",
-    ) -> Optional[dict[Any, Any]]:
+    ) -> dict[Any, Any] | None:
         """get or create a meter for a property view.
 
         Args:
@@ -1608,7 +1608,7 @@ class SeedClient(SeedClientWrapper):
         pm_username: str,
         pm_password: str,
         pm_template: dict,
-        to_filepath: Union[str, Path],
+        to_filepath: str | Path,
     ) -> None:
         """Download a PM report.
 
@@ -1823,7 +1823,7 @@ class SeedClient(SeedClientWrapper):
         cycle_id: int,
         seed_id: int,
         report_format: str = "pdf",
-        filename: Optional[str] = None,
+        filename: str | None = None,
     ) -> dict:
         """Connect to audit template and retrieve audit report by submission ID
 
