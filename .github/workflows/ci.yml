@@ -88,7 +88,9 @@ jobs:
         uses: jwalton/gh-docker-logs@v2
       - name: Extract API credentials from SEED docker instance
         run: |
-          docker exec pyseed_web ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --pyseed > seed-config.json
+          # seedplatform/seed:develop does not include uv in the runtime image,
+          # so call manage.py directly with python instead of `uv run`.
+          docker exec pyseed_web python manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --pyseed > seed-config.json
       - name: Run tests with pytest
         env:
           SEED_PM_UN: ${{ secrets.SEED_PM_UN }}
