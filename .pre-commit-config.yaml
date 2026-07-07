@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args: ["--maxkb=50000"]
@@ -23,9 +23,10 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
+        args: [--no-error-on-unmatched-pattern]
         types_or: [css, yaml, markdown, html, scss, javascript, json]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.2
+    rev: v0.15.20
     hooks:
       # Run the linter
       - id: ruff
