@@ -5,7 +5,7 @@
 
 py-SEED serves as a Python client for the SEED Platform API. This library is purpose-built for Python applications, enabling interaction with the SEED Platform API to access property lists, create properties, establish connections, and retrieve data from ENERGY STAR(R) Portfolio Manager, BETTER, and other sources. The SEED Platform has a robust API, granting users access to every front-end feature seamlessly via the API. Currently, this library exposes the most commonly used SEED API endpoints and will undergo continuous updates tailored to the community's evolving needs. py-SEED offers two interaction levels: a high-level API providing familiar endpoints for easy connectivity to SEED's API, and a low-level API that allows read-write access to any SEED API, demanding a deeper understanding of the SEED API architecture.
 
-py-SEED is compatible with the latest version of the SEED Platform (>2.17.4) and only support SEED API Version 3.
+py-SEED is compatible with the latest version of the SEED Platform (>2.17.4) and only supports SEED API Version 3.
 
 More information can be found here:
 
