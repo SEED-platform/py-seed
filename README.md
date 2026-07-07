@@ -43,8 +43,8 @@ Within Python you can use the client like this:
 
 ```python
 from pathlib import Path
+from datetime import date
 from pyseed.seed_client import SeedClient
-
 # The seed-config.json file defines the hosting location and credentials for your SEED instance.
 # If running SEED locally for testing, then you can run the following from your SEED root directory:
 #    ./manage.py create_test_user_json --username user@seed-platform.org --host http://localhost:8000 --file ./seed-config.json --pyseed
