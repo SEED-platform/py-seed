@@ -764,8 +764,6 @@ class SeedClientMultiCycleTest(unittest.TestCase):
         if not pm_username or not pm_password:
             pytest.skip("Portfolio Manager credentials (SEED_PM_UN, SEED_PM_PW) not available in environment")
 
-        from datetime import date
-
         # Use a test property ID (you may need to adjust this based on your available test data)
         pm_property_ids = ["22178850"]  # Using same ID as in other tests
         start_date = date(2023, 1, 1)

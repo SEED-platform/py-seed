@@ -2,7 +2,7 @@ version: "3.4"
 services:
   db-postgres:
     container_name: pyseed_postgres
-    image: timescale/timescaledb-postgis:latest-pg12
+    image: timescale/timescaledb-ha:pg18.3-ts2.26.4-oss
     environment:
       - POSTGRES_DB=seed
       - POSTGRES_USER=seed
@@ -15,7 +15,7 @@ services:
         max-file: "5"
   db-redis:
     container_name: pyseed_redis
-    image: redis:5.0.1
+    image: redis:8-alpine
   web:
     container_name: pyseed_web
     image: seedplatform/seed:develop
@@ -55,7 +55,6 @@ services:
   web-celery:
     container_name: pyseed_celery
     image: seedplatform/seed:develop
-    build: .
     command: /seed/docker/start_celery_docker.sh
     environment:
       - BSYNCR_SERVER_HOST
