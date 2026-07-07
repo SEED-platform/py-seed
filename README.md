@@ -42,6 +42,7 @@ pip install py-seed
 Within Python you can use the client like this:
 
 ```python
+from datetime import date
 from pathlib import Path
 from datetime import date
 from pyseed.seed_client import SeedClient
