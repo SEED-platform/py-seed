@@ -15,6 +15,13 @@ More information can be found here:
 - [Building Data - SEED](https://buildingdata.energy.gov/#/seed)
 - [pyseed-examples](https://github.com/SEED-platform/pyseed-examples)
 
+## Architecture Direction
+
+Project guardrails and OpenAPI integration direction are documented here:
+
+- [Contribution Guardrails](AGENTS.md)
+- [OpenAPI Integration Direction](docs/architecture/openapi-direction.md)
+
 ## Compatibility Matrix
 
 | py-SEED Version | SEED Version   |
