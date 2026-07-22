@@ -45,6 +45,7 @@ URLS = {
         "labels": "/api/v3/labels/",
         "labels_property": "/api/v3/labels_property/",
         "labels_taxlot": "/api/v3/labels_taxlot/",
+        "properties_column_summary": "/api/v4/properties/column_summary/",
         "organizations": "/api/v3/organizations/",
         "portfolio_manager_report": "/api/v3/portfolio_manager/report/",
         "portfolio_manager_report_templates": "/api/v3/portfolio_manager/template_list/",
@@ -89,6 +90,7 @@ URLS = {
         "properties_meters_reading": "/api/v3/properties/PK/meters/METER_PK/readings/",
         # DELETES with replaceable keys
         "delete_inventory": "api/v3/organizations/ORG_ID/inventory/",
+        "benchmark_data_site_eui": "/api/v3/benchmark_data/site_eui/",
     },
 }
 

@@ -5,6 +5,8 @@ See also https://github.com/seed-platform/py-seed/main/LICENSE
 
 import json
 import logging
+import math
+import re
 import time
 from collections import Counter
 from csv import DictReader
@@ -14,10 +16,32 @@ from typing import Any
 
 from openpyxl import Workbook
 
+from pyseed.exceptions import SEEDVersionError
 from pyseed.seed_client_base import SEEDReadWriteClient
 from pyseed.utils import read_map_file
 
 logger = logging.getLogger(__name__)
+
+SITE_EUI_COMMON_NAMES = [
+    "total_site_eui",
+    "total site eui",
+    "site_eui",
+    "site eui",
+    "Site EUI",
+    "Site Energy Use Intensity",
+]
+
+# Minimum connected-SEED-instance (see `/api/version/`, exposed via `instance_information()`)
+# versions required for newer property analytics endpoints. These were added upstream after
+# the (unreleased, as of writing) 3.4.0 SEED release train:
+#   - Property column summary (v4 `properties/column_summary`): merged upstream in
+#     https://github.com/SEED-platform/seed/pull/5262 and ships in SEED >= 3.4.0.
+#   - ESPM Data Explorer benchmark data (`benchmark_data/site_eui`): proposed upstream in
+#     https://github.com/SEED-platform/seed/pull/5270, which is not yet merged as of writing,
+#     so it will ship in a SEED version *after* 3.4.0 (exact version TBD).
+# Update these tuples once the corresponding SEED release is tagged.
+MIN_SEED_VERSION_FOR_COLUMN_SUMMARY = (3, 4, 0)
+MIN_SEED_VERSION_FOR_BENCHMARK_DATA = (3, 4, 0)
 
 
 class SeedClientWrapper:
@@ -147,6 +171,58 @@ class SeedClient(SeedClientWrapper):
         info["username"] = self.client.username
         return info
 
+    @staticmethod
+    def _parse_seed_version(version_string: str | None) -> tuple[int, ...]:
+        """Parse a SEED ``x.y.z`` version string (as returned by ``/api/version/``) into a
+        tuple of ints suitable for comparison, e.g. ``"3.4.0"`` -> ``(3, 4, 0)``.
+        """
+        parts = re.findall(r"\d+", version_string or "")
+        if not parts:
+            raise ValueError(f"Could not parse SEED version string: {version_string!r}")
+        return tuple(int(part) for part in parts)
+
+    def _connected_seed_version(self) -> tuple[int, ...]:
+        """Return the connected SEED instance's version as a comparable tuple.
+
+        The result is cached on the client instance to avoid an extra API call on every
+        version-gated method invocation.
+        """
+        cached_version = getattr(self, "_cached_seed_version", None)
+        if cached_version is None:
+            info = self.instance_information()
+            cached_version = self._parse_seed_version(info.get("version"))
+            self._cached_seed_version = cached_version
+        return cached_version
+
+    def _require_min_seed_version(
+        self,
+        min_version: tuple[int, ...],
+        feature: str,
+        reference: str | None = None,
+        inclusive: bool = True,
+    ) -> None:
+        """Raise SEEDVersionError if the connected SEED instance doesn't meet ``min_version``.
+
+        Args:
+            min_version: minimum required (major, minor, patch) version tuple.
+            feature: human readable feature/method name to include in the error message.
+            reference: optional URL (e.g. a SEED PR) documenting the requirement.
+            inclusive: if True, the connected version must be >= min_version; if False, it
+                must be strictly greater than min_version (useful for features that ship in
+                an as-yet-untagged release after min_version).
+        """
+        current_version = self._connected_seed_version()
+        meets_requirement = current_version >= min_version if inclusive else current_version > min_version
+        if not meets_requirement:
+            comparator = ">=" if inclusive else ">"
+            required_version = f"{comparator} {'.'.join(str(part) for part in min_version)}"
+            raise SEEDVersionError(
+                feature=feature,
+                required_version=required_version,
+                current_version=".".join(str(part) for part in current_version),
+                reference=reference,
+            )
+
     def get_users(self) -> dict:
         """Get a list of users visible to the current user
 
@@ -273,6 +349,445 @@ class SeedClient(SeedClientWrapper):
 
         return buildings
 
+    @staticmethod
+    def _display_column_name(column_name: str) -> str:
+        """Return a SEED result column name without its volatile trailing column id."""
+        return re.sub(r"_\d+$", "", column_name).strip()
+
+    @classmethod
+    def _normalized_column_name(cls, column_name: str) -> str:
+        display_name = cls._display_column_name(column_name).casefold()
+        display_name = re.sub(r"[^a-z0-9]+", " ", display_name)
+        return re.sub(r"\s+", " ", display_name).strip()
+
+    @staticmethod
+    def _to_float(value: object) -> float | None:
+        if value is None or value == "" or isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            number = float(value)
+        else:
+            try:
+                number = float(str(value).replace(",", "").strip())
+            except ValueError:
+                return None
+        return number if math.isfinite(number) else None
+
+    @classmethod
+    def resolve_result_column(cls, rows: list[dict], common_names: list[str]) -> dict:
+        """Resolve a result column by display/common names.
+
+        SEED API list responses may append the Column id to display names, e.g.
+        ``site_eui_90649``. This helper compares names after removing that
+        trailing id, so callers do not need to know instance-specific ids.
+        """
+        normalized_targets = {cls._normalized_column_name(name): name for name in common_names}
+        target_terms = [set(target.split()) for target in normalized_targets]
+        candidates: list[tuple[str, str]] = []
+
+        for row in rows:
+            for column_name in row:
+                normalized_column = cls._normalized_column_name(column_name)
+                if normalized_column in normalized_targets:
+                    candidates.append((normalized_targets[normalized_column], column_name))
+                    continue
+
+                column_terms = set(normalized_column.split())
+                for terms in target_terms:
+                    if terms and terms.issubset(column_terms):
+                        candidates.append((cls._display_column_name(column_name), column_name))
+                        break
+
+        best_display_name = None
+        best_column_name = None
+        best_count = 0
+        seen: set[str] = set()
+        for display_name, column_name in candidates:
+            if column_name in seen:
+                continue
+            seen.add(column_name)
+            count = sum(1 for row in rows if cls._to_float(row.get(column_name)) is not None)
+            if count > best_count:
+                best_display_name = display_name
+                best_column_name = column_name
+                best_count = count
+
+        if best_column_name is None:
+            return {"ok": False, "error": "No populated field matched the provided common_names", "common_names": common_names}
+
+        return {
+            "ok": True,
+            "display_name": best_display_name,
+            "column_name": best_column_name,
+            "common_names": common_names,
+            "non_null_numeric_count": best_count,
+        }
+
+    @classmethod
+    def numeric_field_values_from_rows(
+        cls,
+        rows: list[dict],
+        common_names: list[str],
+        min_value: float | None = None,
+        max_value: float | None = None,
+    ) -> dict:
+        resolved = cls.resolve_result_column(rows, common_names)
+        if not resolved.get("ok"):
+            return {**resolved, "property_count": len(rows)}
+
+        column_name = resolved["column_name"]
+        all_values = [value for row in rows if (value := cls._to_float(row.get(column_name))) is not None]
+        values = [value for value in all_values if (min_value is None or value >= min_value) and (max_value is None or value <= max_value)]
+        sorted_values = sorted(values)
+        summary = None
+        if sorted_values:
+            summary = {
+                "count": len(sorted_values),
+                "min": min(sorted_values),
+                "p25": cls._percentile(sorted_values, 0.25),
+                "median": cls._percentile(sorted_values, 0.5),
+                "p75": cls._percentile(sorted_values, 0.75),
+                "mean": sum(sorted_values) / len(sorted_values),
+                "max": max(sorted_values),
+            }
+
+        return {
+            "ok": True,
+            "property_count": len(rows),
+            "resolved_field": resolved,
+            "all_value_count": len(all_values),
+            "null_or_non_numeric_count": len(rows) - len(all_values),
+            "range": {"min": min_value, "max": max_value},
+            "below_range_count": sum(1 for value in all_values if min_value is not None and value < min_value),
+            "above_range_count": sum(1 for value in all_values if max_value is not None and value > max_value),
+            "value_count": len(values),
+            "values": values,
+            "summary": summary,
+        }
+
+    @staticmethod
+    def _percentile(sorted_values: list[float], pct: float) -> float:
+        index = (len(sorted_values) - 1) * pct
+        low_index = math.floor(index)
+        high_index = math.ceil(index)
+        if low_index == high_index:
+            return sorted_values[low_index]
+        return sorted_values[low_index] * (high_index - index) + sorted_values[high_index] * (index - low_index)
+
+    @staticmethod
+    def _build_fixed_range_histogram(values: list[float], min_value: float, max_value: float, bins: int) -> list[dict]:
+        if bins <= 0:
+            raise ValueError("bins must be greater than 0")
+        if max_value <= min_value:
+            raise ValueError("max_value must be greater than min_value")
+
+        bin_width = (max_value - min_value) / bins
+        histogram = [
+            {
+                "min": min_value + index * bin_width,
+                "max": min_value + (index + 1) * bin_width,
+                "count": 0,
+            }
+            for index in range(bins)
+        ]
+
+        for value in values:
+            if value < min_value or value > max_value:
+                continue
+            index = min(bins - 1, int((value - min_value) / bin_width))
+            histogram[index]["count"] += 1
+
+        return histogram
+
+    def get_properties_by_criteria(self, criteria: dict | None = None, limit: int | None = None) -> list[dict]:
+        criteria = dict(criteria or {})
+        per_page = 100
+        pagination = self.client.list(endpoint="properties", data_name="pagination", per_page=per_page, **criteria)
+        num_pages = int(pagination.get("num_pages", 1))
+        properties: list[dict] = []
+
+        for page in range(1, num_pages + 1):
+            page_results = self.client.list(
+                endpoint="properties",
+                data_name="results",
+                per_page=per_page,
+                page=page,
+                **criteria,
+            )
+            for row in page_results:
+                properties.append(row)
+                if limit is not None and len(properties) >= limit:
+                    return properties
+
+        return properties
+
+    def get_property_field_values_by_cycle(
+        self,
+        common_names: list[str] | None = None,
+        cycle_id: int | None = None,
+        cycle_name: str | None = None,
+        criteria: dict | None = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
+        max_records: int = 10000,
+    ) -> dict:
+        common_names = common_names or SITE_EUI_COMMON_NAMES
+        if cycle_id is None and cycle_name:
+            cycle = self.get_cycle_by_name(cycle_name)
+            cycle_id = cycle["id"]
+        elif cycle_id is None:
+            cycle_id = self.cycle_id
+
+        criteria = dict(criteria or {})
+        criteria["cycle"] = int(cycle_id)
+        properties = self.get_properties_by_criteria(criteria=criteria, limit=max_records + 1)
+        if len(properties) > max_records:
+            return {
+                "ok": False,
+                "error": f"Matched more than max_records={max_records} properties",
+                "criteria": criteria,
+            }
+
+        result = self.numeric_field_values_from_rows(
+            properties,
+            common_names=common_names,
+            min_value=min_value,
+            max_value=max_value,
+        )
+        return {
+            **result,
+            "criteria": criteria,
+            "cycle_id": cycle_id,
+        }
+
+    def get_property_field_histogram_by_cycle(
+        self,
+        common_names: list[str] | None = None,
+        cycle_id: int | None = None,
+        cycle_name: str | None = None,
+        criteria: dict | None = None,
+        min_value: float = -50,
+        max_value: float = 100,
+        bins: int = 15,
+        max_records: int = 10000,
+    ) -> dict:
+        values_result = self.get_property_field_values_by_cycle(
+            common_names=common_names,
+            cycle_id=cycle_id,
+            cycle_name=cycle_name,
+            criteria=criteria,
+            min_value=min_value,
+            max_value=max_value,
+            max_records=max_records,
+        )
+        if not values_result.get("ok"):
+            return values_result
+
+        try:
+            histogram = self._build_fixed_range_histogram(
+                values=values_result["values"],
+                min_value=float(min_value),
+                max_value=float(max_value),
+                bins=bins,
+            )
+        except ValueError as exc:
+            return {"ok": False, "error": str(exc)}
+
+        return {
+            **{key: value for key, value in values_result.items() if key != "values"},
+            "bins": histogram,
+            "bin_count": bins,
+            "bin_width": (max_value - min_value) / bins,
+        }
+
+    @classmethod
+    def _column_match_score(cls, column: dict, search_names: list[str]) -> tuple[int, list[str]]:
+        searchable_values = [
+            str(column.get("column_name", "")),
+            str(column.get("display_name", "")),
+        ]
+        normalized_values = [cls._normalized_column_name(value) for value in searchable_values if value]
+        best_score = 0
+        matched_names: list[str] = []
+
+        for search_name in search_names:
+            normalized_search = cls._normalized_column_name(search_name)
+            if not normalized_search:
+                continue
+
+            search_terms = set(normalized_search.split())
+            score = 0
+            for normalized_value in normalized_values:
+                value_terms = set(normalized_value.split())
+                if normalized_search == normalized_value:
+                    score = max(score, 100)
+                elif normalized_search in normalized_value:
+                    score = max(score, 80)
+                elif search_terms and search_terms.issubset(value_terms):
+                    score = max(score, 70)
+                elif value_terms and value_terms.issubset(search_terms):
+                    score = max(score, 60)
+
+            if score > 0:
+                matched_names.append(search_name)
+                best_score = max(best_score, score)
+
+        return best_score, matched_names
+
+    @staticmethod
+    def _with_populated_fraction(column: dict, total_records: int | None) -> dict:
+        count = int(column.get("count") or 0)
+        result = {**column, "count": count}
+        result["populated_fraction"] = count / total_records if total_records else None
+        return result
+
+    @classmethod
+    def find_matching_columns_from_stats(
+        cls,
+        stats_result: dict,
+        search_names: list[str],
+        limit: int = 20,
+        include_empty: bool = True,
+        top_populated_limit: int = 10,
+    ) -> dict:
+        """Find matching property columns in an analysis stats response.
+
+        Matches are ranked by populated count first so duplicate or similarly
+        named SEED columns surface with the version that contains the most data.
+        """
+        search_names = [name.strip() for name in search_names if name and name.strip()]
+        if not search_names:
+            return {"ok": False, "error": "search_names is required"}
+        if limit <= 0:
+            return {"ok": False, "error": "limit must be greater than 0"}
+        if top_populated_limit <= 0:
+            return {"ok": False, "error": "top_populated_limit must be greater than 0"}
+
+        total_records = stats_result.get("total_records")
+        stats = stats_result.get("stats", [])
+        enriched_stats = [cls._with_populated_fraction(column, total_records) for column in stats]
+        populated_columns = sorted(
+            [column for column in enriched_stats if column["count"] > 0],
+            key=lambda column: (-column["count"], str(column.get("display_name") or column.get("column_name") or "")),
+        )
+
+        matches = []
+        for column in enriched_stats:
+            score, matched_names = cls._column_match_score(column, search_names)
+            if score == 0:
+                continue
+            if not include_empty and column["count"] == 0:
+                continue
+            matches.append(
+                {
+                    **column,
+                    "match_score": score,
+                    "matched_names": matched_names,
+                },
+            )
+
+        matches.sort(
+            key=lambda column: (
+                -column["count"],
+                -column["match_score"],
+                str(column.get("display_name") or column.get("column_name") or ""),
+            ),
+        )
+
+        return {
+            "ok": True,
+            "search_names": search_names,
+            "total_records": total_records,
+            "count": min(len(matches), limit),
+            "total_match_count": len(matches),
+            "columns": matches[:limit],
+            "top_populated_columns": populated_columns[:top_populated_limit],
+        }
+
+    def get_property_column_summary_by_cycle(
+        self,
+        cycle_id: int | None = None,
+        cycle_name: str | None = None,
+        column_names: list[str] | None = None,
+        include_raw_data: bool = False,
+        raw_data_limit: int = 100,
+    ) -> dict:
+        """Return property column summary data for a cycle.
+
+        Uses the v4 ``properties/column_summary`` endpoint, which requires SEED >= 3.4.0
+        (SEED-platform/seed#5262). Calling this against an older SEED instance raises
+        ``SEEDVersionError``.
+
+        Note: the SEED endpoint reads ``cycle_ids``/``column_names`` as comma-separated
+        query string values (not repeated/list-style params), and requires
+        ``column_names`` to be set (use ``"all"`` to summarize every column). This method
+        passes ``column_names="all"`` by default when none are given.
+        """
+        self._require_min_seed_version(
+            MIN_SEED_VERSION_FOR_COLUMN_SUMMARY,
+            feature="get_property_column_summary_by_cycle",
+            reference="https://github.com/SEED-platform/seed/pull/5262",
+        )
+
+        if cycle_id is None and cycle_name:
+            cycle = self.get_cycle_by_name(cycle_name)
+            cycle_id = cycle["id"]
+        elif cycle_id is None:
+            cycle_id = self.cycle_id
+
+        cleaned_column_names = [str(name).strip() for name in (column_names or []) if name and str(name).strip()]
+        payload: dict[str, Any] = {
+            "cycle_ids": str(int(cycle_id)),
+            "column_names": ",".join(cleaned_column_names) if cleaned_column_names else "all",
+            "include_raw_data": bool(include_raw_data),
+            "raw_data_limit": int(raw_data_limit),
+        }
+        return self.client.list(endpoint="properties_column_summary", data_name="all", **payload)
+
+    def get_property_column_stats_by_cycle(
+        self,
+        cycle_id: int | None = None,
+        cycle_name: str | None = None,
+    ) -> dict:
+        """Backward-compatible wrapper for property column summary data.
+
+        Requires SEED >= 3.4.0 (SEED-platform/seed#5262); raises ``SEEDVersionError``
+        otherwise, via ``get_property_column_summary_by_cycle``.
+        """
+        return self.get_property_column_summary_by_cycle(cycle_id=cycle_id, cycle_name=cycle_name)
+
+    def find_property_columns_by_name(
+        self,
+        search_names: list[str],
+        cycle_id: int | None = None,
+        cycle_name: str | None = None,
+        limit: int = 20,
+        include_empty: bool = True,
+        top_populated_limit: int = 10,
+    ) -> dict:
+        """Find property columns by display/common name and include populated-count stats.
+
+        Requires SEED >= 3.4.0 (SEED-platform/seed#5262); raises ``SEEDVersionError``
+        otherwise, via ``get_property_column_summary_by_cycle``.
+        """
+        if cycle_id is None and cycle_name:
+            cycle = self.get_cycle_by_name(cycle_name)
+            cycle_id = cycle["id"]
+        elif cycle_id is None:
+            cycle_id = self.cycle_id
+
+        stats_result = self.get_property_column_summary_by_cycle(cycle_id=cycle_id, cycle_name=cycle_name)
+        result = self.find_matching_columns_from_stats(
+            stats_result=stats_result,
+            search_names=search_names,
+            limit=limit,
+            include_empty=include_empty,
+            top_populated_limit=top_populated_limit,
+        )
+        if result.get("ok"):
+            result["cycle_id"] = int(cycle_id)
+        return result
+
     def get_property_view(self, property_view_id: int) -> dict:
         """Return a single property (view and state) by the property view id. It is
         recommended to use the more verbose version of `get_property` below.
@@ -312,6 +827,60 @@ class SeedClient(SeedClientWrapper):
         """
         # NOTE: this seems to be the call that OEP uses (returns property and labels dictionaries)
         return self.client.get(property_view_id, endpoint="properties", data_name="properties")
+
+    def get_site_eui_benchmark_data(self, dataset: str = "category", output_format: str = "json") -> dict | str:
+        """Return ENERGY STAR site EUI benchmark data.
+
+        Uses the ``benchmark_data/site_eui`` endpoint proposed in
+        SEED-platform/seed#5270, which is not yet merged as of writing. This feature
+        will only be available in a SEED release *after* 3.4.0 (exact version TBD);
+        calling this against an older/current SEED instance raises ``SEEDVersionError``.
+
+        Args:
+            dataset (str): ``category`` or ``subcategory`` benchmark dataset.
+            output_format (str): ``json`` or ``csv``.
+
+        Returns:
+            dict | str: JSON response payload for ``json`` format, or CSV string for ``csv`` format.
+        """
+        if dataset not in {"category", "subcategory"}:
+            raise ValueError("dataset must be either 'category' or 'subcategory'")
+        if output_format not in {"json", "csv"}:
+            raise ValueError("output_format must be either 'json' or 'csv'")
+
+        self._require_min_seed_version(
+            MIN_SEED_VERSION_FOR_BENCHMARK_DATA,
+            feature="get_site_eui_benchmark_data",
+            reference="https://github.com/SEED-platform/seed/pull/5270",
+            inclusive=False,
+        )
+
+        request_params = {
+            "endpoint": "benchmark_data_site_eui",
+            "data_name": "all",
+            "dataset": dataset,
+        }
+        if output_format != "json":
+            request_params["output_format"] = output_format
+
+        result = self.client.list(**request_params)
+        if output_format == "csv" and isinstance(result, dict):
+            content = result.get("content")
+            if isinstance(content, (bytes, bytearray)):
+                return content.decode("utf-8")
+        return result
+
+    def get_site_eui_benchmark_data_as_json(self, dataset: str = "category") -> dict:
+        """Return ENERGY STAR site EUI benchmark data as JSON.
+
+        Requires a SEED version newer than 3.4.0 (SEED-platform/seed#5270, not yet
+        merged as of writing); raises ``SEEDVersionError`` otherwise, via
+        ``get_site_eui_benchmark_data``.
+        """
+        result = self.get_site_eui_benchmark_data(dataset=dataset)
+        if isinstance(result, dict):
+            return result
+        raise ValueError("Expected JSON response from benchmark data endpoint")
 
     def get_properties_by_cycles(self, column_list_profile_id: int, cycle_ids: list[int]) -> list:
         """_summary_
