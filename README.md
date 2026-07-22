@@ -29,18 +29,6 @@ Project guardrails and OpenAPI integration direction are documented here:
 | 0.5.0 - current | 3.1.0          |
 | 0.4.3           | 2.21.0 - 3.0.0 |
 
-### Feature-Specific SEED Version Requirements
-
-Some `SeedClient` methods depend on SEED API endpoints that only exist in newer,
-not-yet-released versions of SEED. Calling these against an older SEED instance raises
-`pyseed.exceptions.SEEDVersionError` (checked at runtime via the connected instance's
-`/api/version/` response) rather than failing with an unclear HTTP error:
-
-| Method(s)                                                                                            | Requires SEED  | SEED PR                                                    |
-| ----------------------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------- |
-| `get_property_column_summary_by_cycle`, `get_property_column_stats_by_cycle`, `find_property_columns_by_name` | >= 3.4.0       | [SEED-platform/seed#5262](https://github.com/SEED-platform/seed/pull/5262) (merged) |
-| `get_site_eui_benchmark_data`, `get_site_eui_benchmark_data_as_json`                                   | > 3.4.0        | [SEED-platform/seed#5270](https://github.com/SEED-platform/seed/pull/5270) (open, not yet merged as of writing) |
-
 ## Stakeholders
 
 The following list of stakeholders should be considered when making changes to this module.

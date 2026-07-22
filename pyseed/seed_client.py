@@ -216,10 +216,18 @@ class SeedClient(SeedClientWrapper):
         if not meets_requirement:
             comparator = ">=" if inclusive else ">"
             required_version = f"{comparator} {'.'.join(str(part) for part in min_version)}"
+            current_version_str = ".".join(str(part) for part in current_version)
+            warning_message = (
+                f"'{feature}' requires SEED version {required_version} but the connected SEED "
+                f"instance reports version {current_version_str}. Blocking this call."
+            )
+            if reference:
+                warning_message = f"{warning_message} See {reference}"
+            logger.warning(warning_message)
             raise SEEDVersionError(
                 feature=feature,
                 required_version=required_version,
-                current_version=".".join(str(part) for part in current_version),
+                current_version=current_version_str,
                 reference=reference,
             )
 
