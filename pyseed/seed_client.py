@@ -32,13 +32,15 @@ SITE_EUI_COMMON_NAMES = [
 ]
 
 # Minimum connected-SEED-instance (see `/api/version/`, exposed via `instance_information()`)
-# versions required for newer property analytics endpoints. These were added upstream after
-# the (unreleased, as of writing) 3.4.0 SEED release train:
+# versions required for newer property analytics endpoints. Both features merged upstream
+# after the SEED `develop` branch's version was already bumped to (the still-unreleased, as
+# of writing) 3.4.0, so a connected instance reporting exactly 3.4.0 is not guaranteed to be a
+# tagged release that includes them. Both gates therefore require a version *strictly greater
+# than* 3.4.0 (i.e. exclusive), not `>= 3.4.0`:
 #   - Property column summary (v4 `properties/column_summary`): merged upstream in
-#     https://github.com/SEED-platform/seed/pull/5262 and ships in SEED >= 3.4.0.
+#     https://github.com/SEED-platform/seed/pull/5262.
 #   - ESPM Data Explorer benchmark data (`benchmark_data/site_eui`): proposed upstream in
-#     https://github.com/SEED-platform/seed/pull/5270, which is not yet merged as of writing,
-#     so it will ship in a SEED version *after* 3.4.0 (exact version TBD).
+#     https://github.com/SEED-platform/seed/pull/5270, which is not yet merged as of writing.
 # Update these tuples once the corresponding SEED release is tagged.
 MIN_SEED_VERSION_FOR_COLUMN_SUMMARY = (3, 4, 0)
 MIN_SEED_VERSION_FOR_BENCHMARK_DATA = (3, 4, 0)
@@ -722,9 +724,9 @@ class SeedClient(SeedClientWrapper):
     ) -> dict:
         """Return property column summary data for a cycle.
 
-        Uses the v4 ``properties/column_summary`` endpoint, which requires SEED >= 3.4.0
-        (SEED-platform/seed#5262). Calling this against an older SEED instance raises
-        ``SEEDVersionError``.
+        Uses the v4 ``properties/column_summary`` endpoint, which requires a SEED version
+        newer than 3.4.0 (SEED-platform/seed#5262). Calling this against an older or
+        exactly-3.4.0 SEED instance raises ``SEEDVersionError``.
 
         Note: the SEED endpoint reads ``cycle_ids``/``column_names`` as comma-separated
         query string values (not repeated/list-style params), and requires
@@ -735,6 +737,7 @@ class SeedClient(SeedClientWrapper):
             MIN_SEED_VERSION_FOR_COLUMN_SUMMARY,
             feature="get_property_column_summary_by_cycle",
             reference="https://github.com/SEED-platform/seed/pull/5262",
+            inclusive=False,
         )
 
         if cycle_id is None and cycle_name:
@@ -759,8 +762,8 @@ class SeedClient(SeedClientWrapper):
     ) -> dict:
         """Backward-compatible wrapper for property column summary data.
 
-        Requires SEED >= 3.4.0 (SEED-platform/seed#5262); raises ``SEEDVersionError``
-        otherwise, via ``get_property_column_summary_by_cycle``.
+        Requires a SEED version newer than 3.4.0 (SEED-platform/seed#5262); raises
+        ``SEEDVersionError`` otherwise, via ``get_property_column_summary_by_cycle``.
         """
         return self.get_property_column_summary_by_cycle(cycle_id=cycle_id, cycle_name=cycle_name)
 
@@ -775,8 +778,8 @@ class SeedClient(SeedClientWrapper):
     ) -> dict:
         """Find property columns by display/common name and include populated-count stats.
 
-        Requires SEED >= 3.4.0 (SEED-platform/seed#5262); raises ``SEEDVersionError``
-        otherwise, via ``get_property_column_summary_by_cycle``.
+        Requires a SEED version newer than 3.4.0 (SEED-platform/seed#5262); raises
+        ``SEEDVersionError`` otherwise, via ``get_property_column_summary_by_cycle``.
         """
         if cycle_id is None and cycle_name:
             cycle = self.get_cycle_by_name(cycle_name)

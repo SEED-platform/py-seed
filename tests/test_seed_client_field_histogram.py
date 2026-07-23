@@ -101,7 +101,7 @@ def test_get_property_column_summary_by_cycle_calls_properties_column_summary_en
     fake_api_client = FakeClient()
     client.client = fake_api_client
     client.cycle_id = 99
-    client._cached_seed_version = (3, 4, 0)
+    client._cached_seed_version = (3, 4, 1)
 
     result = client.get_property_column_summary_by_cycle(
         cycle_id=22,
@@ -132,7 +132,7 @@ def test_get_property_column_summary_by_cycle_defaults_column_names_to_all() -> 
     fake_api_client = FakeClient()
     client.client = fake_api_client
     client.cycle_id = 99
-    client._cached_seed_version = (3, 4, 0)
+    client._cached_seed_version = (3, 4, 1)
 
     client.get_property_column_summary_by_cycle(cycle_id=22)
 
@@ -143,6 +143,16 @@ def test_get_property_column_summary_by_cycle_raises_seed_version_error_when_too
     client = SeedClient.__new__(SeedClient)
     client.client = None
     client._cached_seed_version = (3, 3, 2)
+
+    with pytest.raises(SEEDVersionError):
+        client.get_property_column_summary_by_cycle(cycle_id=22)
+
+
+def test_get_property_column_summary_by_cycle_raises_seed_version_error_when_not_strictly_newer() -> None:
+    client = SeedClient.__new__(SeedClient)
+    client.client = None
+    # 3.4.0 itself does not satisfy the exclusive "> 3.4.0" requirement.
+    client._cached_seed_version = (3, 4, 0)
 
     with pytest.raises(SEEDVersionError):
         client.get_property_column_summary_by_cycle(cycle_id=22)
@@ -161,7 +171,7 @@ def test_get_property_column_stats_by_cycle_delegates_to_column_summary() -> Non
     fake_api_client = FakeClient()
     client.client = fake_api_client
     client.cycle_id = 77
-    client._cached_seed_version = (3, 4, 0)
+    client._cached_seed_version = (3, 4, 1)
 
     result = client.get_property_column_stats_by_cycle()
 
