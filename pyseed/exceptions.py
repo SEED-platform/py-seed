@@ -54,3 +54,20 @@ class SEEDError(APIClientError):
 
     def __init__(self, error, url=None, caller=None, verb=None, status_code=None, **kwargs):
         super().__init__(error, service="SEED", url=url, caller=caller, verb=verb, status_code=status_code, **kwargs)
+
+
+class SEEDVersionError(Exception):
+    """Raised when a py-seed method requires a newer SEED backend version than the
+    connected instance reports (via ``/api/version/``)."""
+
+    def __init__(self, feature: str, required_version: str, current_version: str | None = None, reference: str | None = None):
+        self.feature = feature
+        self.required_version = required_version
+        self.current_version = current_version
+        self.reference = reference
+        msg = f"'{feature}' requires SEED version {required_version}"
+        if current_version:
+            msg = f"{msg} (connected SEED reports version {current_version})"
+        if reference:
+            msg = f"{msg}. See {reference}"
+        super().__init__(msg)

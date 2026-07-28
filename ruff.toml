@@ -41,6 +41,7 @@ extend-select = [
 ]
 # except for these specific errors
 ignore = [
+    "COM812", # missing-trailing-comma (conflicts with formatter)
     "E501", # line-too-long
     "PLR0913", # too-many-arguments
     "PLR2004", # magic-value-comparison
