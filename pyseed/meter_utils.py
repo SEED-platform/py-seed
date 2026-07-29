@@ -49,7 +49,18 @@ def annual_energy_from_meter_data(
             raise ValueError(f"No annual meter reading was available for year {year}")
         selected = matches[0]
 
-    meter_types = {str(meter.get("alias")): str(meter.get("type")) for meter in meter_data.get("meters", []) if isinstance(meter, dict)}
+    meters = meter_data.get("meters") or []
+    meter_types: dict[str, str] = {}
+    for meter in meters:
+        if not isinstance(meter, dict):
+            continue
+        meter_type = meter.get("type")
+        if not meter_type:
+            continue
+        alias = meter.get("alias")
+        if alias:
+            meter_types[str(alias)] = str(meter_type)
+        meter_types[str(meter_type)] = str(meter_type)
     electricity = 0.0
     natural_gas = 0.0
     for alias, raw_value in selected.items():
