@@ -17,6 +17,7 @@ from typing import Any
 from openpyxl import Workbook
 
 from pyseed.exceptions import SEEDVersionError
+from pyseed.meter_utils import annual_energy_from_meter_data
 from pyseed.seed_client_base import SEEDReadWriteClient
 from pyseed.utils import read_map_file
 
@@ -2014,6 +2015,23 @@ class SeedClient(SeedClientWrapper):
         }
         meter_data = self.client.post(endpoint="properties_meter_usage", url_args={"PK": property_id}, json=payload)
         return meter_data
+
+    def get_annual_energy_from_meter_data(
+        self,
+        property_id: int,
+        year: int | None = None,
+        excluded_meter_ids: list[int] | None = None,
+    ) -> dict[str, Any]:
+        """Return annual property meter totals normalized to kBtu by fuel."""
+        meter_data = {
+            "meters": self.get_meters(property_id),
+            "usage": self.get_meter_data(
+                property_id,
+                interval="Year",
+                excluded_meter_ids=excluded_meter_ids or [],
+            ),
+        }
+        return annual_energy_from_meter_data(meter_data, year=year)
 
     def start_save_data(self, import_file_id: int, multiple_cycle_upload: bool = False) -> dict:
         """start the background process to save the data file to the database.
