@@ -37,6 +37,7 @@ URLS = {
         "cycles": "/api/v3/cycles/",
         "datasets": "/api/v3/datasets/",
         "gbr_properties": "/api/v3/gbr_properties/",
+        "analyses": "/api/v3/analyses/",
         "green_assessment": "/api/v3/green_assessments/",
         "green_assessment_property": "/api/v3/green_assessment_properties/",
         "green_assessment_url": "/api/v3/green_assessment_urls/",
@@ -60,6 +61,8 @@ URLS = {
         # No versioning endpoints
         "version": "/api/version/",
         # POSTs with replaceable keys
+        "analyses_start_pk": "/api/v3/analyses/PK/start/",
+        "analyses_stop_pk": "/api/v3/analyses/PK/stop/",
         "import_files_check_meters_tab_exists_pk": "/api/v3/import_files/PK/check_meters_tab_exists/",
         "import_files_start_map_data_pk": "/api/v3/import_files/PK/map/",
         "import_files_start_matching_pk": "/api/v3/import_files/PK/start_system_matching_and_geocoding/",
@@ -77,6 +80,10 @@ URLS = {
         "upload_org_access_level_instances_file": "/api/v3/organizations/PK/access_levels/importer/",
         # GETs with replaceable keys
         "analyses_views": "/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/",
+        "analyses_views_list": "/api/v3/analyses/PK/views/",
+        "analyses_progress_key_pk": "/api/v3/analyses/PK/progress_key/",
+        "analyses_verify_better_token": "/api/v3/analyses/verify_better_token/",
+        "organizations_access_level_tree": "/api/v3/organizations/PK/access_levels/tree/",
         "audit_template_building_xml": "/api/v3/audit_template/PK/get_building_xml",
         "audit_template_submission": "/api/v3/audit_template/PK/get_submission",
         "import_files_matching_results": "/api/v3/import_files/PK/matching_and_geocoding_results/",
