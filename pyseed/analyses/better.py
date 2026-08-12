@@ -37,8 +37,7 @@ DOC: dict[str, Any] = {
             "required": True,
             "allowed": list(BETTER_SAVINGS_TARGETS),
             "description": (
-                "CONSERVATIVE = 1 std dev worse than peer median; NOMINAL = peer median; "
-                "AGGRESSIVE = 0.5 std dev better than peer median."
+                "CONSERVATIVE = 1 std dev worse than peer median; NOMINAL = peer median; AGGRESSIVE = 0.5 std dev better than peer median."
             ),
         },
         "benchmark_data_type": {
