@@ -2637,6 +2637,104 @@ class SeedClient(SeedClientWrapper):
             include_org_id_query_param=True,
         )
 
+    @staticmethod
+    def _flatten_access_level_tree(nodes: list[dict]) -> list[dict]:
+        """Return every accountability-hierarchy node in depth-first order."""
+        flattened: list[dict] = []
+        for node in nodes:
+            flattened.append(node)
+            children = node.get("children") or []
+            if children:
+                flattened.extend(SeedClient._flatten_access_level_tree(children))
+        return flattened
+
+    def find_organization_access_level_instance(self, level_name: str, instance_name: str) -> dict:
+        """Resolve one accountability-hierarchy instance by level and exact name.
+
+        Matching is case-insensitive and uses the node's full ``path`` so the same
+        display name can be distinguished when it appears at different hierarchy levels.
+
+        Args:
+            level_name: Accountability-hierarchy level, such as ``Partner Name``.
+            instance_name: Exact instance name, such as ``Arvada, CO``.
+
+        Returns:
+            The matching access-level instance, including its id, path, and children.
+
+        Raises:
+            SEEDError: If the level is unknown or the lookup is missing/ambiguous.
+        """
+        level_name = level_name.strip()
+        instance_name = instance_name.strip()
+        if not level_name or not instance_name:
+            raise SEEDError("level_name and instance_name are required")
+
+        tree = self.get_organization_access_level_tree()
+        access_level_names = tree.get("access_level_names") or []
+        canonical_level = next(
+            (name for name in access_level_names if str(name).casefold() == level_name.casefold()),
+            None,
+        )
+        if canonical_level is None:
+            raise SEEDError(
+                f"Unknown accountability-hierarchy level {level_name!r}; "
+                f"available levels: {access_level_names}"
+            )
+
+        matches = []
+        for node in self._flatten_access_level_tree(tree.get("access_level_tree") or []):
+            path = node.get("path") or {}
+            value = path.get(canonical_level)
+            if value is not None and str(value).casefold() == instance_name.casefold():
+                matches.append(node)
+
+        if not matches:
+            raise SEEDError(
+                f"No accountability-hierarchy instance named {instance_name!r} "
+                f"was found at level {canonical_level!r}"
+            )
+        if len(matches) > 1:
+            ids = [match.get("id") for match in matches]
+            raise SEEDError(
+                f"Accountability-hierarchy lookup for {canonical_level!r}={instance_name!r} "
+                f"was ambiguous; matching instance ids: {ids}"
+            )
+        return matches[0]
+
+    def get_properties_by_accountability_hierarchy(
+        self,
+        level_name: str,
+        instance_name: str,
+        criteria: dict | None = None,
+        limit: int | None = None,
+    ) -> dict:
+        """List properties assigned to one accountability-hierarchy instance.
+
+        SEED's property-list endpoint currently ignores an
+        ``access_level_instance_id`` query parameter. This method therefore resolves
+        the requested instance through the organization hierarchy, retrieves the
+        property list, and filters rows against the resolved node's full path.
+        """
+        if limit is not None and limit <= 0:
+            raise ValueError("limit must be greater than 0")
+
+        instance = self.find_organization_access_level_instance(level_name, instance_name)
+        path = instance.get("path") or {}
+        properties = self.get_properties_by_criteria(criteria=criteria)
+        matches = [
+            row
+            for row in properties
+            if all(str(row.get(level, "")).casefold() == str(value).casefold() for level, value in path.items())
+        ]
+        selected = matches if limit is None else matches[:limit]
+        return {
+            "access_level_instance": instance,
+            "path": path,
+            "total_count": len(matches),
+            "count": len(selected),
+            "properties": selected,
+        }
+
     def get_organization_root_access_level_instance_id(self) -> int:
         """Return the organization's root (top-most) access level instance id.
 
