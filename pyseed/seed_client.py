@@ -2676,10 +2676,7 @@ class SeedClient(SeedClientWrapper):
             None,
         )
         if canonical_level is None:
-            raise SEEDError(
-                f"Unknown accountability-hierarchy level {level_name!r}; "
-                f"available levels: {access_level_names}"
-            )
+            raise SEEDError(f"Unknown accountability-hierarchy level {level_name!r}; available levels: {access_level_names}")
 
         matches = []
         for node in self._flatten_access_level_tree(tree.get("access_level_tree") or []):
@@ -2689,15 +2686,11 @@ class SeedClient(SeedClientWrapper):
                 matches.append(node)
 
         if not matches:
-            raise SEEDError(
-                f"No accountability-hierarchy instance named {instance_name!r} "
-                f"was found at level {canonical_level!r}"
-            )
+            raise SEEDError(f"No accountability-hierarchy instance named {instance_name!r} was found at level {canonical_level!r}")
         if len(matches) > 1:
             ids = [match.get("id") for match in matches]
             raise SEEDError(
-                f"Accountability-hierarchy lookup for {canonical_level!r}={instance_name!r} "
-                f"was ambiguous; matching instance ids: {ids}"
+                f"Accountability-hierarchy lookup for {canonical_level!r}={instance_name!r} was ambiguous; matching instance ids: {ids}"
             )
         return matches[0]
 
@@ -2722,9 +2715,7 @@ class SeedClient(SeedClientWrapper):
         path = instance.get("path") or {}
         properties = self.get_properties_by_criteria(criteria=criteria)
         matches = [
-            row
-            for row in properties
-            if all(str(row.get(level, "")).casefold() == str(value).casefold() for level, value in path.items())
+            row for row in properties if all(str(row.get(level, "")).casefold() == str(value).casefold() for level, value in path.items())
         ]
         selected = matches if limit is None else matches[:limit]
         return {
