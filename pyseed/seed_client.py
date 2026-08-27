@@ -16,7 +16,8 @@ from typing import Any
 
 from openpyxl import Workbook
 
-from pyseed.exceptions import SEEDVersionError
+from pyseed.analyses import ANALYSIS_SERVICES
+from pyseed.exceptions import SEEDError, SEEDVersionError
 from pyseed.meter_utils import annual_energy_from_meter_data
 from pyseed.seed_client_base import SEEDReadWriteClient
 from pyseed.utils import read_map_file
@@ -2618,6 +2619,277 @@ class SeedClient(SeedClientWrapper):
             endpoint="analyses_views",
             url_args={"PK": analysis_id, "ANALYSIS_VIEW_PK": analysis_view_id},
             include_org_id_query_param=True,
+        )
+
+    def get_organization_access_level_tree(self) -> dict:
+        """Retrieve the current organization's access level hierarchy, as seen from the
+        connected user's own access level instance downward.
+
+        Returns:
+            dict: {"access_level_names": [...], "access_level_tree": [{"id": ..., "name": ...,
+                "organization": ..., "path": {...}, "children": [...]}]}
+        """
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="organizations_access_level_tree",
+            url_args={"PK": self.client.org_id},
+            include_org_id_query_param=True,
+        )
+
+    @staticmethod
+    def _flatten_access_level_tree(nodes: list[dict]) -> list[dict]:
+        """Return every accountability-hierarchy node in depth-first order."""
+        flattened: list[dict] = []
+        for node in nodes:
+            flattened.append(node)
+            children = node.get("children") or []
+            if children:
+                flattened.extend(SeedClient._flatten_access_level_tree(children))
+        return flattened
+
+    def find_organization_access_level_instance(self, level_name: str, instance_name: str) -> dict:
+        """Resolve one accountability-hierarchy instance by level and exact name.
+
+        Matching is case-insensitive and uses the node's full ``path`` so the same
+        display name can be distinguished when it appears at different hierarchy levels.
+
+        Args:
+            level_name: Accountability-hierarchy level, such as ``Partner Name``.
+            instance_name: Exact instance name, such as ``Arvada, CO``.
+
+        Returns:
+            The matching access-level instance, including its id, path, and children.
+
+        Raises:
+            SEEDError: If the level is unknown or the lookup is missing/ambiguous.
+        """
+        level_name = level_name.strip()
+        instance_name = instance_name.strip()
+        if not level_name or not instance_name:
+            raise SEEDError("level_name and instance_name are required")
+
+        tree = self.get_organization_access_level_tree()
+        access_level_names = tree.get("access_level_names") or []
+        canonical_level = next(
+            (name for name in access_level_names if str(name).casefold() == level_name.casefold()),
+            None,
+        )
+        if canonical_level is None:
+            raise SEEDError(f"Unknown accountability-hierarchy level {level_name!r}; available levels: {access_level_names}")
+
+        matches = []
+        for node in self._flatten_access_level_tree(tree.get("access_level_tree") or []):
+            path = node.get("path") or {}
+            value = path.get(canonical_level)
+            if value is not None and str(value).casefold() == instance_name.casefold():
+                matches.append(node)
+
+        if not matches:
+            raise SEEDError(f"No accountability-hierarchy instance named {instance_name!r} was found at level {canonical_level!r}")
+        if len(matches) > 1:
+            ids = [match.get("id") for match in matches]
+            raise SEEDError(
+                f"Accountability-hierarchy lookup for {canonical_level!r}={instance_name!r} was ambiguous; matching instance ids: {ids}"
+            )
+        return matches[0]
+
+    def get_properties_by_accountability_hierarchy(
+        self,
+        level_name: str,
+        instance_name: str,
+        criteria: dict | None = None,
+        limit: int | None = None,
+    ) -> dict:
+        """List properties assigned to one accountability-hierarchy instance.
+
+        SEED's property-list endpoint currently ignores an
+        ``access_level_instance_id`` query parameter. This method therefore resolves
+        the requested instance through the organization hierarchy, retrieves the
+        property list, and filters rows against the resolved node's full path.
+        """
+        if limit is not None and limit <= 0:
+            raise ValueError("limit must be greater than 0")
+
+        instance = self.find_organization_access_level_instance(level_name, instance_name)
+        path = instance.get("path") or {}
+        properties = self.get_properties_by_criteria(criteria=criteria)
+        matches = [
+            row for row in properties if all(str(row.get(level, "")).casefold() == str(value).casefold() for level, value in path.items())
+        ]
+        selected = matches if limit is None else matches[:limit]
+        return {
+            "access_level_instance": instance,
+            "path": path,
+            "total_count": len(matches),
+            "count": len(selected),
+            "properties": selected,
+        }
+
+    def get_organization_root_access_level_instance_id(self) -> int:
+        """Return the organization's root (top-most) access level instance id.
+
+        This is the value most callers should pass as `access_level_instance_id` to
+        create_analysis when they have not been assigned a narrower access level, since it
+        places no hierarchy restriction on the resulting Analysis.
+
+        Returns:
+            int: id of the organization's root AccessLevelInstance
+        """
+        tree = self.get_organization_access_level_tree()
+        access_level_tree = tree.get("access_level_tree") or []
+        if not access_level_tree:
+            raise SEEDError("Could not determine the organization's root access level instance id; access_level_tree was empty")
+        return access_level_tree[0]["id"]
+
+    def list_analyses(self, include_views: bool = True) -> dict:
+        """List all analyses that have been created (or run) in the current organization.
+
+        Args:
+            include_views (bool, optional): if True, also return each analysis's
+                AnalysisPropertyViews and their output files. Defaults to True.
+
+        Returns:
+            dict: {"status": "success", "analyses": [...]} plus, when include_views is True,
+                "views": [...] and "original_views": {...}. Each analysis includes its
+                "id", "name", "service", "status", "configuration", and highlights.
+        """
+        return self.client.list(
+            endpoint="analyses",
+            data_name="all",
+            include_views="true" if include_views else "false",
+        )
+
+    def retrieve_analysis(self, analysis_id: int) -> dict:
+        """Retrieve a single analysis's details, including highlights and property view info.
+
+        Args:
+            analysis_id (int): ID of the analysis
+
+        Returns:
+            dict: {"status": "success", "analysis": {...}}. The nested "analysis" dict includes
+                "id", "name", "service", "status" (human-readable), "configuration",
+                "parsed_results", "number_of_analysis_property_views", "views", "cycles",
+                and "highlights" (a list of {"name", "value"} summary rows).
+        """
+        return self.client.get(
+            analysis_id,
+            endpoint="analyses",
+            data_name="all",
+            include_org_id_query_param=True,
+        )
+
+    def create_analysis(
+        self,
+        name: str,
+        service: str,
+        property_view_ids: list[int],
+        configuration: dict | None = None,
+        access_level_instance_id: int | None = None,
+        start_analysis: bool = False,
+    ) -> dict:
+        """Create a new Analysis for one or more properties, optionally starting it immediately.
+
+        Use pyseed.analyses.build_*_configuration() helpers (e.g. build_better_configuration,
+        build_eui_configuration) to build a valid `configuration` dict for `service`, and
+        pyseed.analyses.describe_analysis_service(service) to see what each service does, what
+        it requires, and what its results look like.
+
+        Args:
+            name (str): a human-readable name for this analysis run.
+            service (str): one of pyseed.analyses.ANALYSIS_SERVICES, e.g. "BETTER", "EUI", "CO2",
+                "EEEJ", "BSyncr", "Element Statistics", "Building Upgrade Recommendation",
+                "HVAC Metrics".
+            property_view_ids (list[int]): property view ids to include in the analysis. Must be
+                non-empty.
+            configuration (dict, optional): service-specific configuration. Defaults to {}, which
+                is only valid for services with no required configuration (EEEJ, Element
+                Statistics, HVAC Metrics without a floor_area_column).
+            access_level_instance_id (int, optional): access level instance to create the analysis
+                under. Defaults to the organization's root access level instance (see
+                get_organization_root_access_level_instance_id) if not supplied.
+            start_analysis (bool, optional): if True, start running the analysis immediately after
+                creation. Defaults to False (create in "Ready" status without starting).
+
+        Returns:
+            dict: {"status": "success", "progress_key": ..., "progress": {...}}. Use
+                track_progress_result(progress_key) to poll status, and retrieve_analysis /
+                list_analyses to fetch the created analysis id and later its results.
+        """
+        if service not in ANALYSIS_SERVICES:
+            raise ValueError(f"service must be one of {ANALYSIS_SERVICES}, got {service!r}")
+        if not property_view_ids:
+            raise ValueError("property_view_ids must be a non-empty list")
+
+        if access_level_instance_id is None:
+            access_level_instance_id = self.get_organization_root_access_level_instance_id()
+
+        payload = {
+            "name": name,
+            "service": service,
+            "configuration": configuration or {},
+            "property_view_ids": property_view_ids,
+            "access_level_instance_id": access_level_instance_id,
+        }
+
+        extra_params = {"start_analysis": "true"} if start_analysis else {}
+        return self.client.post(
+            endpoint="analyses",
+            data_name="all",
+            json=payload,
+            **extra_params,
+        )
+
+    def start_analysis(self, analysis_id: int) -> dict:
+        """Start running a previously created ("Ready" status) analysis.
+
+        Args:
+            analysis_id (int): ID of the analysis to start
+
+        Returns:
+            dict: {"status": "success", "progress_key": ..., "progress": {...}}
+        """
+        return self.client.post("analyses_start_pk", url_args={"PK": analysis_id}, data_name="all")
+
+    def stop_analysis(self, analysis_id: int) -> dict:
+        """Stop a currently running (or queued) analysis.
+
+        Args:
+            analysis_id (int): ID of the analysis to stop
+
+        Returns:
+            dict: {"status": "success"}
+        """
+        return self.client.post("analyses_stop_pk", url_args={"PK": analysis_id}, data_name="all")
+
+    def delete_analysis(self, analysis_id: int) -> dict:
+        """Permanently delete an analysis and its results. This cannot be undone.
+
+        Args:
+            analysis_id (int): ID of the analysis to delete
+
+        Returns:
+            dict: {"status": "success"}
+        """
+        return self.client.delete(
+            analysis_id,
+            endpoint="analyses",
+            data_name="all",
+        )
+
+    def verify_better_token(self, better_token: str) -> dict:
+        """Check whether a BETTER Analysis API token is valid, without creating an analysis.
+
+        Args:
+            better_token (str): the BETTER API token to validate (see organization settings).
+
+        Returns:
+            dict: {"token": ..., "validity": bool}
+        """
+        return self.client.list(
+            endpoint="analyses_verify_better_token",
+            data_name="all",
+            better_token=better_token,
         )
 
     def get_cross_cycle_data(self, property_view_id: int) -> dict:

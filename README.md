@@ -108,6 +108,44 @@ seed_client.list(endpoint='properties')
 seed_client.get(property_pk, endpoint='properties')
 ```
 
+## Analyses
+
+SEED can run several built-in analyses against selected properties in a Cycle (the same feature
+behind the "Run Analysis" button in the SEED web UI): `BSyncr`, `BETTER`, `EUI`, `CO2`, `EEEJ`,
+`Element Statistics`, `Building Upgrade Recommendation`, and `HVAC Metrics`. The `pyseed.analyses`
+module documents what each one does, what data it needs, and what its results look like, and
+provides `build_*_configuration()` helpers that build a valid, validated `configuration` dict for
+`SeedClient.create_analysis()`.
+
+```python
+from pyseed.analyses import build_eui_configuration, describe_analysis_service
+
+# Learn what a service needs before running it (purpose, required_inputs,
+# configuration_schema, output_schema, failure_modes):
+describe_analysis_service("EUI")
+
+# Build & validate a configuration, then create and start the analysis:
+configuration = build_eui_configuration(select_meters="all")
+result = seed_client.create_analysis(
+    name="Q1 EUI screen",
+    service="EUI",
+    property_view_ids=[111, 112, 113],
+    configuration=configuration,
+    start_analysis=True,
+)
+progress_key = result["progress"]["progress_key"]
+seed_client.track_progress_result(progress_key)
+
+# Once complete:
+seed_client.list_analyses()
+seed_client.retrieve_analysis(analysis_id)
+```
+
+Other relevant `SeedClient` methods: `start_analysis`, `stop_analysis`, `delete_analysis`,
+`retrieve_analyses_for_property`, `retrieve_analysis_result`, `verify_better_token`, and
+`get_organization_root_access_level_instance_id` (used automatically by `create_analysis` when
+`access_level_instance_id` is not supplied).
+
 ## Testing
 
 Tests can be run via `uv` + `tox`:
