@@ -108,6 +108,20 @@ seed_client.list(endpoint='properties')
 seed_client.get(property_pk, endpoint='properties')
 ```
 
+All CRUD methods accept either a registered endpoint name or a full URL through `endpoint`.
+For `get`, `put`, `patch`, and `delete`, pass `None` as the primary key and
+`required_pk=False` when the URL already identifies the resource:
+
+```python
+seed_client.put(
+    None,
+    endpoint=f"{seed_client.urls['organizations']}{your_org_id}/access_levels/1/edit_instance/",
+    required_pk=False,
+    json={"name": "Army"},
+    data_name="all",
+)
+```
+
 ## Analyses
 
 SEED can run several built-in analyses against selected properties in a Cycle (the same feature
