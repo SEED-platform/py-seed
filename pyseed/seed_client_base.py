@@ -219,6 +219,10 @@ class SEEDBaseClient(JSONAPI):
         self.urls = _get_urls(self.base_url, url_map=url_map, version=version)
         self.endpoints = self.urls.keys()
 
+    def _get_endpoint_url(self, endpoint):
+        """Resolve a registered endpoint name or use an explicit URL."""
+        return endpoint if endpoint.startswith(("http://", "https://")) else self.urls[endpoint]
+
     def _check_response(self, response, *args, **kwargs):
         """Verify we have got a response without any errors.
 
@@ -415,8 +419,7 @@ class CreateMixin:
         """
         Post to SEED API (Create record)
 
-        :param endpoint: endpoint name.
-        :param url: url to call
+        :param endpoint: endpoint name or full URL.
         :param data_name: key response data is stored under
 
         :returns: dict (from response.json()[data_name])
@@ -427,13 +430,9 @@ class CreateMixin:
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, "endpoint", endpoint)
         data_name = _set_default(self, "data_name", data_name, required=False)
-        # check if the endpoint is to be looked up or is a fully qualified url
-        if "/" in endpoint:
-            url = endpoint
-        elif endpoint in self.urls:
-            url = self.urls[endpoint]
-        else:
+        if "/" not in endpoint and endpoint not in self.urls:
             raise Exception(f"Unknown endpoint: {endpoint}")
+        url = self._get_endpoint_url(endpoint)
         if not url.endswith("/"):
             url = url + "/"
         url = _replace_url_args(url, url_args)
@@ -451,7 +450,7 @@ class ReadMixin:
         """
         Get a single record from SEED.
 
-        :param endpoint: endpoint name.
+        :param endpoint: endpoint name or full URL.
         :param pk: primary key of record
         :param data_name: key response data is stored under
 
@@ -463,7 +462,7 @@ class ReadMixin:
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, "endpoint", endpoint)
         data_name = _set_default(self, "data_name", data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
+        url = add_pk(self._get_endpoint_url(endpoint), pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
         if org_id_qp:
             url += f"?organization_id={self.org_id}"
@@ -475,7 +474,7 @@ class ReadMixin:
         """
         Get all records from SEED.
 
-        :param endpoint: endpoint name.
+        :param endpoint: endpoint name or full URL.
         :param data_name: key response data is stored under
 
         :returns: dict (from response.json()[data_name])
@@ -484,7 +483,7 @@ class ReadMixin:
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, "endpoint", endpoint)
         data_name = _set_default(self, "data_name", data_name, required=False)
-        url = self.urls[endpoint]
+        url = self._get_endpoint_url(endpoint)
         if not url.endswith("/"):
             url = url + "/"
         url = _replace_url_args(url, url_args)
@@ -503,7 +502,7 @@ class UpdateMixin:
         Update a record via PUT.
 
         :param pk: key to put to
-        :param endpoint: endpoint name.
+        :param endpoint: endpoint name or full URL.
         :param data_name: key response data is stored under
 
         :returns: dict (from response.json()[data_name])
@@ -512,7 +511,7 @@ class UpdateMixin:
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, "endpoint", endpoint)
         data_name = _set_default(self, "data_name", data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
+        url = add_pk(self._get_endpoint_url(endpoint), pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
 
         response = super()._put(url=url, **kwargs)
@@ -523,7 +522,7 @@ class UpdateMixin:
         """
         Update a record via PATCH.
 
-        :param endpoint: endpoint name.
+        :param endpoint: endpoint name or full URL.
         :param pk: key to put to
         :param data_name: key response data is stored under
 
@@ -533,7 +532,7 @@ class UpdateMixin:
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, "endpoint", endpoint)
         data_name = _set_default(self, "data_name", data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
+        url = add_pk(self._get_endpoint_url(endpoint), pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
         response = super()._patch(url=url, **kwargs)
         self._check_response(response, **kwargs)
@@ -549,7 +548,7 @@ class DeleteMixin:
         """
         Delete a record in SEED
 
-        :param endpoint: endpoint name.
+        :param endpoint: endpoint name or full URL.
         :param pk: key to put to
         :param data_name: key response data is stored under
 
@@ -560,7 +559,7 @@ class DeleteMixin:
         kwargs = self._set_params(kwargs)
         endpoint = _set_default(self, "endpoint", endpoint)
         data_name = _set_default(self, "data_name", data_name, required=False)
-        url = add_pk(self.urls[endpoint], pk, required=kwargs.pop("required_pk", True), slash=True)
+        url = add_pk(self._get_endpoint_url(endpoint), pk, required=kwargs.pop("required_pk", True), slash=True)
         url = _replace_url_args(url, url_args)
         response = super()._delete(url=url, **kwargs)
         # delete should return 204 and no content, unless it is a background task
