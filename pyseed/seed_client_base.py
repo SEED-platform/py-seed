@@ -67,16 +67,16 @@ URLS = {
         "import_files_start_map_data_pk": "/api/v3/import_files/PK/map/",
         "import_files_start_matching_pk": "/api/v3/import_files/PK/start_system_matching_and_geocoding/",
         "import_files_start_save_data_pk": "/api/v3/import_files/PK/start_save_data/",
-        "org_column_mapping_import_file": "api/v3/organizations/ORG_ID/column_mappings/",
+        "org_column_mapping_import_file": "/api/v3/organizations/ORG_ID/column_mappings/",
         "portfolio_manager_property_download": "/api/v3/portfolio_manager/PK/download/",
         "portfolio_manager_meter_download": "/api/v3/portfolio_manager/meter_download/",
         "update_org_access_level_names": "/api/v3/organizations/PK/access_levels/access_level_names/",
         "start_org_access_level_instances_file_save": "/api/v3/organizations/PK/access_levels/start_save_data/",
         # PUTs with replaceable keys:
         "column_list_profiles_pk_show_populated": "/api/v3/column_list_profiles/PK/show_populated/",
-        "properties_update_with_buildingsync": "api/v3/properties/PK/update_with_building_sync/",
-        "properties_upload_inventory_document": "api/v3/properties/PK/upload_inventory_document",
-        "property_update_with_espm": "api/v3/properties/PK/update_with_espm/",
+        "properties_update_with_buildingsync": "/api/v3/properties/PK/update_with_building_sync/",
+        "properties_upload_inventory_document": "/api/v3/properties/PK/upload_inventory_document",
+        "property_update_with_espm": "/api/v3/properties/PK/update_with_espm/",
         "upload_org_access_level_instances_file": "/api/v3/organizations/PK/access_levels/importer/",
         # GETs with replaceable keys
         "analyses_views": "/api/v3/analyses/PK/views/ANALYSIS_VIEW_PK/",
@@ -96,7 +96,7 @@ URLS = {
         # GET & POST with replaceable keys
         "properties_meters_reading": "/api/v3/properties/PK/meters/METER_PK/readings/",
         # DELETES with replaceable keys
-        "delete_inventory": "api/v3/organizations/ORG_ID/inventory/",
+        "delete_inventory": "/api/v3/organizations/ORG_ID/inventory/",
         "benchmark_data_site_eui": "/api/v3/benchmark_data/site_eui/",
     },
 }

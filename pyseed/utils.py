@@ -102,7 +102,7 @@ def geojson_area(geometry):
     return total_area
 
 
-def read_map_file(mapfile_path):
+def read_map_file(mapfile_path: str | Path):
     """Read in the mapping file"""
 
     mapfile_path = Path(mapfile_path)
@@ -116,7 +116,7 @@ def read_map_file(mapfile_path):
         # Open the mapping file and fill list
         maplist = []
         for rowitem in map_reader:
-            data = {
+            data: dict[str, str | bool] = {
                 "from_field": rowitem[0],
                 "from_units": rowitem[1],
                 "to_table_name": rowitem[2],

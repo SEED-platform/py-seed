@@ -56,7 +56,7 @@ class SeedClientWrapper:
         self,
         organization_id: int,
         connection_params: dict | None = None,
-        connection_config_filepath: Path | None = None,
+        connection_config_filepath: str | Path | None = None,
     ) -> None:
         """wrapper around SEEDReadWriteClient.
 
@@ -71,7 +71,7 @@ class SeedClientWrapper:
                     "port": 8000,
                     "use_ssl": false
                 }
-            connection_config_filepath (Path, optional): path to the parameters (JSON file). Defaults to None.
+            connection_config_filepath (str | Path, optional): path to the parameters (JSON file). Defaults to None.
 
         Raises:
             Exception: SeedClientWrapper
@@ -91,7 +91,7 @@ class SeedClientWrapper:
         self.client = SEEDReadWriteClient(organization_id, **self.payload)
 
     @classmethod
-    def read_connection_config_file(cls, filepath: Path) -> dict:
+    def read_connection_config_file(cls, filepath: str | Path) -> dict:
         """Read in the connection config file and return the connection params. This
         file can be mostly created by calling the following from the SEED root directory:
 
@@ -109,8 +109,9 @@ class SeedClientWrapper:
             }
 
         Args:
-            filepath (str): path to the connection config file
+            filepath (str | Path): path to the connection config file
         """
+        filepath = Path(filepath)
         if not filepath.exists():
             raise Exception(f"Cannot find connection config file: {filepath!s}")
 
@@ -128,7 +129,7 @@ class SeedClient(SeedClientWrapper):
         self,
         organization_id: int,
         connection_params: dict | None = None,
-        connection_config_filepath: Path | None = None,
+        connection_config_filepath: str | Path | None = None,
     ) -> None:
         super().__init__(organization_id, connection_params, connection_config_filepath)
 
@@ -1365,8 +1366,7 @@ class SeedClient(SeedClientWrapper):
             ]
         """
         # first list the cycles
-        cycles = self.client.list(endpoint="cycles")
-        return cycles["cycles"]
+        return self.client.list(endpoint="cycles", data_name="cycles")
 
     def create_cycle(self, cycle_name: str, start_date: date, end_date: date) -> dict:
         """Name of the cycle to create. If the cycle already exists, then it will
@@ -1400,8 +1400,7 @@ class SeedClient(SeedClientWrapper):
             if cycle["name"] == cycle_name:
                 raise Exception(f"A cycle with this name already exists: '{cycle_name}'")
 
-        cycles = self.client.post(endpoint="cycles", json=post_data)
-        return cycles["cycles"]
+        return self.client.post(endpoint="cycles", data_name="cycles", json=post_data)
 
     def get_or_create_cycle(
         self,
@@ -1555,12 +1554,12 @@ class SeedClient(SeedClientWrapper):
             selected = self.client.get(dataset["id"], endpoint="datasets", data_name="dataset")
         return selected
 
-    def upload_datafile(self, dataset_id: int, data_file: str, upload_datatype: str) -> dict:
+    def upload_datafile(self, dataset_id: int, data_file: str | Path, upload_datatype: str) -> dict:
         """Upload a datafile file
 
         Args:
             dataset_id (int): id of the SEED dataset to where the data file will be saved
-            data_file (str): full path to file
+            data_file (str | Path): full path to file
             upload_datatype (str): Type of data in file ('Assessed Raw', 'Portfolio Raw')
 
         Returns:
@@ -1732,7 +1731,7 @@ class SeedClient(SeedClientWrapper):
 
         return result
 
-    def create_or_update_column_mapping_profile_from_file(self, mapping_profile_name: str, mapping_file: str) -> dict:
+    def create_or_update_column_mapping_profile_from_file(self, mapping_profile_name: str, mapping_file: str | Path) -> dict:
         """creates or updates a mapping profile. The format of the mapping file is a CSV with the following format:
 
             Raw Columns,    units, SEED Table,    SEED Columns, Omit\n
@@ -1746,7 +1745,7 @@ class SeedClient(SeedClientWrapper):
 
         Args:
             mapping_profile_name (str): Name of the mapping profile that will be created or updated.
-            mapping_file (str): Path to the mapping file will be used to create the mapping profile.
+            mapping_file (str | Path): Path to the mapping file used to create the mapping profile.
 
         Returns:
             dict: {
@@ -1844,11 +1843,11 @@ class SeedClient(SeedClientWrapper):
 
         return result
 
-    def create_extra_data_columns_from_file(self, columns_csv_filepath: str) -> list:
+    def create_extra_data_columns_from_file(self, columns_csv_filepath: str | Path) -> list:
         """Create extra data columns from a csv file. if column exist, skip.
 
         Args:
-            'columns_csv_filepath': 'path/to/file'
+            columns_csv_filepath (str | Path): path to a CSV file
             file is expected to have headers: column_name, display_name, column_description,
 
             See example file at tests/data/test-seed-create-columns.csv
@@ -2215,7 +2214,7 @@ class SeedClient(SeedClientWrapper):
             pm_username (str): username for Energystar Portfolio Manager
             pm_password (str): password for Energystar Portfolio Manager
             pm_template (dict): the full template object dict returned from get_pm_report_template_names
-            to_filepath (Union[str, Path]): Destination file path where the generated XLSX report
+            to_filepath (str | Path): Destination file path where the generated XLSX report
                 will be saved.
 
         Returns:
@@ -2279,7 +2278,7 @@ class SeedClient(SeedClientWrapper):
     def upload_meters_datafile(
         self,
         dataset_name: str,
-        datafile: str,
+        datafile: str | Path,
         datafile_type: str = "PM Meter Usage",
     ) -> dict:
         # upload file
@@ -2299,9 +2298,9 @@ class SeedClient(SeedClientWrapper):
     def upload_and_match_datafile(
         self,
         dataset_name: str,
-        datafile: str,
+        datafile: str | Path,
         column_mapping_profile_name: str,
-        column_mappings_file: str,
+        column_mappings_file: str | Path,
         import_meters_if_exist: bool = False,
         **kwargs,
     ) -> dict:
@@ -2310,9 +2309,9 @@ class SeedClient(SeedClientWrapper):
 
         Args:
             dataset_name (str): Name of the dataset to upload to
-            datafile (str): Full path to the datafile to upload
+            datafile (str | Path): Full path to the datafile to upload
             column_mapping_profile_name (str): Name of the column mapping profile to use
-            column_mappings_file (str): Mapping that will be uploaded to the column_mapping_profile_name
+            column_mappings_file (str | Path): Mapping file that will be uploaded to the column_mapping_profile_name
             import_meters_if_exist (bool): If true, will import meters from the meter tab if they exist in the datafile. Defaults to False.
 
         Kwargs:
@@ -2484,18 +2483,25 @@ class SeedClient(SeedClientWrapper):
 
         return response2
 
-    def retrieve_portfolio_manager_property(self, username: str, password: str, pm_property_id: int, save_file_name: Path) -> dict:
+    def retrieve_portfolio_manager_property(
+        self,
+        username: str,
+        password: str,
+        pm_property_id: int,
+        save_file_name: str | Path,
+    ) -> dict:
         """Connect to portfolio manager and download an individual properties data in Excel format
 
         Args:
             username (str): ESPM login username
             password (str): ESPM password
             pm_property_id (int): ESPM ID of the property to download
-            save_file_name (Path): Location to save the file, preferably an absolute path
+            save_file_name (str | Path): Location to save the file, preferably an absolute path
 
         Returns:
             dict: Did the file download?
         """
+        save_file_name = Path(save_file_name)
         if save_file_name.exists():
             raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
 
@@ -2520,7 +2526,7 @@ class SeedClient(SeedClientWrapper):
         pm_property_ids: list[str],
         start_date: date,
         end_date: date,
-        save_file_name: Path,
+        save_file_name: str | Path,
     ) -> dict:
         """Connect to portfolio manager and download an individual meters data in Excel format
 
@@ -2530,11 +2536,12 @@ class SeedClient(SeedClientWrapper):
             pm_property_ids (list(str)): property whoms meters to download
             start_date (date): start_date from meter readings
             end_date (date): end_date from meter readings
-            save_file_name (Path): Location to save the file, preferably an absolute path
+            save_file_name (str | Path): Location to save the file, preferably an absolute path
 
         Returns:
             dict: Did the file download?
         """
+        save_file_name = Path(save_file_name)
         if save_file_name.exists():
             raise Exception(f"Save filename already exists, save to a new file name: {save_file_name}")
 
@@ -2557,13 +2564,19 @@ class SeedClient(SeedClientWrapper):
                 result["status"] = "success"
         return result
 
-    def import_portfolio_manager_property(self, seed_id: int, cycle_id: int, mapping_profile_id: int, file_path: str) -> dict:
+    def import_portfolio_manager_property(
+        self,
+        seed_id: int,
+        cycle_id: int,
+        mapping_profile_id: int,
+        file_path: str | Path,
+    ) -> dict:
         """Import the downloaded xlsx file into SEED on a specific propertyID
         Args:
             seed_id (int): Property view ID to update with the ESPM file
             cycle_id (int): Cycle ID
             mapping_profile_id (int): Column Mapping Profile ID
-            file_path: path to file downloaded from the retrieve_portfolio_manager_report method above
+            file_path (str | Path): path to file downloaded from the retrieve_portfolio_manager_report method above
         ESPM file will have meter data that we want to handle (electricity and natural gas)
         in the 'Meter Entries' tab"""
 
@@ -2918,7 +2931,7 @@ class SeedClient(SeedClientWrapper):
             url_args={"PK": self.client.org_id},
         )
 
-    def update_organizations_access_level_instances(self, file: str):
+    def update_organizations_access_level_instances(self, file: str | Path):
         # upload file
         with open(file, "rb") as f:
             response = self.client.put(
