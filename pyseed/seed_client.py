@@ -1551,8 +1551,40 @@ class SeedClient(SeedClientWrapper):
         dataset = self.client.post(endpoint="datasets", json=post_data)
         selected = {}
         if dataset["status"] == "success":
-            selected = self.client.get(dataset["id"], endpoint="datasets", data_name="dataset")
+            selected = self.get_dataset(dataset["id"])
         return selected
+
+    def get_datasets(self) -> list:
+        """Get all the datasets in the organization, each with its import files.
+
+        Returns:
+            list: dataset records, each with an "importfiles" list
+        """
+        return self.client.list(endpoint="datasets", data_name="datasets")
+
+    def get_dataset(self, dataset_id: int) -> dict:
+        """Get a dataset and the import files that were uploaded to it.
+
+        Args:
+            dataset_id (int): ID of the dataset
+
+        Returns:
+            dict: dataset record with an "importfiles" list. Each import file reports how far
+                it is through the import: `raw_save_done`, `mapping_done`, and `matching_done`.
+        """
+        return self.client.get(dataset_id, endpoint="datasets", data_name="dataset")
+
+    def get_import_file(self, import_file_id: int) -> dict:
+        """Get an import file, including how far it is through the import.
+
+        Args:
+            import_file_id (int): ID of the import file
+
+        Returns:
+            dict: import file record with `raw_save_done`, `mapping_done`, `matching_done`,
+                the target `cycle`, and its parent `dataset`
+        """
+        return self.client.get(import_file_id, endpoint="import_files", data_name="import_file")
 
     def upload_datafile(self, dataset_id: int, data_file: str | Path, upload_datatype: str) -> dict:
         """Upload a datafile file
@@ -1585,6 +1617,43 @@ class SeedClient(SeedClientWrapper):
             files=files_params,
         )
 
+    def get_progress(self, progress_key: str) -> dict:
+        """Return the current progress of a background task without waiting for it to finish.
+
+        Use this to poll a long-running task (save, map, match, ...) from a caller that
+        cannot block, and `track_progress_result` to block until the task is complete.
+
+        Args:
+            progress_key (str): the key to check
+
+        Returns:
+            dict: progress_result
+                {
+                    'status': 'parsing',  # 'not-started', 'parsing', 'running', 'success', 'warning', 'error'
+                    'status_message': '',
+                    'progress': 42,
+                    'progress_key': ':1:SEED:save_raw_data:PROG:57',
+                    'unique_id': 57,
+                    'func_name': 'save_raw_data',
+                    'message': None,
+                    'stacktrace': None,
+                    'summary': None,
+                    'total': 1
+                }
+
+            SEED reports {'progress': 0, 'status': 'waiting'} for a key it does not know,
+            which includes keys that have expired from its cache.
+        """
+        if not progress_key:
+            raise ValueError("No progress key provided")
+
+        return self.client.get(
+            None,
+            required_pk=False,
+            endpoint="progress",
+            url_args={"PROGRESS_KEY": progress_key},
+        )
+
     def track_progress_result(self, progress_key) -> dict:
         """Delays the sequence until progress is at 100 percent
 
@@ -1609,25 +1678,19 @@ class SeedClient(SeedClientWrapper):
         """
         if not progress_key:
             raise Exception("No progress key provided")
-        try:
-            progress_result = self.client.get(
-                None,
-                required_pk=False,
-                endpoint="progress",
-                url_args={"PROGRESS_KEY": progress_key},
-            )
-        except Exception:  # noqa: BLE001
-            logger.error("Other unknown exception caught")
-            progress_result = None
 
-        if progress_result and progress_result["progress"] == 100:
-            return progress_result
-        else:
+        while True:
+            try:
+                progress_result = self.get_progress(progress_key)
+            except Exception:  # noqa: BLE001
+                logger.error("Other unknown exception caught")
+                progress_result = None
+
+            if progress_result and progress_result["progress"] == 100:
+                return progress_result
+
             # wait a couple seconds before checking the status again
             time.sleep(2)
-            progress_result = self.track_progress_result(progress_key)
-
-        return progress_result
 
     def get_column_mapping_profiles(self, profile_type: str = "All") -> dict:
         """get the list of column mapping profiles. If profile_type is provided
